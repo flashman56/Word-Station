@@ -13,3 +13,5 @@ scripts/.dev-gen-quota.json
 # dict_cache 导入文件（由 npm run export:dict 生成，体积大）
 supabase/dict_cache.csv
 supabase/dict_cache.sql
+# ECDICT 词典数据源（本地缓存，体积大，不应入库）
+scripts/.ecdict/
