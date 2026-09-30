@@ -1,6 +1,7 @@
 import React from 'react'
 import { STATUS, effectiveStatus, autoKnown, isManual, freqBand, recordOf } from '../lib/derive.js'
 import { statusLabel } from '../lib/learning.js'
+import SpeakerButton from './SpeakerButton.jsx'
 
 export default function WordRow({
   word,
@@ -44,6 +45,9 @@ export default function WordRow({
         <span className="font-medium text-slate-800">{word.form}</span>
         <span className="text-slate-400 text-xs ml-1">{word.pos}</span>
       </div>
+
+      {/* 喇叭：点一下即朗读该词；stopPropagation 不触发行选中 / 多选 */}
+      <SpeakerButton text={word.form} size="xs" />
 
       <div className="flex-1 min-w-0 truncate text-slate-600 text-xs">{word.gloss}</div>
 

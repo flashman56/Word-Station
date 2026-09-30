@@ -13,6 +13,7 @@ import {
 } from './lib/derive.js'
 import { buildRelations, pairKey, relationsOf } from './lib/relations.js'
 import { phoneticsOfAsync } from './lib/dict.js'
+import { estimateVocabulary } from './lib/vocab.js'
 import { useSettings } from './hooks/useSettings.js'
 import { buildBands, normalizeBand } from './hooks/useLearn.js'
 import { useAuth } from './hooks/useAuth.js'
@@ -24,6 +25,8 @@ import Sidebar from './components/Sidebar.jsx'
 import LearnHome from './components/LearnHome.jsx'
 import StudySession from './components/StudySession.jsx'
 import WordRow from './components/WordRow.jsx'
+import SpeakerButton from './components/SpeakerButton.jsx'
+import EtymologyPanel from './components/EtymologyPanel.jsx'
 import BulkActionBar from './components/BulkActionBar.jsx'
 import AuthPanel from './components/AuthPanel.jsx'
 import StationBar from './components/StationBar.jsx'
@@ -47,6 +50,8 @@ const DEFAULT_FILTERS = {
   learnBand: 'all',
   // 需求1：新学队列按词族成组出题（默认开，可关回退乱序/原排序）
   groupByFamily: true,
+  // 增量：学习卡进入新词时自动朗读单词（默认关，仅朗读单词、不读例句）
+  autoSpeak: false,
 }
 
 /** ISO 时间格式化：YYYY-MM-DD HH:mm；无值回落「尚未学习」 */
@@ -205,6 +210,9 @@ function AppShell({ words, auth, stations, sync }) {
     [words],
   )
   const bands = useMemo(() => buildBands(maxRank), [maxRank])
+
+  // 预测词汇量：纯本地派生（离线 / 未登录天然可用），随学习记录变化重算
+  const vocab = useMemo(() => estimateVocabulary(words, learn.records), [words, learn.records])
 
   const bandCounts = useMemo(() => {
     const counts = {}
@@ -405,6 +413,7 @@ function AppShell({ words, auth, stations, sync }) {
         onExport={handleExport}
         onImport={handleImport}
         onClear={handleClear}
+        vocab={vocab}
       />
 
       <main className="flex-1 min-w-0 flex flex-col">
@@ -482,6 +491,7 @@ function AppShell({ words, auth, stations, sync }) {
                 onToggleGroupByFamily={() =>
                   setFilters((prev) => ({ ...prev, groupByFamily: prev.groupByFamily === false }))
                 }
+                vocab={vocab}
               />
             </div>
           )}
@@ -496,6 +506,7 @@ function AppShell({ words, auth, stations, sync }) {
                 markKnown={learn.markKnown}
                 onExit={exitSession}
                 onViewInCloud={openWordFromStudy}
+                autoSpeak={filters.autoSpeak === true}
               />
             </div>
           )}
@@ -658,6 +669,12 @@ function MorphDetail({
           {morph.note}
         </p>
       )}
+
+      {/* 词源故事：精编优先，缺失回退本地组合叙述（懒加载 morph-etym.js） */}
+      <div className="mt-3">
+        <EtymologyPanel morph={morph} />
+      </div>
+
       <h3 className="text-xs font-semibold text-slate-500 mt-4 mb-1">同源词 {morph.words.length}</h3>
 
       <div className="flex items-center gap-1 mb-1.5 text-xs">
@@ -729,6 +746,9 @@ function WordDetail({
   const st = rec.status
   const cfg = STATUS[st]
   const band = freqBand(word.freqRank)
+  // 构词拆解：点词素 chip 内联展开其词源故事
+  const [expandedMorphId, setExpandedMorphId] = useState(null)
+  const expandedMorph = expandedMorphId ? index.morphById.get(expandedMorphId) || null : null
   // 音标 / 例句 / 用法：异步查表（红线：严禁生成，查不到显示「音标待补」）
   const [phon, setPhon] = useState(null)
   useEffect(() => {
@@ -785,7 +805,10 @@ function WordDetail({
       <button onClick={onBack} className="text-xs text-slate-400 hover:text-blue-600">
         ← 返回词群
       </button>
-      <h2 className="text-lg font-bold text-slate-800 mt-1">{word.form}</h2>
+      <div className="flex items-center gap-2 mt-1">
+        <h2 className="text-lg font-bold text-slate-800">{word.form}</h2>
+        <SpeakerButton text={word.form} size="sm" />
+      </div>
       <p className="text-xs text-slate-400">{word.pos}</p>
       <p className="text-sm text-slate-700 mt-1">{word.gloss}</p>
 
@@ -882,17 +905,46 @@ function WordDetail({
           无词素 · {word.kind === 'mono' ? '单纯词' : word.kind === 'loan' ? '外来词' : word.kind === 'proper' ? '专有名词' : '固定搭配'}
         </div>
       ) : (
-        <div className="flex items-center flex-wrap gap-1">
-          {word.chain.map((step, i) => (
-            <React.Fragment key={i}>
-              {i > 0 && <span className="text-slate-300">+</span>}
-              <span className="px-2 py-1 rounded border border-slate-200 text-xs">
-                <span className="font-medium text-slate-700">{step.form}</span>
-                <span className="text-slate-400 ml-1">{step.gloss}</span>
-              </span>
-            </React.Fragment>
-          ))}
-        </div>
+        <>
+          <div className="flex items-center flex-wrap gap-1">
+            {word.chain.map((step, i) => {
+              const m = step.morph ? index.morphById.get(step.morph) : null
+              const clickable = Boolean(m)
+              const expanded = clickable && expandedMorphId === m.id
+              return (
+                <React.Fragment key={i}>
+                  {i > 0 && <span className="text-slate-300">+</span>}
+                  {clickable ? (
+                    <button
+                      type="button"
+                      onClick={() => setExpandedMorphId(expanded ? null : m.id)}
+                      title="查看词源故事"
+                      className={`px-2 py-1 rounded border text-xs transition-colors ${
+                        expanded
+                          ? 'border-blue-300 bg-blue-50'
+                          : 'border-slate-200 hover:border-blue-300 hover:bg-blue-50'
+                      }`}
+                    >
+                      <span className="font-medium text-slate-700">{step.form}</span>
+                      <span className="text-slate-400 ml-1">{step.gloss}</span>
+                      <span className="ml-1 text-slate-400">{expanded ? '▾' : '▸'}</span>
+                    </button>
+                  ) : (
+                    <span className="px-2 py-1 rounded border border-slate-200 text-xs">
+                      <span className="font-medium text-slate-700">{step.form}</span>
+                      <span className="text-slate-400 ml-1">{step.gloss}</span>
+                    </span>
+                  )}
+                </React.Fragment>
+              )
+            })}
+          </div>
+          {expandedMorph && (
+            <div className="mt-2">
+              <EtymologyPanel morph={expandedMorph} defaultOpen />
+            </div>
+          )}
+        </>
       )}
 
       <h3 className="text-xs font-semibold text-slate-500 mt-4 mb-1.5">所属词群</h3>

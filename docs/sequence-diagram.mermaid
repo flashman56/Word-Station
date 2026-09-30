@@ -1,43 +1,62 @@
 sequenceDiagram
     autonumber
     actor U as 用户
-    participant AP as AddWordsPanel
-    participant PF as lib/parseForms
-    participant DL as lib/dict
-    participant SWA as cloud/stationWords
-    participant GA as cloud/generate
-    participant FN as Edge Function generate-word
-    participant DC as dict_cache
-    participant DS as DeepSeek
-    participant DB as Postgres
+    participant SB as SpeakerButton
+    participant H as useSpeech
+    participant M as SpeechModule(单例)
+    participant SS as window.speechSynthesis
 
-    U->>AP: 粘贴 "photosynthesis, quixotic; obtuse"
-    AP->>PF: parse(raw)
-    PF-->>AP: ParsedForm[]（去重/去空）
-    AP->>DL: lookupForms(forms)
-    DL-->>AP: hit / miss 分组
-    Note over AP: 预览：命中 ✓ / 待生成 ⚡ / 站内重复 ⚠
-
-    U->>AP: 勾选并提交
-    AP->>SWA: addMany(stationId, hitItems)
-    SWA->>DB: upsert station_words(source='public')
-    DB-->>SWA: ok（ignoreDuplicates 跳过重复）
-
-    AP->>GA: generate(['photosynthesis','quixotic'], stationId)
-    GA->>FN: POST /generate-word（Bearer JWT）
-    FN->>FN: auth.getUser(token) → uid
-    FN->>DC: select form_key in (...)
-    DC-->>FN: 公共库命中 / 生成缓存命中
-    alt 缓存未命中
-        FN->>FN: consume_generation_quota(n)
-        FN->>DS: POST /chat/completions（批量，禁音标）
-        DS-->>FN: items[]
-        FN->>FN: 校验字段；丢弃音标；morphs 兜底 x.unk
-        FN->>DC: upsert dict_cache(payload, model, prompt_version)
+    Note over U,SS: 流程 1 · 发音点击
+    U->>SB: 点击喇叭
+    SB->>SB: e.stopPropagation()
+    SB->>H: speak(word.form)
+    H->>H: supported? 否 → 直接返回（按钮本就 disabled）
+    H->>SS: cancel()
+    alt 同一文本正在播
+        H->>SS: cancel() → 停止，speaking=false
+    else 播放
+        H->>M: pickVoice()  // en-US → en-GB → en* → null
+        M-->>H: voice | null
+        H->>SS: new SpeechSynthesisUtterance(form)
+        H->>SS: u.lang=en-US; u.rate=0.9; u.voice=voice
+        H->>SS: speak(u)
+        SS-->>H: onstart → speaking=true
+        SS-->>H: onend / onerror → speaking=false（静默复位）
     end
-    FN->>DB: upsert user_words（音标取自 dict_cache）
-    FN->>DB: upsert station_words(source='user')
-    FN-->>GA: results + quota
-    GA-->>AP: 逐词状态（onProgress）
-    AP->>SWA: refresh
-    AP-->>U: 已加入 18 词 · 新生成 2 词 · 跳过 1 重复
+
+    Note over U,SS: 流程 2 · 词汇量计算
+    participant LH as LearnHome/Sidebar
+    participant V as vocab.js
+    participant ST as AppShell(useMemo)
+    ST->>V: estimateVocabulary(words, learn.records)
+    V->>V: 去重 + 按 freqRank 分档 → libraryN[b]
+    V->>V: 遍历 records：仅 statusSource!=='migration' 计入样本
+    V->>V: knownP[b] = known/studied
+    V->>V: PAVA 非增约束 + 无样本档插值
+    V->>V: Σ over 档(knownP≥0.25) × libraryN → estimate
+    V->>V: 二项方差传播 → low/high；sufficient 闸门
+    V-->>ST: VocabResult
+    ST-->>LH: vocab (prop)
+    LH-->>U: sufficient ? "≈ N 词 ±D" : "样本不足"
+    U->>LH: 点「怎么算的」
+    LH-->>U: 展开 bands[] 分档表
+
+    Note over U,SS: 流程 3 · 词源展开
+    participant WD as WordDetail/MorphDetail
+    participant EP as EtymologyPanel
+    participant E as etym.js
+    participant D as morph-etym.js(动态 chunk)
+    U->>WD: 点击词素（step.morph → index.morphById）
+    WD->>EP: 挂载 panel(morph)
+    EP->>E: resolveEtymology(morph)
+    alt 首次调用
+        E->>D: import('./data/morph-etym.js')  // 懒加载，只一次
+        D-->>E: { [morphId]: EtymEntry }
+    end
+    alt map[morph.id] 存在
+        E-->>EP: curated entry
+    else 缺失
+        E->>E: composeEtymology(morph)  // 本地组合叙述
+        E-->>EP: composed entry
+    end
+    EP-->>U: 来源 / 演变时间线 / 同源词 chips（pie 标注「重构形」）

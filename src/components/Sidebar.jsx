@@ -1,5 +1,6 @@
 import React from 'react'
 import { CEFR, ORIGINS, STATUS, TYPES, AUTO_KNOWN_RANK } from '../lib/derive.js'
+import VocabCard from './VocabCard.jsx'
 
 function Section({ title, children }) {
   return (
@@ -40,6 +41,7 @@ export default function Sidebar({
   onExport,
   onImport,
   onClear,
+  vocab = null,
 }) {
   const patch = (p) => setFilters((f) => ({ ...f, ...p }))
 
@@ -177,6 +179,31 @@ export default function Sidebar({
           </span>
         </label>
       </Section>
+
+      <Section title="朗读">
+        <label className="flex items-start gap-2 text-xs leading-relaxed cursor-pointer">
+          <input
+            type="checkbox"
+            checked={Boolean(filters.autoSpeak)}
+            onChange={(e) => patch({ autoSpeak: e.target.checked })}
+            className="mt-0.5"
+          />
+          <span>
+            学习卡自动朗读
+            <span className="block text-slate-400">进入新词时自动朗读单词（不读例句）</span>
+          </span>
+        </label>
+        <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+          点任意词旁的喇叭即可朗读（浏览器原生语音）；移动端静音键下系统语音仍可出声。
+        </p>
+      </Section>
+
+      {/* 预测词汇量（精简位）：与 LearnHome 显著位同源同值 */}
+      {vocab && (
+        <div className="mb-4">
+          <VocabCard result={vocab} compact />
+        </div>
+      )}
 
       <Section title="统计">
         <dl className="text-xs space-y-1">

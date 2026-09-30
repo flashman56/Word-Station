@@ -23,6 +23,7 @@ export default function StudySession({
   markKnown,
   onExit,
   onViewInCloud,
+  autoSpeak = false,
 }) {
   const [round] = useState(() => (Array.isArray(queue) ? queue.slice() : []))
   const [index, setIndex] = useState(0)
@@ -83,6 +84,7 @@ export default function StudySession({
         onMarkKnown={submitMarkKnown}
         onNext={goNext}
         onViewInCloud={onViewInCloud}
+        autoSpeak={autoSpeak}
       />
     </div>
   )

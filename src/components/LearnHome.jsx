@@ -1,5 +1,6 @@
 import React from 'react'
 import { STATUS, STATS_SCOPE } from '../lib/derive.js'
+import VocabCard from './VocabCard.jsx'
 
 /**
  * 学习首页（进入「学习」页签默认看到的）。
@@ -36,6 +37,7 @@ export default function LearnHome({
   onChangeBand,
   groupByFamily = true,
   onToggleGroupByFamily,
+  vocab = null,
 }) {
   // 当前选中档位 id（'all' 或 'lo-hi'），用于高亮按钮
   const activeBandId = band === 'all' || band == null ? 'all' : band.id
@@ -74,6 +76,13 @@ export default function LearnHome({
           )
         })}
       </div>
+
+      {/* 预测词汇量（显著位）：无 vocab 传入（如 StationLearn）则不渲染 */}
+      {vocab && (
+        <div className="mt-5">
+          <VocabCard result={vocab} />
+        </div>
+      )}
 
       {/* 掌握进度条 */}
       <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-5">

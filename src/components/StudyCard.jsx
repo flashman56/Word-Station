@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react'
 import { MASTER_THRESHOLD, statusLabel } from '../lib/learning.js'
 // 红线：音标只查表（public/data/v1/phon/*.json，源头是 ECDICT），严禁模型生成
 import { phoneticsOfAsync } from '../lib/dict.js'
+import { useSpeech } from '../hooks/useSpeech.js'
+import SpeakerButton from './SpeakerButton.jsx'
 
 /**
  * 单张学习 / 复习卡片。
@@ -28,12 +30,21 @@ export default function StudyCard({
   onNext,
   record,
   onViewInCloud,
+  autoSpeak = false,
 }) {
   const [answered, setAnswered] = useState(false)
   const [result, setResult] = useState(null) // 'correct' | 'incorrect' | 'known'
   const [out, setOut] = useState(null) // onAnswer 的返回值，便于立刻给反馈
 
   const isReview = mode === 'review'
+  const { speak } = useSpeech()
+
+  // 自动朗读（默认关）：进入新卡时朗读**单词**（绝不读例句）。
+  // StudyCard 在 StudySession 中以 key=index 挂载，故换卡即重挂 → 每次只读新词一次。
+  useEffect(() => {
+    if (!autoSpeak) return
+    speak(word.form, { lang: 'en-US', rate: 0.9 })
+  }, [word.form, autoSpeak, speak])
 
   const handleAnswer = (r) => {
     if (answered) return
@@ -81,6 +92,8 @@ export default function StudyCard({
       {/* 词头 */}
       <div className="flex items-end gap-3 flex-wrap">
         <h2 className="text-4xl font-bold text-slate-800 tracking-tight">{word.form}</h2>
+        {/* 喇叭：作答前 / 后均可点，不影响下方作答按钮 */}
+        <SpeakerButton text={word.form} size="md" className="mb-1" />
         {phonetic ? (
           <span className="text-lg text-slate-400">/{phonetic.replace(/^\/|\/$/g, '')}/</span>
         ) : (
