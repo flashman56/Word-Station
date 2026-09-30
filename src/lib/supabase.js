@@ -1,14 +1,24 @@
 /**
  * Supabase 客户端单例
  * ------------------------------------------------------------------
- * - 只持有公开信息（URL + anon key），安全性由 RLS 保证；
- * - 未配置环境变量时降级为 null，应用进入「纯本地游客模式」，不发任何网络请求；
- * - DEEPSEEK_API_KEY 严禁出现在本文件及任何 VITE_ 变量里。
+ * - 只持有公开信息（URL + publishable/anon key），安全性由 RLS 保证；
+ * - 配置规则：若构建环境注入了 VITE_SUPABASE_*，则以环境变量为准；
+ *   否则回退到下面内置的「公开兜底配置」，指向生产 Supabase 项目——
+ *   因此应用在任何构建环境下都视为「已配置 Supabase」，线上登录/注册始终可用
+ *   （即便 Cloudflare Pages 忘了配环境变量也不会退回本地模式）。
+ * - DEEPSEEK_API_KEY / SUPABASE_SERVICE_ROLE_KEY 严禁出现在本文件及任何 VITE_ 变量里。
  */
 import { createClient } from '@supabase/supabase-js'
 
-const SUPABASE_URL = (import.meta.env?.VITE_SUPABASE_URL ?? '').trim()
-const SUPABASE_ANON_KEY = (import.meta.env?.VITE_SUPABASE_ANON_KEY ?? '').trim()
+// 公开兜底配置：publishable key + 项目 URL，本就设计为可在浏览器暴露（安全性由 RLS 保证）。
+// 这样即便构建环境没有注入 VITE_SUPABASE_*（例如 Cloudflare Pages 忘了配环境变量），
+// 线上也能连上 Supabase；若显式配置了环境变量，则以环境变量为准。
+// 注意：必须用 || 而非 ??，因为未注入时构建期得到的是空字符串（''），?? 不会触发兜底。
+const FALLBACK_SUPABASE_URL = 'https://svnwsbkhpzejygugtorl.supabase.co'
+const FALLBACK_SUPABASE_ANON_KEY = 'sb_publishable_6fm_XDqCS4BWwyqEeOb_BA_YODx2ghg'
+
+const SUPABASE_URL = (import.meta.env?.VITE_SUPABASE_URL || FALLBACK_SUPABASE_URL).trim()
+const SUPABASE_ANON_KEY = (import.meta.env?.VITE_SUPABASE_ANON_KEY || FALLBACK_SUPABASE_ANON_KEY).trim()
 
 /**
  * 浏览器内一律走同源 `/supabase` 代理（开发=Vite 中间件，生产=Cloudflare Pages Function），
