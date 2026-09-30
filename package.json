@@ -1,0 +1,41 @@
+{
+  "name": "word-root-cloud",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "基于词根词缀的个人单词云 —— 词素为父节点、单词为叶子的网状词群",
+  "scripts": {
+    "dev": "vite",
+    "build": "npm run split:data && vite build",
+    "build:skip-data": "vite build",
+    "preview": "vite preview",
+    "validate": "node scripts/validate-data.mjs",
+    "gen:words": "node scripts/gen-words.mjs",
+    "split:data": "node scripts/split-data.mjs",
+    "export:dict": "node scripts/export-dict-cache.mjs",
+    "test:e2e": "node scripts/qa-react-e2e.mjs",
+    "test:learning": "node scripts/test-learning.mjs",
+    "test:graph": "node scripts/test-graph.mjs",
+    "test:atlas": "node scripts/test-atlas.mjs",
+    "test:parse-forms": "node scripts/test-parse-forms.mjs",
+    "test:merge": "node scripts/test-merge.mjs",
+    "test:cloud": "npm run test:parse-forms && npm run test:merge",
+    "relations:report": "node scripts/relation-report.mjs",
+    "test:all": "npm run validate && npm run test:learning && npm run test:graph && npm run test:atlas && npm run test:e2e && npm run test:cloud && npm run relations:report"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "idb-keyval": "^6.2.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "esbuild": "^0.21.5",
+    "jsdom": "^30.1.1",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "vite": "^5.4.11"
+  }
+}

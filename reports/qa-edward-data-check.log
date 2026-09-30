@@ -1,0 +1,86 @@
+
+=== 1. 数据完整性 ===
+总词条: 64825
+重复 id: 0 组
+重复 form(大小写归一): 0 组
+必填字段/cefr/kind/relations 校验: PASS
+
+=== 1b. words-mono-seed 随机 50 条 gloss 抽查 ===
+  ringmaster [n.] 马戏团领班 (B2)
+  nomadic [adj.] 游牧的；流浪的 (B2)
+  goodbye [interj.] 再见 (A1)
+  stan [n.] 斯坦（人名） (B1)
+  zoological [adj.] 动物学的 (B2)
+  nouveau [adj.] 新近的（法语） (C1)
+  geniuses [n.] 天才（复数） (B1)
+  mauritania [n.] 毛里塔尼亚（非洲国家） (B1)
+  tb [n.] 结核病；太字节 (B2)
+  woodhouse [n.] 伍德豪斯（姓氏） (C1)
+  joan [n.] 琼（女子名） (B1)
+  fundraising [n.] 筹款；募捐活动 (B2)
+  perspectives [n.] 观点；视角 (B2)
+  bowen [n.] 鲍文（姓氏/地名） (B1)
+  dublin [n.] 都柏林 (A2)
+  cherie [n.] 亲爱的（法语昵称） (B2)
+  zapping [v.] 快速切换；电击 (B2)
+  lusty [adj.] 强壮的；精力充沛的 (C1)
+  kazoo [n.] 卡祖笛 (C1)
+  lusting [v.] 渴望；贪求（现在分词） (B2)
+  gondo [n.] 贡多（人名/地名） (C2)
+  hellfire [n.] 地狱之火 (C1)
+  audits [n.] 审计；查账（复数） (B2)
+  ismael [n.] 伊斯梅尔（人名） (C2)
+  parentheses [n.] 圆括号；插入语（复数） (B2)
+  blare [v.] 发出刺耳响声 (B2)
+  hulking [adj.] 笨重的；庞大的 (C1)
+  flew [v.] 飞（过去式） (A2)
+  louisa [n.] 路易莎（人名） (B2)
+  preventing [v.] 阻止；预防 (B1)
+  cockney [n.] 伦敦东区人/口音 (C1)
+  spyware [n.] 间谍软件 (B2)
+  corpses [n.] 尸体（复数） (B2)
+  birthright [n.] 与生俱来的权利 (C1)
+  reunion [n.] 重聚；团聚 (B1)
+  chimera [n.] 嵌合体；幻想 (C2)
+  jungles [n.] 丛林（复数） (B1)
+  wehrmacht [n.] 德国国防军（纳粹时期） (C2)
+  colour [n.] 颜色（英式） (A1)
+  advisement [n.] 考虑；咨询 (C1)
+  antichrist [n.] 敌基督；反基督者 (C1)
+  engel [n.] 恩格尔（姓氏） (C2)
+  monahan [n.] 莫纳汉（姓氏） (C1)
+  beckham [n.] 贝克汉姆（人名） (B1)
+  merging [v.] 合并；融合 (B2)
+  wilder [v.] 使迷失；使困惑 (C1)
+  coached [v.] 训练；指导 (B1)
+  enormously [adv.] 极其；巨大地 (B2)
+  epoxy [n.] 环氧树脂 (C1)
+  exterminator [n.] 灭虫者； exterminator (B2)
+
+=== 2. 关系一致性 (synants 全量) ===
+syn: 共 8910 对; 端点缺失 0; 自指 0; 重复对 185
+ant: 共 2933 对; 端点缺失 0; 自指 0; 重复对 77
+synants-mono.syn: 8597 对, 端点缺失 0
+synants-mono.ant: 2832 对, 端点缺失 0
+
+=== 3. 应用集成 (import 实测) ===
+words 总数(实测): 64825
+mono 三文件合计(实测): 49515 = 358 + 2644 + 46513
+  查询 "movements" → 命中(1条, id=w.movements)
+  查询 "elvira" → 命中(1条, id=w.elvira)
+  查询 "oncoming" → 命中(1条, id=w.oncoming)
+  查询 "Mahler" → 命中(1条, id=w.mahler)
+  查询 "sky" → 命中(1条, id=w.sky)
+
+=== 5. 性能 sanity ===
+索引构建(64825条): 46.0 ms; mono 词数 49515
+mono kind 分布: {"mono":17253,"loan":17807,"proper":13783,"phrase":672}
+首字母大写但 kind≠proper: 2 如 Carnaval(loan),Americano(loan)
+
+=== 2b. 重复对明细 ===
+syn 重复对样例: kind~good [synants.js 手写簇 + synants.js 手写簇] | laugh~smile [synants.js 手写簇 + synants.js 手写簇] | laugh~happy [synants.js 手写簇 + synants.js 手写簇] | laugh~glad [synants.js 手写簇 + synants.js 手写簇] | smile~happy [synants.js 手写簇 + synants.js 手写簇]
+ant 重复对样例: harm~help [synants.js 手写簇 + synants.js 手写簇] | kind~cruel [synants.js 手写簇 + synants.js 手写簇] | brave~afraid [synants.js 手写簇 + synants.js 手写簇] | laugh~cry [synants.js 手写簇 + synants.js 手写簇] | laugh~sad [synants.js 手写簇 + synants.js 手写簇]
+
+=== 5. 性能 sanity ===
+heapUsed: 117.3 MB; rss: 180.9 MB
+总耗时(含 import): 146 ms

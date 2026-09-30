@@ -1,0 +1,8 @@
+name = "word-root-cloud"
+compatibility_date = "2024-09-23"
+pages_build_output_dir = "dist"
+
+# 同源 Supabase 网关所需的唯一环境变量（公开值，非密钥）。
+# 浏览器携带的 apikey / Authorization 头会由 functions/supabase/[...path].js 原样转发。
+[vars]
+SUPABASE_URL = "https://svnwsbkhpzejygugtorl.supabase.co"

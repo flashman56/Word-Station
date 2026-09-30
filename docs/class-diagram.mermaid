@@ -1,0 +1,117 @@
+classDiagram
+    class WordKey {
+        <<module>>
+        +publicKey(form: string) string
+        +userKey(formKey: string) string
+        +parse(key: string) object
+    }
+
+    class ParseForms {
+        <<module>>
+        +parse(raw: string) ParsedForm[]
+        +dedupe(forms: ParsedForm[]) ParsedForm[]
+        -SEPARATORS: RegExp
+    }
+
+    class DictLoader {
+        -index: Map
+        -wordCache: Map
+        -phonCache: Map
+        +loadIndex() Promise
+        +lookupForms(forms: string[]) LookupResult
+        +loadWords(wordKeys: string[]) Promise
+        +phoneticsOfAsync(form: string) Promise
+    }
+
+    class SupabaseClient {
+        +from(table: string) QueryBuilder
+        +auth: AuthApi
+        +functions: FunctionsApi
+    }
+
+    class StationsApi {
+        +list() Promise~Station[]~
+        +create(name: string) Promise~Station~
+        +rename(id: string, name: string) Promise~Station~
+        +remove(id: string) Promise~void~
+        +togglePin(id: string, pinned: boolean) Promise~Station~
+    }
+
+    class StationWordsApi {
+        +listByStation(stationId: string) Promise~StationWord[]~
+        +addMany(stationId: string, items: array) Promise~AddResult~
+        +remove(stationId: string, wordKey: string) Promise~void~
+        +updateNote(stationId: string, wordKey: string, note: string) Promise~void~
+    }
+
+    class UserWordsApi {
+        +listMine() Promise~UserWord[]~
+        +upsert(row: UserWord) Promise~UserWord~
+        +patch(id: string, patch: object) Promise~UserWord~
+        +remove(id: string) Promise~void~
+    }
+
+    class GenerateApi {
+        +generate(forms: string[], stationId: string, onProgress) Promise~GenResponse~
+        +retry(formKey: string) Promise~GenItem~
+    }
+
+    class LearnSyncApi {
+        +pullSince(lastSyncAt: string) Promise~object~
+        +pushBatch(rows: array) Promise~void~
+        -BATCH: int
+    }
+
+    class MergeUtil {
+        <<module>>
+        +mergeRecord(local: object, remote: object) object
+        +mergeAll(local: object, remote: object) object
+        -fingerprint(rec: object) string
+    }
+
+    class OfflineQueue {
+        -KEY: string
+        +enqueue(kind: string, payload: object) void
+        +drain() Promise~void~
+        +pendingCount() int
+    }
+
+    class useLearnCloud {
+        +records: object
+        +answer(wordKey: string, result: string) object
+        +markKnown(wordKey: string) void
+        +setReview(wordKey: string) void
+        +syncStatus: string
+    }
+
+    class useLearn {
+        <<existing hook>>
+        +records: object
+        +learnQueue: array
+        +reviewQueue: array
+        +answer() object
+        +markKnown() void
+        +retreat() void
+        +reset() void
+    }
+
+    class LearningCore {
+        <<src/lib/learning.js · 禁止改动>>
+        +applyAnswer(rec: object, result: string, now: string) object
+        +buildLearnQueue(words: array, records: object, size: int, opts: object) array
+        +buildReviewQueue(words: array, records: object, size: int, now: string) array
+    }
+
+    DictLoader ..> ParseForms : 提供命中查询
+    StationsApi --> SupabaseClient
+    StationWordsApi --> SupabaseClient
+    StationWordsApi ..> WordKey : 生成 word_key
+    UserWordsApi --> SupabaseClient
+    UserWordsApi ..> WordKey
+    GenerateApi --> SupabaseClient : functions.invoke
+    LearnSyncApi --> SupabaseClient
+    LearnSyncApi ..> MergeUtil
+    useLearnCloud --> useLearn : 包装（本地状态机不变）
+    useLearnCloud --> LearnSyncApi : 上行 dirty 记录
+    useLearnCloud --> OfflineQueue : 断网入队
+    useLearn --> LearningCore : 纯函数调用

@@ -1,0 +1,15 @@
+node_modules
+dist
+.env
+.env.local
+*.local
+scripts/.gen-cache.json
+scripts/.gen-log.txt
+# 构建期产物（由 npm run split:data 生成）
+public/data/
+# 生成缓存 / 配额计数（vite dev 中间件调试用）
+scripts/.dev-gen-cache.json
+scripts/.dev-gen-quota.json
+# dict_cache 导入文件（由 npm run export:dict 生成，体积大）
+supabase/dict_cache.csv
+supabase/dict_cache.sql

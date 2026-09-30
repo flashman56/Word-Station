@@ -1,0 +1,43 @@
+sequenceDiagram
+    autonumber
+    actor U as 用户
+    participant AP as AddWordsPanel
+    participant PF as lib/parseForms
+    participant DL as lib/dict
+    participant SWA as cloud/stationWords
+    participant GA as cloud/generate
+    participant FN as Edge Function generate-word
+    participant DC as dict_cache
+    participant DS as DeepSeek
+    participant DB as Postgres
+
+    U->>AP: 粘贴 "photosynthesis, quixotic; obtuse"
+    AP->>PF: parse(raw)
+    PF-->>AP: ParsedForm[]（去重/去空）
+    AP->>DL: lookupForms(forms)
+    DL-->>AP: hit / miss 分组
+    Note over AP: 预览：命中 ✓ / 待生成 ⚡ / 站内重复 ⚠
+
+    U->>AP: 勾选并提交
+    AP->>SWA: addMany(stationId, hitItems)
+    SWA->>DB: upsert station_words(source='public')
+    DB-->>SWA: ok（ignoreDuplicates 跳过重复）
+
+    AP->>GA: generate(['photosynthesis','quixotic'], stationId)
+    GA->>FN: POST /generate-word（Bearer JWT）
+    FN->>FN: auth.getUser(token) → uid
+    FN->>DC: select form_key in (...)
+    DC-->>FN: 公共库命中 / 生成缓存命中
+    alt 缓存未命中
+        FN->>FN: consume_generation_quota(n)
+        FN->>DS: POST /chat/completions（批量，禁音标）
+        DS-->>FN: items[]
+        FN->>FN: 校验字段；丢弃音标；morphs 兜底 x.unk
+        FN->>DC: upsert dict_cache(payload, model, prompt_version)
+    end
+    FN->>DB: upsert user_words（音标取自 dict_cache）
+    FN->>DB: upsert station_words(source='user')
+    FN-->>GA: results + quota
+    GA-->>AP: 逐词状态（onProgress）
+    AP->>SWA: refresh
+    AP-->>U: 已加入 18 词 · 新生成 2 词 · 跳过 1 重复
