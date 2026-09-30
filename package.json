@@ -24,7 +24,7 @@
     "test:merge": "node scripts/test-merge.mjs",
     "test:cloud": "npm run test:parse-forms && npm run test:merge",
     "relations:report": "node scripts/relation-report.mjs",
-    "test:all": "npm run validate && npm run test:learning && npm run test:graph && npm run test:atlas && npm run test:e2e && npm run test:cloud && npm run test:vocab && npm run relations:report"
+    "test:all": "npm run validate && npm run validate:etym && npm run test:learning && npm run test:graph && npm run test:atlas && npm run test:e2e && npm run test:cloud && npm run test:vocab && npm run relations:report"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
