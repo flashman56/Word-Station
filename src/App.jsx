@@ -202,7 +202,13 @@ function AppShell({ words, auth, stations, sync }) {
     if (auth.userId) setView((v) => (v === 'learn' && sessionMode === 'none' ? 'station' : v))
   }, [auth.userId, sessionMode])
 
-  const stationWords = useStationWords(stations.currentId, auth.userId)
+  const stationWords = useStationWords(stations.currentId, auth.userId, {
+    // ★ A-06 / M3：私有词的**离线反查来源**。
+    //   useUserWords 已全量缓存私有词，断网时草稿里的 u.* 靠它反查出 form/gloss。
+    //   绝不能改成走 userWordsApi.listByKeys —— 那是纯网络请求，离线必然失败，
+    //   而离线正是需要投影的那一刻。
+    privateWords: userWords.words,
+  })
   const existingKeys = useMemo(
     () => new Set((stationWords.refs || []).map((r) => r.wordKey)),
     [stationWords.refs],
@@ -495,7 +501,9 @@ function AppShell({ words, auth, stations, sync }) {
               />
               <div className="px-4 py-2 bg-slate-50 text-xs text-slate-500 border-t border-slate-200">
                 {stations.current
-                  ? `当前小站：${stations.current.name} · 共 ${stationWords.counts.total} 词（公共 ${stationWords.counts.public} · 私有 ${stationWords.counts.user}）`
+                  ? `当前小站：${stations.current.name} · 共 ${stationWords.counts.total} 词（公共 ${stationWords.counts.public} · 私有 ${stationWords.counts.user}）${
+                      stationWords.pendingCount > 0 ? ` · 另有 ${stationWords.pendingCount} 词待上传` : ''
+                    }`
                   : '还没有小站：在上方新建一个（如「雅思」「论文阅读」）'}
               </div>
               <StationLearn
@@ -507,6 +515,9 @@ function AppShell({ words, auth, stations, sync }) {
                 setReview={learn.setReview}
                 retreat={learn.retreat}
                 ownerId={auth.userId}
+                online={sync.online}
+                pending={stationWords.pending}
+                onRetrySync={learn.flush}
                 onRefresh={async () => {
                   // 私有词可能被编辑过 → 顺手刷新全局私有词，否则学习页统计会停在旧值
                   await stationWords.refresh()
