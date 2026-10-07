@@ -136,6 +136,7 @@ const NO_PRIVATE_WORDS = []
  * @param {boolean} [opts.groupByFamily] 需求1：新学队列按词族成组出题（默认开）
  * @param {Array} [opts.morphemes] 词素数组（用于识别词根 → 词族键）
  * @param {(keys: string[]) => void} [opts.onDirty] 写操作回调（云端同步据此标记 dirty，纯函数层不受影响）
+ * @param {(err: {code: string, message: string}|null) => void} [opts.onStorageError] 写盘失败回调（A-12）
  * @param {boolean} [opts.stampUpdatedAt] 是否给写出的记录打 updatedAt（默认 true）
  */
 export function useLearn(
@@ -148,6 +149,7 @@ export function useLearn(
     groupByFamily = true,
     morphemes = null,
     onDirty = null,
+    onStorageError = null,
     stampUpdatedAt = true,
   } = {},
 ) {
@@ -174,13 +176,37 @@ export function useLearn(
   // records 归属分区。声明在所有写入点之前，任何 persist 都取它。
   const scopeRef = useRef(scopeOf(scope))
 
-  /** 显式落盘（隐私模式写入失败忽略，内存态仍可用） */
+  // 写盘失败信号（A-12）：放进 ref，回调变化不引起 persist 重建
+  const onStorageErrorRef = useRef(onStorageError)
+  useEffect(() => {
+    onStorageErrorRef.current = onStorageError
+  }, [onStorageError])
+
+  /**
+   * 显式落盘。**写失败绝不能静默**（A-12）。
+   *
+   * 分区后每个账号一份载荷，多账号会把本机配额顶满（Safari 无痕单域约 5MB）。
+   * 静默 catch 的后果是：用户以为进度存上了，实际根本没存进去，刷新即丢，
+   * 而且**无任何提示** —— 这比一开始报错更糟。所以：
+   *   - 失败 → onStorageError({code, message}) 上报，徽标进入红色告警态；
+   *   - 成功 → onStorageError(null) 清除告警（告警态持续到下一次写成功，
+   *     不做成一次性 toast：否则用户改完一条看到告警消失，会以为问题已解决）；
+   *   - **内存态照常更新**：写盘失败不得让用户刚做的操作凭空消失，答题零阻塞。
+   */
   const persist = useCallback((next, sc) => {
     const target = sc || scopeRef.current
     try {
       writeLearn(next, target)
-    } catch {
-      /* ignore */
+      if (onStorageErrorRef.current) onStorageErrorRef.current(null)
+    } catch (e) {
+      if (onStorageErrorRef.current) {
+        onStorageErrorRef.current({
+          code: e && e.name === 'QuotaExceededError' ? 'QUOTA_EXCEEDED' : 'WRITE_FAILED',
+          message: (e && e.message) || String(e),
+        })
+      }
+      // 故意不 rethrow：内存态已经是新的（调用方在此之前已 setRecords），
+      // 这里抛出去只会让答题路径变成一次未处理的异常。
     }
   }, [])
 
@@ -345,7 +371,19 @@ export function useLearn(
     persist({}, scopeRef.current)
   }, [persist])
 
-  /** 导出 v2 结构，供用户另存 */
+  /**
+   * 导出 v2 结构，供用户另存。
+   *
+   * ★ 依赖提醒（A-12 徽标文案依赖这条）★
+   *   徽标的容量告警文案里写着「建议先导出 JSON 备份当前进度」——
+   *   那句话之所以成立，靠的就是这里序列化的是**内存态 `records`**（依赖数组 [records]），
+   *   而**不是**从 localStorage 读。
+   *
+   *   这一点在写盘失败时尤其关键：磁盘是旧的、内存是新的，若哪天有人把这里
+   *   改成读 localStorage，导出的就会是那份「丢掉了最近改动」的旧数据，
+   *   告警文案里的补救建议随之变成一句假承诺 —— 用户照做，备份出来的却正是
+   *   他最需要保住的那部分内容的反面。
+   */
   const exportJson = useCallback(
     () => JSON.stringify({ version: LEARN_STORE_VERSION, records }, null, 2),
     [records],
