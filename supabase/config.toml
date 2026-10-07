@@ -1,0 +1,20 @@
+# Supabase CLI 配置
+# -----------------------------------------------------------------------------
+# 用途：让 `supabase functions deploy` / `supabase secrets set` 知道目标是哪个项目，
+#       并声明 generate-word 的鉴权策略。
+# 现状：本文件此前不存在，CLI 会退回到「交互式选择项目」，在 CI / 非交互环境下直接失败。
+# 参见 docs/DEPLOY-EDGE-FUNCTION.md。
+# -----------------------------------------------------------------------------
+
+project_id = "svnwsbkhpzejygugtorl"
+
+[functions.generate-word]
+# verify_jwt = true（Supabase 平台默认值，此处显式写出以免误改）
+#
+# 依据：生产客户端 src/lib/supabase.js 用 createClient() 建客户端，
+#      src/lib/cloud/generate.js 走 supabase.functions.invoke()，
+#      而 @supabase/supabase-js 的 fetchWithAuth() 会把
+#      `Authorization: Bearer <当前 session 的 access_token>` 注入到该请求上。
+#      因此网关的 JWT 校验能拿到真实用户 token，可以通过。
+#      反例：若改成 false，未登录用户也能直接调本函数烧 DeepSeek 额度，必须避免。
+verify_jwt = true
