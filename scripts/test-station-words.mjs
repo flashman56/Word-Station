@@ -381,6 +381,235 @@ test('★ 源码纪律：refresh 失败时不清空 refs（断网不该让列表
   assert.ok(!/setRefs\(\[\]\)/.test(errBody), '★ 失败分支不得 setRefs([]) —— 那会让断网时列表消失')
 })
 
+
+// ================================================================ 第四部分：
+// T06 列裁剪（只留 wordKey）—— 护栏取值的守门人
+//
+// ★ 为什么这组测试是「护栏取值」的守门人 ★
+//   裁剪前单条 299.7 B → 1 站×500 词 = 146.3KB → 256KB 护栏第 2 个站就拒写
+//   ⇒ A-02（断网刷新小站消失）在多站场景下等于没修好。
+//   裁剪后单条 17B（短）/ 36B（长）→ 10 站满配 83KB（短）/ 175.8KB（长）。
+//   护栏仍 256KB，因为 LRU 上限本来就是 10 站 ⇒ 正常路径永不触发。
+//
+// ★ 长词边界的意义（team-lead 明确要求）★
+//   词形长度让单条体积差 **2 倍**（w.a 18.0B vs w.internationalization 37.0B）。
+//   用短词测出「83KB 很安全」而长词实际 175.8KB —— 结论虽仍在护栏内，
+//   **但余量从 50% 掉到 29%**。所以断言必须按**长词**校验余量，
+//   否则将来有人改护栏值时会误判。
+
+/** 从 hook 源码里取出 pickCacheRef 的**真实实现**（箭头/普通函数都覆盖） */
+function loadPickCacheRef() {
+  const src = readFileSync(STATION_WORDS_HOOK, 'utf8')
+  const m = /export function pickCacheRef\([^)]*\) \{([\s\S]*?)\n\}/.exec(src)
+  assert.ok(m, 'hook 里找不到 pickCacheRef')
+  const whole = m[0].replace('export ', '')
+  // eslint-disable-next-line no-new-func
+  return new Function(whole + '; return pickCacheRef;')()
+}
+
+const pickCacheRef = loadPickCacheRef()
+
+/** 一条形状合法的引用行（8 个字段，模拟 stationWordFromRow 的输出） */
+function fullRef(n, opts) {
+  const o = opts || {}
+  return {
+    id: 'sw-00000000-0000-4000-8000-' + String(n).padStart(12, '0'),
+    stationId: 'station-1',
+    ownerId: SCOPE_A,
+    wordKey: (o.prefix || 'w') + '.somewordform',
+    source: 'public',
+    note: o.note === undefined ? null : o.note,
+    addedAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-02T00:00:00.000Z',
+  }
+}
+
+console.log('\n— ④ 列裁剪：投影只留 wordKey')
+
+test('★★ 投影后的对象**只含** wordKey（用 Object.keys 精确匹配，不用 length===1）', () => {
+  // ★ 为什么不用 `Object.keys(r).length === 1` ★
+  //   那样「多留一个字段但恰好另一个被替换」这类错误可能通过；
+  //   断言必须精确到**键名集合**（deepEqual），才能在注入时立刻指出是哪个字段。
+  const r = pickCacheRef(fullRef(1))
+  assert.deepEqual(Object.keys(r), ['wordKey'], '★ 键集合必须恰好是 ["wordKey"]')
+  assert.equal(r.wordKey, fullRef(1).wordKey, 'wordKey 的值必须原样保留')
+})
+
+test('★★ 7 个可裁字段**一个都不许残留**（逐个点名，比 keys 匹配更能定位）', () => {
+  const r = pickCacheRef(fullRef(2, { note: '有笔记也不能留' }))
+  const strippable = ['id', 'stationId', 'ownerId', 'source', 'note', 'addedAt', 'updatedAt']
+  strippable.forEach((f) => {
+    assert.ok(!(f in r), '★ 投影里不该有 ' + f + '（它占体积且无人读）')
+  })
+})
+
+test('★ 内存态与落盘态是**两回事**：refresh 仍把全字段交给 setRefs', () => {
+  // 若这里将来改成 setRefs(list.map(pickCacheRef))，K5 接笔记 UI 时
+  // 就只能靠云端了 —— 而 team-lead 要求「内存态保持全字段」。
+  //
+  // ★★ 断言必须用「右括号」锚定，不能用 indexOf('setRefs(list') ★★
+  //   `setRefs(list.map(pickCacheRef))` 里**也包含** `setRefs(list` 这个子串，
+  //   所以第一版断言在注入「内存态也裁剪」后**依然全绿**（实测：注入 5 未被抓住）。
+  //   → 凡是「这里必须是裸调用、不能带参数」的断言，都要用紧随其后的字符
+  //     （这里是 `)`）来锚定。子串包含是「假绿」的常见来源。
+  const src = readFileSync(STATION_WORDS_HOOK, 'utf8')
+  // 形如 setRefs(<something>) 的所有调用点
+  const calls = [...src.matchAll(/setRefs\(([^)]*)\)/g)].map((m) => m[1].trim())
+  assert.ok(calls.length > 0, '找得到 setRefs 调用（实际 ' + calls.length + ' 处）')
+  assert.ok(
+    calls.includes('list'),
+    '★ 内存态必须有一个 setRefs(list)（全字段）；实际参数：' + JSON.stringify(calls),
+  )
+  assert.ok(
+    !calls.some((a) => a.includes('pickCacheRef')),
+    '★ 内存态绝不能是投影版 setRefs(list.map(pickCacheRef)) —— 那会让 K5 只能靠云端',
+  )
+  // 落盘那处必须恰好是投影
+  const writes = [...src.matchAll(/writeStationRefs\(([^;]*)\)/g)].map((m) => m[1].trim())
+  assert.ok(
+    writes.some((w) => /list\.map\(pickCacheRef\)/.test(w)),
+    '★ 落盘必须是 list.map(pickCacheRef)（投影）；实际：' + JSON.stringify(writes),
+  )
+})
+
+test('★★ 护栏行为不变：超限仍静默拒写、旧值完好、不抛错、返回 false', () => {
+  // ★ 这是 QA 已独立验证过的行为，裁剪不能破坏它 ★
+  // 裁剪只会让 payload 更小、更难触发拒写 —— 但「更难触发」不等于
+  // 「测不到」，所以这里用一个**裁剪后仍远超上限**的条数来复现。
+  reset()
+  const huge = []
+  for (let i = 0; i < 40000; i += 1) huge.push(pickCacheRef({ wordKey: 'w.word' + i }))
+  const before = writeStationRefs(ST1, [pickCacheRef(fullRef(3))], SCOPE_A)
+  assert.equal(before, true, '前置：小数据能写进去')
+  const oldValue = localStorage.getItem(keysFor(SCOPE_A).stationWordsCache)
+  assert.ok(oldValue, '前置：旧值存在')
+
+  let threw = null
+  let result = null
+  try {
+    result = writeStationRefs(ST2, huge, SCOPE_A)
+  } catch (e) {
+    threw = e
+  }
+  assert.equal(threw, null, '★ 超限不抛错')
+  assert.equal(result, false, '★ 超限返回 false')
+  assert.equal(
+    localStorage.getItem(keysFor(SCOPE_A).stationWordsCache),
+    oldValue,
+    '★ 旧值完好（不留半截数据）',
+  )
+  assert.equal(readStationRefs(ST1, SCOPE_A).refs.length, 1, '★ 已有小站的条目仍完好')
+})
+
+test('★★ LRU 仍按 10 站裁剪（裁剪不改变条目数逻辑）', () => {
+  reset()
+  for (let i = 1; i <= 12; i += 1) {
+    writeStationRefs('s' + i, [pickCacheRef({ wordKey: 'w.w' + i })], SCOPE_A)
+  }
+  let kept = 0
+  for (let i = 1; i <= 12; i += 1) {
+    if (readStationRefs('s' + i, SCOPE_A).refs.length > 0) kept += 1
+  }
+  assert.equal(kept, 10, '★ 仍只保留 10 个条目（实际 ' + kept + '）')
+})
+
+console.log('\n— ⑤ 长词边界的体积余量（护栏取值的守门人）')
+
+/** 单条 JSON 序列化后的 UTF-8 字节数（与 localStorage 同口径） */
+function bytes(v) {
+  return Buffer.byteLength(JSON.stringify(v), 'utf8')
+}
+
+const CAP_BYTES = 256 * 1024
+const LRU_STATIONS = 10
+const WORDS_PER_STATION = 500
+/** ★ 最坏情况的词形（实测单条 37B，是短词 18B 的 2 倍多） */
+const LONG_KEY = 'w.internationalization'
+const SHORT_KEY = 'w.a'
+
+test('★ 长词与短词的单条体积差约 2 倍（这是余量要按最坏情况算的根因）', () => {
+  const short = bytes({ wordKey: SHORT_KEY })
+  const long = bytes({ wordKey: LONG_KEY })
+  assert.ok(short > 0 && long > 0, '前置：两者都能量出体积')
+  const ratio = long / short
+  assert.ok(
+    ratio > 1.8 && ratio < 2.3,
+    '★ 长词/短词比值在 1.8~2.3 之间（实测 short=' + short + 'B long=' + long + 'B ratio=' + ratio.toFixed(2) + '）',
+  )
+  console.log('    短词 ' + short + 'B/条 · 长词 ' + long + 'B/条 · 比值 ' + ratio.toFixed(2) + '×')
+})
+
+test('★★ 10 站满配：长词场景仍在 256KB 护栏内，且余量 > 20%', () => {
+  // ★ 按**长词**算最坏情况 ★ 用短词算会高估余量一倍
+  const longPer = bytes({ wordKey: LONG_KEY })
+  const total10 = longPer * WORDS_PER_STATION * LRU_STATIONS
+  assert.ok(
+    total10 < CAP_BYTES,
+    '★★ 10 站 × ' + WORDS_PER_STATION + ' 词（长词）= ' + (total10 / 1024).toFixed(1) + 'KB，必须 < 护栏 256KB',
+  )
+  const margin = ((CAP_BYTES - total10) / CAP_BYTES) * 100
+  assert.ok(margin > 20, '★ 长词场景余量 ' + margin.toFixed(0) + '%，须 > 20%')
+  console.log(
+    '    长词 ' + longPer + 'B/条 → 1 站 ' + ((longPer * WORDS_PER_STATION) / 1024).toFixed(1) +
+      'KB → 10 站 ' + (total10 / 1024).toFixed(1) + 'KB，余量 ' + margin.toFixed(0) + '%',
+  )
+})
+
+test('★ 单站极端规模（5000 词，长词）仍在护栏内', () => {
+  const longPer = bytes({ wordKey: LONG_KEY })
+  const total = longPer * 5000
+  assert.ok(
+    total < CAP_BYTES,
+    '★ 单站 5000 词（长词）= ' + (total / 1024).toFixed(1) + 'KB < 256KB（实测，非估算）',
+  )
+  console.log('    单站 5000 词（长词）= ' + (total / 1024).toFixed(1) + 'KB')
+})
+
+test('★★ 注释里必须写「长词最坏值」而不只是平均值（team-lead 明确要求）', () => {
+  const src = readFileSync(STATION_WORDS_HOOK, 'utf8')
+  const start = src.indexOf('function pickCacheRef')
+  const docStart = src.lastIndexOf('/**', start)
+  const doc = src.slice(docStart, start)
+
+  // ★★★ 断言必须锚定「数字表」那一段，且**不能越界到告诫段** ★★★
+  //   这一版修掉了两个真实的假绿（都是缺陷注入 7 抓出来的）：
+  //
+  //   ① 第一版用 `/17\s*B/.test(doc)` 全篇搜 —— 而 17B / 175.8KB 在下面的
+  //      「重新实测」告诫段里**又出现了一次**，删掉数字表那行，数字仍「存在」，
+  //      断言被蒙过去。
+  //   ② 第二版用 `doc.slice(doc.indexOf('★ 体积'))` 取到 doc **末尾** ——
+  //      告诫段仍在切片里，`/17\s*B/` 照样匹配到告诫段里的 `（17B vs 36B）`
+  //      （`\s*` 允许**零个**空格，所以 `17B` 也匹配）。
+  //      注入后依然全绿。
+  //
+  //   ⇒ 修法：切片必须**两端都锚定** —— 从「★ 体积」到「调这个护栏值之前」之前。
+  //   一般形态：**存在性断言必须限定区间，否则同样的内容在别处出现就会互相顶替。**
+  const tableStart = doc.indexOf('★ 体积')
+  const tableEnd = doc.indexOf('★★ 调这个护栏值之前')
+  assert.ok(tableStart !== -1, '★ 注释里必须有「体积」小节（数字表）')
+  assert.ok(tableEnd > tableStart, '★ 数字表必须在告诫段之前')
+  const table = doc.slice(tableStart, tableEnd)
+
+  // 数字用「B 结尾」锚定，避免 `17.6 KB` 之类被误当作 `17B` 的一部分
+  assert.ok(/(^|[^.\d])17\s*B/.test(table), '★ 体积表里有短词单条体积（17 B）')
+  assert.ok(/36\s*B/.test(table), '★ 体积表里必须有长词单条体积（36 B），不能只写平均的 26 B')
+  assert.ok(/175\.8\s*KB/.test(table), '★ 体积表里必须有长词 10 站满配的**实测值** 175.8 KB')
+  assert.ok(/31\s*%/.test(table), '★ 体积表里应写明长词场景余量 31%（按最坏情况算，不是 50%）')
+  assert.ok(/2\.12/.test(table), '★ 体积表里应写明长短词比值 2.12×（实测，不是「约 2 倍」）')
+  // 「重新实测」的告诫段必须独立存在
+  assert.ok(
+    /重新实测/.test(tableEnd === -1 ? doc : doc.slice(tableEnd)),
+    '★ 注释里必须保留「改护栏前要重新实测，不能用短词估算」的告诫',
+  )
+})
+
+test('★ 分区隔离与损坏回落不受裁剪影响', () => {
+  reset()
+  writeStationRefs(ST1, [pickCacheRef({ wordKey: 'w.a' })], SCOPE_A)
+  assert.deepEqual(readStationRefs(ST1, SCOPE_B).refs, [], '★ 分区隔离仍成立')
+  localStorage.setItem(keysFor(SCOPE_A).stationWordsCache, '{坏 JSON')
+  assert.deepEqual(readStationRefs(ST1, SCOPE_A).refs, [], '损坏 JSON 仍回落空')
+})
 console.log(`\n通过 ${passed} · 失败 ${failed}`)
 process.exit(failed === 0 ? 0 : 1)
 
