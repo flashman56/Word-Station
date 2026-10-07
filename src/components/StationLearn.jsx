@@ -57,6 +57,7 @@ export default function StationLearn({
   removeWord,
   online = true,
   ownerId = null,
+  currentStationName = '',
   pending = EMPTY_PENDING,
   onRetrySync,
   onRefresh,
@@ -70,6 +71,57 @@ export default function StationLearn({
   const list = words || []
   const recs = records || {}
   const pendingList = pending || EMPTY_PENDING
+  const [rowNotice, setRowNotice] = useState(null)
+
+  /**
+   * ★ B-01「移出小站」★
+   *
+   * 语义定稿（**只删 station_words 的一行引用**）：
+   *   · user_words 里的私有词条**保留**；
+   *   · learn_records 的学习记录**逐字段不变**（nextDueAt / 计数全不变）。
+   *
+   * ★ 所以 confirm 必须把「不删什么」也写出来 ★
+   *   只说「确定移除？」的话，用户最担心的恰恰是「我的学习记录会不会没了」——
+   *   而答案是「不会」。写清这一句，用户才敢点。
+   *
+   * ★ 站内复习队列 vs 学习页复习队列（PRD 3.1.4）★
+   *   移除后该词立即从**站内**复习队列消失（list 变小 → 派生队列变小）；
+   *   但它**仍在**学习页复习队列里 —— 因为 buildReviewQueue 的 statWords 是
+   *   全库 ∪ 私有词，与小站无关。到期后会照常出现在学习页，状态照常更新。
+   *   这不是 bug，是设计；所以删除后要给一条事后反馈。
+   *
+   * ★ Q1 已定：离线时禁用并说明为什么 ★
+   *   不做离线删除队列。理由不是「改动小」：
+   *     - 加词草稿是**幂等 upsert**（重复执行无损），删除不是；
+   *     - remove 草稿一旦被 park（跨账号 / 永久失败）会出现「云端词还在、
+   *       用户以为删了、刷新又回来」—— 正是本项目在系统性消灭的那类静默不一致；
+   *     - 离线下顺序只靠 queuedAt 侥幸正确，force 重试 / 多设备并发 / 队列重排
+   *       任一发生就会提前执行。
+   *   offline.js 因此**零改动**、不新增草稿 kind。
+   */
+  const doRemove = async (w) => {
+    if (!online) return
+    if (
+      !window.confirm(
+        `从「${currentStationName || '这个小站'}」移出 ${w.form}？\n` +
+          `· 只是从这个小站移除，不会删除这个词条本身\n` +
+          `· 你的学习记录保留，仍会出现在「学习」页的复习队列里\n` +
+          `· 移出后可以随时从学习页重新加回\n` +
+          `此操作不可撤销。`,
+      )
+    )
+      return
+    const ok = await removeWord(w.wordKey)
+    if (ok) {
+      // ★ 事后反馈：不能只靠 confirm（confirm 一关，用户就没有任何回执了）
+      setRowNotice(`已从「${currentStationName || '当前小站'}」移出 ${w.form} · 学习记录保留`)
+      setTimeout(() => setRowNotice(null), 4000)
+      if (onRefresh) await onRefresh()
+    } else {
+      setRowNotice(`移出失败：${w.form} 仍在小站中，请稍后重试`)
+      setTimeout(() => setRowNotice(null), 4000)
+    }
+  }
 
   /** 该词的记录（wordKey 与 word.id 天然对齐，无需再算） */
   const recordOf = useMemo(() => (w) => recs[w.id] || recs[w.wordKey], [recs])
@@ -165,6 +217,8 @@ export default function StationLearn({
               <span>
                 本小站词条 {list.length} 个（点私有词的词形可编辑）
               </span>
+              {/* B-1 事后反馈：移出成功后必须给一条回执，不能只靠 confirm */}
+              {rowNotice && <span className="text-emerald-700 font-medium">{rowNotice}</span>}
               {/* B-7：行内有了状态色块后，「颜色代表什么」就成了新问题 —— 补三色图例 */}
               <StatusLegend className="ml-auto" />
             </div>
@@ -237,7 +291,7 @@ export default function StationLearn({
                     )}
 
                     {/* B-1/B-2：状态徽标 + 行内快捷标记 */}
-                    <span className="ml-auto flex items-center gap-1.5 shrink-0">
+                    <span className="ml-auto flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
                       {prog && st !== 'known' && (
                         <span className="text-[11px] text-slate-400">{prog}</span>
                       )}
@@ -258,6 +312,24 @@ export default function StationLearn({
                           退回复习
                         </GhostBtn>
                       )}
+
+                      {/* ★ B-01 第 4 个按钮：移出小站 ★
+                          离线时 disabled + 可执行提示（Q1：不做离线删除队列，
+                          理由见 doRemove 的注释）。文案绝不能叫「删除」——
+                          那是 UserWordEditor 里「彻底删词条 + 所有小站引用」的语义，
+                          两个后果相反的按钮同名会埋雷。 */}
+                      <GhostBtn
+                        onClick={() => doRemove(w)}
+                        disabled={!online || !removeWord}
+                        danger
+                        title={
+                          !online
+                            ? '离线时不能移除词条，联网后再试'
+                            : `只从「${currentStationName || '当前小站'}」移除这个词；词条本身与学习记录都保留`
+                        }
+                      >
+                        移出小站
+                      </GhostBtn>
                     </span>
                   </div>
                 )

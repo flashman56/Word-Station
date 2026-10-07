@@ -30,6 +30,7 @@ import WordRow from './components/WordRow.jsx'
 import SpeakerButton from './components/SpeakerButton.jsx'
 import EtymologyPanel from './components/EtymologyPanel.jsx'
 import BulkActionBar from './components/BulkActionBar.jsx'
+import AddToStationMenu from './components/AddToStationMenu.jsx'
 import AuthPanel from './components/AuthPanel.jsx'
 import StationBar from './components/StationBar.jsx'
 import AddWordsPanel from './components/AddWordsPanel.jsx'
@@ -56,6 +57,9 @@ const DEFAULT_FILTERS = {
   // 增量：学习卡进入新词时自动朗读单词（默认关，仅朗读单词、不读例句）
   autoSpeak: false,
 }
+
+/** WordDetail 的 addToStationProps 缺省值：空对象 = 按钮不渲染（默认行为不变） */
+const EMPTY_ADD_PROPS = {}
 
 /** ISO 时间格式化：YYYY-MM-DD HH:mm；无值回落「尚未学习」 */
 function formatDateTime(iso) {
@@ -398,6 +402,42 @@ function AppShell({ words, auth, stations, sync }) {
   const bulkSetReview = useCallback(() => learn.applyMany([...selectedIds], 'review'), [selectedIds, learn])
   const bulkReset = useCallback(() => learn.applyMany([...selectedIds], 'reset'), [selectedIds, learn])
 
+  /**
+   * ★ C 组「加入小站」三处共用的 props（G1）★
+   * BulkActionBar 有三个调用点（ListView / FocusView / MorphDetail），语义都成立，
+   * 所以这里抽一份共用的 —— 三处任一漏传都会让那处的按钮静默 disabled，
+   * 而界面上看不出原因（这是「看起来改了其实只生效两处」的典型）。
+   */
+  const addToStationProps = useMemo(
+    () => ({
+      addToStation: true,
+      ownerId: auth.userId,
+      stations: stations.stations,
+      stationsLoading: stations.loading,
+      online: sync.online,
+      currentStationId: stations.currentId,
+      currentStationName: stations.current ? stations.current.name : '',
+      existingKeys,
+      createStation: stations.createStation,
+      onRefreshStations: async () => {
+        await stations.refresh()
+        await stationWords.refresh()
+      },
+    }),
+    [
+      auth.userId,
+      stations.stations,
+      stations.loading,
+      stations.currentId,
+      stations.current,
+      stations.createStation,
+      stations.refresh,
+      sync.online,
+      existingKeys,
+      stationWords.refresh,
+    ],
+  )
+
   // ---------------------------------------------------------------- 导入 / 导出 / 清空
 
   const handleExport = () => {
@@ -464,6 +504,7 @@ function AppShell({ words, auth, stations, sync }) {
             ownerId={auth.userId}
             existingKeys={existingKeys}
             currentStationName={stations.current ? stations.current.name : ''}
+            addToStationProps={addToStationProps}
             onClose={() => setPrivateWordsOpen(false)}
             onRefresh={async () => {
               // 彻底删除会同时动 user_words 与 station_words → 两边都要刷
@@ -537,8 +578,15 @@ function AppShell({ words, auth, stations, sync }) {
                 retreat={learn.retreat}
                 ownerId={auth.userId}
                 online={sync.online}
+                currentStationName={stations.current ? stations.current.name : ''}
                 pending={stationWords.pending}
                 onRetrySync={learn.flush}
+                /* ★ B-01 的补漏（架构师 G-补漏）：此前根本没传 ★
+                   useStationWords 早就 return 了 removeWord，但这里只传了
+                   words / records / answer / markKnown / setReview / retreat /
+                   ownerId / onRefresh —— 不补这个 prop，「移出小站」按钮点了
+                   没反应。这正是「看起来改了其实没生效」的典型。 */
+                removeWord={stationWords.removeWord}
                 onRefresh={async () => {
                   // 私有词可能被编辑过 → 顺手刷新全局私有词，否则学习页统计会停在旧值
                   await stationWords.refresh()
@@ -626,6 +674,7 @@ function AppShell({ words, auth, stations, sync }) {
                   onMarkKnown={bulkMarkKnown}
                   onSetReview={bulkSetReview}
                   onReset={bulkReset}
+                  addToStationProps={addToStationProps}
                   onBackToMap={() => setView('overview')}
                   width={Math.max(520, window.innerWidth - 640)}
                   height={Math.max(420, window.innerHeight - 140)}
@@ -656,6 +705,7 @@ function AppShell({ words, auth, stations, sync }) {
                 onMarkKnown={bulkMarkKnown}
                 onSetReview={bulkSetReview}
                 onReset={bulkReset}
+                addToStationProps={addToStationProps}
               />
             </Suspense>
           )}
@@ -676,6 +726,10 @@ function AppShell({ words, auth, stations, sync }) {
             onMarkKnown={onMarkKnown}
             onSetReview={onSetReview}
             onRetreat={onRetreat}
+            /* ★ C-01：WordDetail 不是独立文件，是 App.jsx 内的内部函数 ★
+               「加入小站 ▾」加在既有「我会了 / 加入待复习」按钮组**同层** ——
+               同一组「对这个词做标记或归档」的操作，不另开一个区域。 */
+            addToStationProps={addToStationProps}
           />
         ) : selectedMorph ? (
           <MorphDetail
@@ -787,6 +841,10 @@ function MorphDetail({
             onReset={onReset}
             onClear={onClearSelection}
             layout="column"
+            /* ★ G1 第 3 处调用点（右侧词群详情）★
+               语义与 ListView / FocusView 相同（已选若干公共词 → 批量操作），
+               所以第 4 个「加入小站」按钮在这里同样成立。 */
+            {...addToStationProps}
           />
         </div>
       )}
@@ -819,6 +877,7 @@ function WordDetail({
   onMarkKnown,
   onSetReview,
   onRetreat,
+  addToStationProps = EMPTY_ADD_PROPS,
 }) {
   const rec = recordOf(word, records)
   const st = rec.status
@@ -974,6 +1033,18 @@ function WordDetail({
               退回复习
             </button>
           )}
+          {/* ★ C-01「加入小站 ▾」★
+              放在同一按钮组的**同层**（不是另开一块）：它与「我会了」同属
+              「对这个词做一个动作」，拆到别处会让用户以为这是页面级操作。
+              ★ 私有词与公共词走**完全相同**的这条路径：wordView 的
+                id === wordKey 让同一份 records 同时服务小站与学习页，
+                而 source 由 sources 显式给出（私有词恒为 'user'，不能靠猜）。 */}
+          <AddToStationMenu
+            {...addToStationProps}
+            wordKeys={[word.wordKey || word.id]}
+            sources={[word.source === 'user' ? 'user' : 'public']}
+            size="md"
+          />
         </div>
       </div>
 

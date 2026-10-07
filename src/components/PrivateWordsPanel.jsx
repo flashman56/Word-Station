@@ -4,6 +4,7 @@ import { recordOf as recordOfPure } from '../lib/derive.js'
 import UserWordEditor from './UserWordEditor.jsx'
 import StatusPill from './StatusPill.jsx'
 import { GhostBtn } from './StationLearn.jsx'
+import AddToStationMenu from './AddToStationMenu.jsx'
 
 /**
  * 「我的私有词」内联列表（侧栏展开）
@@ -36,7 +37,7 @@ import { GhostBtn } from './StationLearn.jsx'
  *   ownerId     当前账号（UserWordEditor 保存 / 删除都要真实 uid）
  *   existingKeys 当前小站已有的 wordKey 集合（标「已在「x」✓」）
  *   currentStationName 当前小站名（用于那句提示）
- *   onAddToStation (word) => void  加入小站（T05 接 AddToStationMenu）
+ *   addToStationProps  透传给 AddToStationMenu 的 props（与词云三视图共用同一份）
  *   onRefresh   刷新回调（编辑 / 删除之后要同时刷私有词与小站词条）
  *   onClose     收起面板
  */
@@ -46,7 +47,7 @@ export default function PrivateWordsPanel({
   ownerId = null,
   existingKeys = EMPTY_SET,
   currentStationName = '',
-  onAddToStation,
+  addToStationProps = null,
   onRefresh,
   onClose,
 }) {
@@ -167,13 +168,16 @@ export default function PrivateWordsPanel({
                     <GhostBtn onClick={() => setEditing(w)} title="编辑释义 / 词性 / 例句">
                       编辑
                     </GhostBtn>
-                    {onAddToStation && (
-                      <GhostBtn
-                        onClick={() => onAddToStation(w)}
-                        title={inStation ? `已在「${currentStationName || '当前小站'}」中，可选择其他小站` : '加入小站'}
-                      >
-                        加入小站 ▾
-                      </GhostBtn>
+                    {/* ★ C-06：私有词与公共词走**完全相同**的 AddToStationMenu ★
+                        唯一差别是 sources 给 'user' —— 因为私有词的 source 恒为
+                        'user'，不能靠猜（词库里它是 'public'）。
+                        wordView 的 id === wordKey 让这一条路径对两者都成立。 */}
+                    {addToStationProps && (
+                      <AddToStationMenu
+                        {...addToStationProps}
+                        wordKeys={[w.wordKey]}
+                        sources={['user']}
+                      />
                     )}
                     <span className="text-[10px] text-slate-400">
                       移出小站请到小站页内操作（那里只删引用，词条仍在本列表）

@@ -30,6 +30,10 @@ export default function ListView({
   onMarkKnown,
   onSetReview,
   onReset,
+  /* ★ C-02：「加入小站」的透传 props（G1 第 1 处调用点）★
+     默认值 = 空对象 → BulkActionBar 的 addToStation 保持 false → 按钮不渲染，
+     所以「不传新 prop」的既有调用点行为完全不变。 */
+  addToStationProps = {},
 }) {
   const [sortKey, setSortKey] = useState('freqRank')
   const [asc, setAsc] = useState(true)
@@ -222,6 +226,8 @@ export default function ListView({
             onSetReview={onSetReview}
             onReset={onReset}
             onClear={onClearSelection}
+            /* ★ G1 第 1 处调用点（列表页）★ */
+            {...addToStationProps}
           />
         </div>
       )}
