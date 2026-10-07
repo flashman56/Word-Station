@@ -11,11 +11,13 @@
 ## 0. TL;DR
 
 ```bash
-# 一次性：登录（二选一）
+# 一次性：登录（通常只需要这一步，之后无需任何 export）
 npx supabase login
-#   登录态写入 CLI 自己的文件，脚本会自动读取，无需 export
 
-#   或者手动拿 token（优先级更高）：
+#   登录后直接跑脚本即可。脚本会自行判断认证状态：
+#   优先用环境变量 / 旧版登录态文件；都没有时自动探测 CLI 自身的认证。
+
+#   若要显式指定 token（优先级最高，用于切账号或 CI）：
 #   supabase.com → Account → Access Tokens → Generate new token → 复制 sbp_xxx
 #   export SUPABASE_ACCESS_TOKEN=sbp_xxxxxxxxxxxxxxxx
 
@@ -33,14 +35,23 @@ node scripts/deploy-generate-fn.mjs --use-api
 
 ## 1. 前置条件
 
-### 1.1 Access Token 的两个来源
+### 1.1 认证：脚本优先用显式 token，否则自动依赖 CLI 自身的登录态
 
-脚本按**以下优先级**解析 Access Token，两个来源都不需要你手写 export：
+**日常你什么都不用做**——只要 `npx supabase login` 成功过，就可以直接跑脚本，无需任何 `export`。
 
-| 优先级 | 来源 | 怎么来的 |
+脚本的判据是「**CLI 自己能不能认证**」，而不是「我们能不能读到 token 文件」。
+原因：新版 Supabase CLI 可能把凭证存在**我们读不到的位置**（例如 Windows 凭据管理器），
+此时 `~/.supabase/access-token` 不存在，但 CLI 依然完全可用。
+**「读不到文件」≠「未登录」**，所以脚本不会因此拦住你。
+
+脚本按以下顺序处理：
+
+| 顺序 | 情况 | 脚本行为 |
 | --- | --- | --- |
-| ①（高） | 环境变量 `SUPABASE_ACCESS_TOKEN` | 手动 `export`，或写进 shell profile |
-| ② | **Supabase CLI 登录态文件** | `npx supabase login` 自动写入，脚本自动读取 |
+| ① | 环境变量 `SUPABASE_ACCESS_TOKEN` 有值 | 直接用它，打印来源 / 长度 / 3 字符前缀，**优先级最高**（用于切账号、CI） |
+| ② | 旧版 CLI 登录态文件 `~/.supabase/access-token` 可读且是 `sbp_` 开头 | 用它，打印来源（文件内容会 `trim`，CLI 写入时带结尾换行） |
+| ③ | 上面两个都没有 | **自动探测 CLI 认证**：跑只读的 `projects list --output json`（60s 超时，不触发交互、不写任何东西）。能列出项目就继续，报 `CLI 认证：OK（由 CLI 自身登录态管理）` |
+| ④ | ③ 也失败 | 才 `BLOCKED`，并同时给出 `npx supabase login` 与 sbp token 两条出路 |
 
 CLI 登录态文件的位置（脚本用 `os.homedir()` 拼路径，跨平台）：
 
@@ -49,15 +60,11 @@ CLI 登录态文件的位置（脚本用 `os.homedir()` 拼路径，跨平台）
 | Windows | `%USERPROFILE%\.supabase\access-token` |
 | macOS / Linux | `~/.supabase/access-token` |
 
-> ✅ **`npx supabase login` 之后，直接跑脚本即可**，不需要再 `export`。
-> 显式 `export SUPABASE_ACCESS_TOKEN=...` 仍然有效，且优先级更高（用于切换账号 / CI）。
+> 手动验证 CLI 是否已登录：`npx --yes supabase@latest projects list`
+> ——能列出项目就是已登录（与脚本的探测是同一条命令）。
 >
-> 脚本只会打印**来源、长度与 3 字符前缀**（如 `来自 CLI 登录态文件，长度 40，前缀 sbp…`），
-> **绝不打印 token 本身**。文件内容会自动 trim——CLI 写入时带结尾换行，
-> 不 trim 会得到一个「看起来像 token 错了」的认证失败。
-
-如果登录态文件存在但内容为空、或不以 `sbp_` 开头（写入被截断/损坏），脚本会**立刻退出并说明原因**，
-而不是让你在部署到一半时收到一个看不懂的 401。
+> 脚本**从不打印 token 本身**，只打印来源、长度与 3 字符前缀。
+> 登录态文件本身也是明文全账号凭据，不要拷贝或同步它。
 
 ### 1.2 其他前置条件
 
@@ -133,12 +140,15 @@ npx supabase functions deploy generate-word --use-api --project-ref svnwsbkhpzej
 
 两条都由 `scripts/deploy-generate-fn.mjs` 串成一步。脚本特性：
 
-- Access Token 双来源解析：环境变量优先，其次 CLI 登录态文件（详见 [§1.1](#11-access-token-的两个来源)）
-- 登录态文件为空 / 不以 `sbp_` 开头 → **立刻退出并说明原因**
+- 认证判据是 **CLI 自身的认证状态**：优先用显式 token，读不到就自动探测
+  `projects list`（60s 超时、只读），详见 [§1.1](#11-认证脚本优先用显式-token否则自动依赖-cli-自身的登录态)
+- 登录态文件为空 / 不以 `sbp_` 开头 → **只警告不阻断**（文件坏掉不代表没登录，交给 CLI 探测定夺）
 - 预检 `config.toml` 存在、`verify_jwt = true`、函数入口存在
 - 预检 Supabase CLI ≥ 2.13.3（`--use-api` 的硬性要求），过低 → **立刻退出并给出升级命令**
 - 缺 key → **立刻退出**，不做任何降级尝试
 - 预检依赖是否逃出 `supabase/`，逃出则**拒绝部署**（除非加 `--use-api`）
+- `DEEPSEEK_API_KEY` 只经**临时 env-file + `--env-file`** 传给 CLI（`0o600`，用完即删），
+  绝不出现在 argv / shell history / 日志里
 - 所有子进程输出经脱敏过滤；打印每条命令的 exit code
 
 ### 脚本参数
@@ -424,10 +434,10 @@ npx supabase functions delete generate-word --project-ref svnwsbkhpzejygugtorl
 
 | 症状 | 先看 |
 | --- | --- |
-| `BLOCKED: 未找到 Supabase Access Token` | 两条路都没走：先 `npx supabase login`，或 `export SUPABASE_ACCESS_TOKEN=sbp_xxx`（§1.1） |
-| `BLOCKED: 登录态文件存在但是空的 / 不以 sbp_ 开头` | 文件写入被截断，重跑 `npx supabase login`（§1.1） |
+| `BLOCKED: 无法确认 Supabase 认证状态` | CLI 也没登录。跑 `npx supabase login`，或 export sbp token；验证：`npx --yes supabase@latest projects list`（§1.1） |
 | `BLOCKED: Supabase CLI 版本过低` | `--use-api` 需 ≥ 2.13.3，按提示 `npx supabase@latest`（§2） |
-| `401` 且刚跑完登录 | 确认脚本打印的 token 长度/前缀是你预期的那个；两个来源都存在时 env 优先（§1.1） |
+| 登录了但脚本报 `探测超时` | CLI 探测 60s 没返回，多为网络问题；重跑，或先手动 `npx --yes supabase@latest projects list` 排除网络（§1.1） |
+| `⚠ CLI 登录态文件内容不合法` | 只是警告，不影响部署。若 CLI 探测也失败，重跑 `npx supabase login`（§1.1） |
 | `404 NOT_FOUND` | Dashboard → Edge Functions（函数列表里根本没有它 = 部署失败） |
 | `500 BOOT_ERROR` | §2 的 `--use-api`；再查 Logs 里的 `Module not found` 路径 |
 | `401 UNAUTHORIZED`（带真 token） | `SUPABASE_ANON_KEY` / `SUPABASE_SERVICE_ROLE_KEY` 默认 secret 是否被误删 |
