@@ -1,11 +1,18 @@
 /**
  * v1（手工标注字符串）→ v2（学习记录对象）迁移 + **全应用唯一的存储键访问器**
  * ------------------------------------------------------------------
- * 本文件是 `wrc.*` 键名的**唯一来源**。业务代码只传 `ownerId`（或 `scopeOf(ownerId)`
- * 的结果），永不接触 scope 字符串、更永不自己拼键。这条不变量由
- * `scripts/check-storage-keys.mjs`（npm run test:keys）机器保证：
- * 除本文件与 dict.js 的 IndexedDB 前缀白名单外，`src/**` 里出现任何
- * 分区键字面量（**含注释**）即判失败。
+ * 本文件是存储键名的**唯一来源**。业务代码只传 `ownerId`（或 `scopeOf(ownerId)`
+ * 的结果），永不接触 scope 字符串、更永不自己拼键或判断键。
+ *
+ * ★ 可被机器保证的不变量（scripts/check-storage-keys.mjs，npm run test:keys）★
+ *   除本文件与 dict.js 的 IndexedDB 前缀白名单外，`src/**` 里出现任何
+ *   `wrc.` 命名空间字面量即判失败 —— **含注释，且包括裸前缀**
+ *   （不只是 `wrc.learn.v2` 这类具体键名）。
+ *
+ *   裸前缀也在禁列内，是因为「业务代码自己判断 `k.startsWith('wrc.')`」
+ *   与「业务代码自己拼 `wrc.learn.v2:<uid>`」是同一种泄漏：键名知识一旦离开
+ *   本文件，改键名 / 加分区键时就必然漏改一处。需要做这种判断时，
+ *   调 `isStorageKey()` / `affectsLocalScope()`。
  *
  * 三条铁律：
  *   1. 旧键（无后缀，如 learn 主存储）**一律保留不删**，只被「首个领养者」幂等复制一份；
@@ -28,6 +35,20 @@ import { AUTO_KNOWN_RANK } from './derive.js'
 
 /** 游客 scope 的字面量（非法 scope 一律回落到这里，绝不抛错） */
 export const GUEST_SCOPE = 'guest'
+
+/**
+ * 本应用在 localStorage 上的**键命名空间前缀**。
+ *
+ * 它连同下面的 `isStorageKey()` / `affectsLocalScope()` 一起构成一条
+ * 可被机器保证的不变量：**除本文件与 dict.js 的 IndexedDB 白名单外，
+ * `src/**` 里不出现任何 `wrc.` 字面量**（scripts/check-storage-keys.mjs 的 R1）。
+ *
+ * 为什么要专门导出一个「前缀」：业务代码确实偶尔需要判断「这个 storage 事件
+ * 的键是不是我们的」（多标签页串号处理）。若让它自己写 `k.startsWith('wrc.')`，
+ * 键名知识就又漏回了业务文件 —— 那正是分区键 bug 的源头（R1 注释里写的
+ * 「工程师照着过时注释改代码」同款回流路径）。
+ */
+export const STORAGE_PREFIX = 'wrc.'
 
 /**
  * 归一化 scope：任何 falsy 或非字符串 → `'guest'`。
@@ -96,9 +117,9 @@ export const KEYS = {
   settingsV1: FROZEN_KEYS.settingsV1,
   settingsV1Backup: FROZEN_KEYS.settingsV1Backup,
   // 设备级 / 全局键
-  settings: 'wrc.settings.v2',
-  partition: 'wrc.partition.v1',
-  draftsDiscarded: 'wrc.drafts.discarded',
+  settings: `${STORAGE_PREFIX}settings.v2`,
+  partition: `${STORAGE_PREFIX}partition.v1`,
+  draftsDiscarded: `${STORAGE_PREFIX}drafts.discarded`,
 }
 
 /**
@@ -118,7 +139,8 @@ export const KEYS = {
  */
 
 /**
- * 全应用唯一的存储键访问器。业务代码禁止自行拼接 'wrc.*'。
+ * 全应用唯一的存储键访问器。业务代码禁止自行拼接键名 —— 需要判断某个字符串
+ * 是不是本应用的存储键时，用 `isStorageKey()`，不要自己写前缀比较。
  * @param {string|null|undefined} scope scopeOf() 的结果；非法值回落 'guest'
  * @returns {ScopeKeys}
  */
@@ -127,20 +149,70 @@ export function keysFor(scope) {
   const suffix = `:${sc}`
   return {
     scope: sc,
-    learn: `wrc.learn.v2${suffix}`,
-    prefs: `wrc.prefs.v1${suffix}`,
-    migration: `wrc.migration.v2${suffix}`,
-    sync: `wrc.sync.v1${suffix}`,
-    cloudMigration: `wrc.migration.cloud${suffix}`,
-    drafts: `wrc.drafts.v1${suffix}`,
-    stationCurrent: `wrc.station.current${suffix}`,
-    userWordsCache: `wrc.userwords.v1${suffix}`,
+    learn: `${STORAGE_PREFIX}learn.v2${suffix}`,
+    prefs: `${STORAGE_PREFIX}prefs.v1${suffix}`,
+    migration: `${STORAGE_PREFIX}migration.v2${suffix}`,
+    sync: `${STORAGE_PREFIX}sync.v1${suffix}`,
+    cloudMigration: `${STORAGE_PREFIX}migration.cloud${suffix}`,
+    drafts: `${STORAGE_PREFIX}drafts.v1${suffix}`,
+    stationCurrent: `${STORAGE_PREFIX}station.current${suffix}`,
+    userWordsCache: `${STORAGE_PREFIX}userwords.v1${suffix}`,
     // 设备级 / 全局键：跨账号共享（难度档、词族成组、自动朗读本就与账号无关）
     settings: KEYS.settings,
     partition: KEYS.partition,
     draftsDiscarded: KEYS.draftsDiscarded,
   }
 }
+
+/**
+ * 这个 key 是否与「当前账号的本地学习态」有关？
+ *
+ * 用途：`storage` 事件（多标签页串号，A-11）只对该重载的键做反应。
+ * 由本文件判定而不是在调用处 `key.includes('learn.v2')` —— 后者等于把
+ * 键名知识又漏回业务文件，那正是分区键 bug 的源头。
+ *
+ * @param {string} key
+ * @returns {boolean}
+ */
+export function isStorageKey(key) {
+  return typeof key === 'string' && key.startsWith(STORAGE_PREFIX)
+}
+
+/**
+ * 该键变化时，是否要强制重载当前 scope 的内存态（切号可能已在别处发生）。
+ *
+ * 覆盖：分区 learn 键（另一个标签写了别的 scope 的进度）、cloudMigration 标记、
+ * 设备级设置键。**故意不包括** drafts：草稿入队 / 补传只影响计数，
+ * 由 onPendingChange 通知即可，没必要整表重载。
+ *
+ * @param {string} key
+ * @returns {boolean}
+ */
+export function affectsLocalScope(key) {
+  if (!isStorageKey(key)) return false
+  // ★ 坑（改错过一次）：keysFor() 返回的分区键是**带 scope 后缀**的（`…:uid-A`），
+  //   而 storage 事件给的是完整键名。比较「逻辑键」时两边都必须截到最后一个冒号之前 ——
+  //   拿 `…:guest` 直接比 `…:uid-A`，永远不相等，于是这个函数静默失效，
+  //   症状只是「多标签页不重载」，极难归因。
+  //   键名里不含冒号，所以按最后一个冒号截断是安全的。
+  const k = keysFor(GUEST_SCOPE)
+  const base = (fullKey) => String(fullKey).split(':')[0]
+  const family = base(key)
+  return (
+    family === base(k.learn) ||
+    family === base(k.prefs) ||
+    family === base(k.cloudMigration) ||
+    family === base(k.migration) ||
+    // 设备级 / 全局键本来就没有后缀，base 是恒等变换
+    family === k.settings ||
+    // 冻结的 v1 源与备份：另一个标签重跑迁移时会写备份，此时本标签应重读。
+    // 迁移的主判据（migration 标记）已在上面，但 v1 备份只写一次、且可能先于
+    // 标记写入，补上它保证「别的标签动过迁移源」一定能被察觉。
+    family === FROZEN_KEYS.statusV1 ||
+    family === FROZEN_KEYS.statusV1Backup
+  )
+}
+
 
 /** prefs 载荷缺省值 */
 function emptyPrefs() {

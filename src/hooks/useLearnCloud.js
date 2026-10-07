@@ -29,6 +29,7 @@ import * as learnSyncApi from '../lib/cloud/learnSync.js'
 import * as offlineApi from '../lib/cloud/offline.js'
 import { notifyPendingChanged, onPendingChange } from '../lib/cloud/offline.js'
 import {
+  affectsLocalScope,
   ensurePartition,
   readCloudMigration,
   readLearn,
@@ -471,17 +472,22 @@ export function useLearnCloud(words, { ownerId = null, online = true, privateWor
   //
   // 同源多标签下，A 在标签 1 登出、B 在标签 2 登录时，本标签会收到 storage 事件，
   // 但内存里仍持有 A 的 records（Supabase auth 变化由 useAuth 异步跟上，存在窗口）。
-  // 这里做**保守处理**：命中任何 learn 分区键 / 账号相关键的外部写入即强制重载
+  // 这里做**保守处理**：命中「与本地学习态有关」的键的外部写入即强制重载
   // 当前 scope 的本地态。若另一个标签写的是别的 scope，本标签同样重载 —— 因为
   // 它无法确定自己是不是也该跟着换号，重载是唯一不会「显示前一个账号数据」的动作。
+  //
+  // ★ 键的判定交给 migrate.js 的 affectsLocalScope() ★
+  //   这里曾经自己写「命名空间前缀比较」+「键名子串比较」两段，等于把键名知识
+  //   漏回业务文件 —— 正是 check-storage-keys.mjs 的 R1 要拦的那类写法（它当初
+  //   没被拦住，是因为规则只枚举了具体键名、没含裸前缀；现已收紧）。
+  //   顺带一提：写这段注释时若把旧代码原样引回来，R1 自己就会先判本文件失败
+  //   —— 这恰好说明门禁是活的。
   useEffect(() => {
     if (typeof window === 'undefined') return undefined
     const onStorage = (e) => {
-      const key = e.key || ''
-      if (!key.startsWith('wrc.')) return
-      // 分区学习键 / 设备级设置键之外的不理会（避免草稿入队引发无谓重载）
-      const relevant = key.includes('learn.v2') || key.includes('migration.cloud') || key.includes('status.v1')
-      if (!relevant) return
+      // 只认 migrate.js 判定的「与本地学习态有关」的键；
+      // 草稿入队 / 补传不重载（只影响计数，由 onPendingChange 通知即可）
+      if (!affectsLocalScope(e.key)) return
       const sc = scopeRef.current
       replaceAllRef.current?.(readLearn(sc), sc)
       dirty.clear()

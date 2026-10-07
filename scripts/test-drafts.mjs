@@ -51,7 +51,14 @@ let failed = 0
 
 function test(name, fn) {
   try {
-    fn()
+    const r = fn()
+    // ★ 加固：async 回调必须用 atest。同步 test() 调用 fn() 之后不等待，
+    //   回调体里的断言会变成游离的 promise —— 失败被吞成 unhandledRejection，
+    //   而这里仍然报✓。那是一条**永远不可能失败**的测试，比没有测试更糟
+    //   （它会让人以为该路径已被覆盖）。所以这里显式拦下来。
+    if (r && typeof r.then === 'function') {
+      throw new Error('这是 async 用例，必须改用 await atest(...)；用同步 test() 包装会让断言失效')
+    }
     passed += 1
     console.log(`  ✓ ${name}`)
   } catch (e) {
@@ -138,16 +145,20 @@ test('claim：item 不是对象 → skip / malformed', () => {
   assert.deepEqual(claim('learn', '字符串', UID_A), { ok: false, verdict: 'skip', reason: 'malformed' })
 })
 
-// ---------------------------------------------------------------- isPermanentError（U1 实测校准）
+// ---------------------------------------------------------------- isPermanentError（实测校准）
+//
+// HTTP 状态码以 QA 的**生产实测**为准：RLS 拒绝是 403（不是 401，那是鉴权），
+// PGRST301 是 401，PGRST205 是 404。白名单按 `code` 命中，所以状态码只影响
+// 这几条用例的标题与文档，不影响判定行为。
 
-test('isPermanentError：RLS 拒绝（U1 实测：HTTP 401 + code 42501）判为永久', () => {
+test('isPermanentError：RLS 拒绝（生产实测 HTTP 403 + code 42501）判为永久', () => {
   assert.equal(
     isPermanentError({ code: '42501', message: 'new row violates row-level security policy for table "learn_records"' }),
     true,
   )
 })
 
-test('isPermanentError：JWT / API key 失败（U1 实测）判为永久', () => {
+test('isPermanentError：JWT / API key 失败（生产实测 HTTP 401）判为永久', () => {
   assert.equal(isPermanentError({ code: 'PGRST301', message: 'Expected 3 parts in JWT; got 1' }), true)
   assert.equal(isPermanentError({ code: 'PGRST301', message: 'No suitable key or wrong key type' }), true)
   // 「Invalid API key」实测**没有 code**，只能靠 message 关键词
@@ -155,7 +166,7 @@ test('isPermanentError：JWT / API key 失败（U1 实测）判为永久', () =>
   assert.equal(isPermanentError({ code: '401', message: 'JWT expired' }), true)
 })
 
-test('isPermanentError：资源不存在（PGRST205 / 404 / NOT_FOUND）判为永久', () => {
+test('isPermanentError：资源不存在（生产实测 HTTP 404 / PGRST205）判为永久', () => {
   assert.equal(isPermanentError({ code: 'PGRST205', message: "Could not find the table 'x'" }), true)
   assert.equal(isPermanentError({ code: '404', message: 'not found' }), true)
   assert.equal(isPermanentError({ code: 'NOT_FOUND', message: '' }), true)
@@ -575,6 +586,135 @@ await atest('drain：push 抛异常也算可重试失败，草稿保留且仍算
   assert.equal(res.failed, 1)
   assert.equal(res.parked, 0)
   assert.equal(pendingCount(sc), 1, '抛异常也必须保留草稿')
+})
+
+// ---------------------------------------------------------------- GAP-A 回归：游标契约
+//
+// drain 的 `i` 指向「当前待处理元素」。每个分支必须自己决定要不要推进：
+//   原地改写（park）        → length 不变 → 必须 i += 1，否则死循环重访同一条；
+//   splice(i, 1)（真丢弃/推成功）→ 后面的左移到 i → 绝不能再 i += 1，
+//     否则会跳过刚移过来的那条。
+// 这里曾写错过（splice 之后又 i += 1），导致**排在一条结构损坏草稿之后的草稿
+// 本轮不会被推送** —— 单轮 drain「逐条走完队列」的契约被破坏，而首页登录那一次
+// drain 很可能就是唯一一次机会（下一轮会补推，所以数据没丢、只是迟到了）。
+
+await atest('★ GAP-A：真丢弃（splice）分支之后的那条草稿，本轮必须被推送', async () => {
+  reset()
+  const sc = scopeOf(UID_A)
+  enqueue('learn', { ownerId: UID_A, rows: 'BROKEN' }, sc) // [0] 结构损坏
+  enqueue('learn', { ownerId: UID_A, rows: [{ wordKey: 'w.g1', record: { status: 'review' } }] }, sc) // [1]
+  enqueue('learn', { ownerId: UID_A, rows: [{ wordKey: 'w.g2', record: { status: 'review' } }] }, sc) // [2]
+
+  const attempted = []
+  const res = await drain({
+    scope: sc,
+    uid: UID_A,
+    force: true,
+    push: async (kind, item) => {
+      attempted.push(item.rows[0].wordKey)
+      return { ok: true, error: null }
+    },
+  })
+  assert.deepEqual(attempted, ['w.g1', 'w.g2'], '★ 两条正常草稿本轮都要被推（旧实现只会推 w.g2）')
+  assert.equal(res.discarded, 1)
+  assert.equal(res.pushed, 2)
+  assert.equal(pendingCount(sc), 0, '队列清空')
+})
+
+await atest('★ GAP-A：连续多条损坏草稿夹着正常草稿，一次 drain 也要走完', async () => {
+  reset()
+  const sc = scopeOf(UID_A)
+  // [0]坏 [1]好 [2]坏 [3]好 [4]坏 [5]好 —— 交替排列，最容易触发游标错位
+  const bad = { ownerId: UID_A, rows: 'BROKEN' }
+  const good = (k) => ({ ownerId: UID_A, rows: [{ wordKey: k, record: { status: 'review' } }] })
+  enqueue('learn', bad, sc)
+  enqueue('learn', good('w.a'), sc)
+  enqueue('learn', bad, sc)
+  enqueue('learn', good('w.b'), sc)
+  enqueue('learn', bad, sc)
+  enqueue('learn', good('w.c'), sc)
+
+  const attempted = []
+  const res = await drain({
+    scope: sc,
+    uid: UID_A,
+    force: true,
+    push: async (kind, item) => {
+      attempted.push(item.rows[0].wordKey)
+      return { ok: true, error: null }
+    },
+  })
+  assert.deepEqual(attempted, ['w.a', 'w.b', 'w.c'], '★ 交替排列下三条都要被推')
+  assert.equal(res.discarded, 3)
+  assert.equal(pendingCount(sc), 0)
+})
+
+await atest('★ GAP-A：park 分支（原地改写）与 splice 分支混排时游标仍正确', async () => {
+  reset()
+  const sc = scopeOf(UID_B)
+  // [0] B 自己的（推） [1] A 的（park） [2] 损坏（splice） [3] B 自己的（推）
+  enqueue('learn', { ownerId: UID_B, rows: [{ wordKey: 'w.mine1', record: { status: 'review' } }] }, sc)
+  enqueue('learn', { ownerId: UID_A, rows: [{ wordKey: 'w.other', record: { status: 'review' } }] }, sc)
+  enqueue('learn', { ownerId: UID_B, rows: 'BROKEN' }, sc)
+  enqueue('learn', { ownerId: UID_B, rows: [{ wordKey: 'w.mine2', record: { status: 'review' } }] }, sc)
+
+  const attempted = []
+  const res = await drain({
+    scope: sc,
+    uid: UID_B,
+    force: true,
+    push: async (kind, item) => {
+      attempted.push(item.rows[0].wordKey)
+      return { ok: true, error: null }
+    },
+  })
+  assert.deepEqual(attempted, ['w.mine1', 'w.mine2'], '★ 两条 B 自己的都要被推')
+  assert.equal(res.parked, 1, 'A 的那条被 park')
+  assert.equal(res.discarded, 1, '损坏的那条被真丢弃')
+  assert.equal(stuckCount(sc), 1)
+  assert.equal(pendingCount(sc), 0)
+})
+
+await atest('★ GAP-A：损坏草稿在队尾时不影响前面的，且不越界', async () => {
+  reset()
+  const sc = scopeOf(UID_A)
+  enqueue('learn', { ownerId: UID_A, rows: [{ wordKey: 'w.ok', record: { status: 'review' } }] }, sc)
+  enqueue('learn', { ownerId: UID_A, rows: 'BROKEN' }, sc)
+
+  const attempted = []
+  const res = await drain({
+    scope: sc,
+    uid: UID_A,
+    force: true,
+    push: async (kind, item) => {
+      attempted.push(item.rows[0].wordKey)
+      return { ok: true, error: null }
+    },
+  })
+  assert.deepEqual(attempted, ['w.ok'])
+  assert.equal(res.discarded, 1)
+  assert.equal(pendingCount(sc), 0)
+  assert.equal(stuckCount(sc), 0)
+})
+
+await atest('★ GAP-A：全是损坏草稿时会被清空，且不因游标错位而漏处理', async () => {
+  reset()
+  const sc = scopeOf(UID_A)
+  for (let i = 0; i < 4; i += 1) enqueue('learn', { ownerId: UID_A, rows: `BROKEN${i}` }, sc)
+
+  const attempted = []
+  const res = await drain({
+    scope: sc,
+    uid: UID_A,
+    force: true,
+    push: async (kind, item) => {
+      attempted.push(item.rows && item.rows[0] && item.rows[0].wordKey)
+      return { ok: true, error: null }
+    },
+  })
+  assert.equal(attempted.length, 0, '损坏草稿不该进 push')
+  assert.equal(res.discarded, 4, '★ 四条都被真丢弃（错位的话会少于 4）')
+  assert.equal(pendingCount(sc), 0)
 })
 
 console.log(`\n通过 ${passed} · 失败 ${failed}`)

@@ -382,21 +382,24 @@ export function claim(kind, item, uid) {
 /**
  * 永久失败判定：RLS / 鉴权 / 资源不存在 → 重试无意义。
  *
- * ★ U1 实测校准（2026-09，scripts/ 下的探针脚本跑出来的真实形状）★
+ * ★ U1 实测校准 ★
  *   Cloudflare Pages 的 `/supabase` 网关（functions/_middleware.js）**逐字转发**
  *   `upstream.status` / `statusText` / body，只剥离逐跳头 —— 所以错误体在网关
- *   前后**完全一致**，实测结果可直接用于校准：
+ *   前后**完全一致**，直连实测结果可直接用于校准。**HTTP 状态码一列以 QA 的
+ *   生产实测为准**（我第一版注释写的是 401，实际是 403；白名单靠 `code` 命中所以
+ *   行为一直正确，但注释会误导后来人，故按实测更正）：
  *
  *   | 场景                    | HTTP | error.code   | error.message                                  |
  *   |-------------------------|------|--------------|------------------------------------------------|
- *   | RLS `with check` 拒绝     | 401  | `'42501'`    | `new row violates row-level security policy…` |
+ *   | RLS `with check` 拒绝     | 403  | `'42501'`    | `new row violates row-level security policy…` |
  *   | JWT 无效 / 结构错误       | 401  | `'PGRST301'` | `Expected 3 parts in JWT; got 1` 等            |
  *   | API key 无效             | 401  | **无 code**  | `Invalid API key`                              |
  *   | 表不存在（PGRST）         | 404  | `'PGRST205'` | `Could not find the table …`                   |
  *   | 网络不可达               | —    | `''`         | `TypeError: fetch failed`                      |
  *
- *   注意 HTTP 401 配 code 42501 这个反直觉组合 —— 只按 `status` 判会漏，
- *   只按 `code` 判也会漏「Invalid API key」（它根本没有 code）。
+ *   注意 RLS 拒绝是 **403 + code 42501**：它既不是 401（那是鉴权），也不能只按
+ *   HTTP 判 —— 只按 `status` 会漏掉「无 code 的 Invalid API key」，只按 `code`
+ *   也会漏它。所以白名单同时覆盖 code 列表与 message 关键词。
  *
  * ★ 失败方向：默认安全侧 ★
  *   **未识别**的错误一律返回 false（= 可重试）→ 草稿保留 + 继续下一条。
@@ -458,12 +461,22 @@ export async function drain({ scope = 'guest', uid = null, force = false, onProg
     const total = queue.length
     let done = 0
     let i = 0
+    // ★ 游标契约（这里改错过一次，GAP-A）★
+    //   `i` 指向当前待处理元素。每个分支必须自己决定要不要推进：
+    //     - 原地改写（park / 解除 park）→ length 不变 → **必须 i += 1**，
+    //       否则会一直重访同一条、死循环；
+    //     - `splice(i, 1)` → 后面的元素左移到了 i，**绝不能再 i += 1** ——
+    //       那样会把刚移过来的那条整个跳过，破坏「单轮 drain 逐条走完队列」的
+    //       契约（首页登录那一次 drain 很可能就是唯一一次机会）。
+    //   所以下面的分支里，推进游标的位置各不相同，且都紧贴对应操作。
     while (i < queue.length) {
       const item = queue[i]
 
       // ① 认领。与错误形态无关的第一道防线：非本账号的条目在推送之前就被摘掉。
       const verdict = claim(kind, item, uid)
       if (!verdict.ok) {
+        done += 1
+        notifyPendingChanged()
         if (verdict.verdict === 'discard') {
           // 跨账号（A-14）：**保留**并 park，不删除。
           // 它们属于别的账号 —— A 自己的登录态可能马上回来、届时本可正常上行，
@@ -472,15 +485,22 @@ export async function drain({ scope = 'guest', uid = null, force = false, onProg
           queue[i] = { ...item, parked: true, parkedReason: verdict.reason }
           moveToDiscarded(kind, item, verdict.reason, true)
           parked += 1
+          i += 1 // 原地改写，length 未变 → 推进
         } else {
-          // 结构损坏：推上去必然失败，留着只会反复报错 → 真丢弃
+          // 结构损坏（缺 rows / stationId 等）：推上去必然失败，留着只会反复报错
+          // → 真丢弃。
+          //
+          // ★ 为什么丢草稿不算丢数据（别误判成数据丢失）★
+          //   草稿只是**上行队列项**，不是数据源。真正的数据源是 learn 分区 ——
+          //   答题时就已经落盘（本地先于上行持久化），草稿只是「把这份数据送上去」
+          //   的一次性载体。所以删草稿不会让学习进度消失：原主人下次登录时，
+          //   pull / migrateToCloud 会从 learn 分区重新上行。
+          //   ★ 反过来，跨账号时把 A 的草稿「落回 B」才是危险的：那等于用 B 的
+          //     身份推 A 的数据，可能造成跨账号重复上行。所以此处宁可丢草稿。
           moveToDiscarded(kind, item, verdict.reason)
-          queue.splice(i, 1)
+          queue.splice(i, 1) // ★ length 变了 → 此处「不」推进 i（GAP-A 的修法）
           discarded += 1
         }
-        done += 1
-        i += 1
-        notifyPendingChanged()
         continue // 无论哪条分支都不阻塞后续
       }
 
@@ -501,7 +521,7 @@ export async function drain({ scope = 'guest', uid = null, force = false, onProg
         void parked
         void parkedReason
         cur = rest
-        queue[i] = cur
+        queue[i] = cur // 原地改写，length 未变
       }
 
       // ② 上行
@@ -517,7 +537,7 @@ export async function drain({ scope = 'guest', uid = null, force = false, onProg
       }
 
       if (ok) {
-        queue.splice(i, 1)
+        queue.splice(i, 1) // ★ length 变了 → 不推进 i
         pushed += 1
         done += 1
         notifyPendingChanged()
@@ -528,12 +548,13 @@ export async function drain({ scope = 'guest', uid = null, force = false, onProg
       // ③ 永久失败（本 scope + 已实测白名单）→ **park 保留**，记日志，不阻塞后续。
       //   不删除：删了就找不回来了，而用户可能只是暂时登出/换号。
       //   不计入 pendingCount：否则徽标永远显示一个减不掉的数字（A-14）。
+      //   （丢弃草稿不丢数据的理由同上：数据源是 learn 分区，见 ① 的注释。）
       if (isPermanentError(lastError)) {
         queue[i] = { ...item, parked: true, parkedReason: 'push-rejected' }
         moveToDiscarded(kind, item, 'push-rejected', true)
         parked += 1
         done += 1
-        i += 1
+        i += 1 // 原地改写，length 未变 → 推进
         notifyPendingChanged()
         continue
       }
