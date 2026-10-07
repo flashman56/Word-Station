@@ -23,14 +23,6 @@ import VocabCard from './VocabCard.jsx'
  *   onChangeBand    (band) => void，band 为 bands 中的档位对象
  *   groupByFamily   需求1：按词族成组出题开关（默认 true）
  *   onToggleGroupByFamily () => void 切换开关
- *   vocab            词汇量预测结果（不传则不渲染该区块）
- *   showSharedNote   是否显示「小站复习与学习复习是同一份记录」说明（B-5，默认 false）
- *   privateCount     私有词数量；>0 时在词汇量区块下渲染「含 N 个私有词」（B-3）
- *   vocabIncludesPrivate 词汇量估算是否含私有词；false 时渲染 B-8 提示（阈值不暴露给用户）
- *   excludeProper  是否排除专有名词（kind === 'proper'）；默认 false
- *   onToggleExcludeProper () => void 切换开关。**不传则整张卡片不渲染** ——
- *                  本组件被 StationLearn 复用，那里没有这个设置，
- *                  渲染出一个点了没反应的死开关比不显示更糟。
  */
 export default function LearnHome({
   stats = { unknown: 0, review: 0, known: 0, total: 0 },
@@ -46,11 +38,6 @@ export default function LearnHome({
   groupByFamily = true,
   onToggleGroupByFamily,
   vocab = null,
-  showSharedNote = false,
-  privateCount = 0,
-  vocabIncludesPrivate = true,
-  excludeProper = false,
-  onToggleExcludeProper,
 }) {
   // 当前选中档位 id（'all' 或 'lo-hi'），用于高亮按钮
   const activeBandId = band === 'all' || band == null ? 'all' : band.id
@@ -94,23 +81,7 @@ export default function LearnHome({
       {vocab && (
         <div className="mt-5">
           <VocabCard result={vocab} />
-          {/* B-3：一个数 + 一行注脚（Q6）。私有词确实参与了统计，这里说明它有几个 */}
-          {privateCount > 0 && (
-            <p className="mt-1.5 text-xs text-slate-400">含 {privateCount} 个私有词</p>
-          )}
-          {/* B-8：私有词过多时估算回退到公共词，明说「暂不含」——
-              阈值不暴露给用户（500 是实现细节，不是产品口径）。 */}
-          {!vocabIncludesPrivate && (
-            <p className="mt-1.5 text-xs text-slate-400">私有词较多，词汇量估算暂不含私有词</p>
-          )}
         </div>
-      )}
-
-      {/* B-5：说明「小站复习」与「学习复习」是同一份记录，避免用户以为是两套进度 */}
-      {showSharedNote && (
-        <p className="mt-3 text-xs leading-relaxed text-slate-400">
-          小站复习与学习复习是同一份记录、同一个到期时间（答错 +24h），到期后两边都会出现，不是重复出题。
-        </p>
       )}
 
       {/* 掌握进度条 */}
@@ -194,37 +165,6 @@ export default function LearnHome({
           </button>
         </div>
       </div>
-
-      {/* 排除专有名词开关（人名 / 地名 / 品牌）。
-          ★ 只在传了 handler 时渲染 ★：StationLearn 复用本组件但它没有这个设置，
-            那里渲染出来会是一个点了没反应的死开关。 */}
-      {onToggleExcludeProper && (
-        <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-5">
-          <div className="flex items-center justify-between gap-4">
-            <div className="min-w-0">
-              <div className="text-sm font-medium text-slate-600">排除专有名词（人名 / 地名 / 品牌）</div>
-              <div className="text-xs text-slate-400 mt-0.5 leading-relaxed">
-                开启后不再新学这类词（当前词库约 1.4 万）
-              </div>
-            </div>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={excludeProper}
-              onClick={() => onToggleExcludeProper && onToggleExcludeProper()}
-              className={`relative shrink-0 w-11 h-6 rounded-full transition-colors ${
-                excludeProper ? 'bg-blue-600' : 'bg-slate-300'
-              }`}
-            >
-              <span
-                className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
-                  excludeProper ? 'translate-x-5' : ''
-                }`}
-              />
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* 主操作区 */}
       <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-6 text-center">

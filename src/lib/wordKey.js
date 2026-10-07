@@ -7,8 +7,7 @@
  * | 私有库 | `u.<formKey>`    | `formKey = lower(btrim(form))`，owner 内唯一  |
  *
  * 关键点：`slug()` 与离线脚本生成 `word.id` 的口径一致（去变音符号 + 去非字母数字 + 小写），
- * 所以公共词的 word_key 与既有学习记录里的记录 key 完全相同，不需要任何迁移。
- * （学习记录存在哪个 localStorage 键由 lib/migrate.js 独占，本文件不关心。）
+ * 所以公共词的 word_key 与既有 `wrc.learn.v2` 里的记录 key 完全相同，不需要任何迁移。
  */
 
 /**

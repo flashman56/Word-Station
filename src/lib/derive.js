@@ -57,37 +57,8 @@ export const AUTO_KNOWN_RANK = 2500
  * 为什么是常量而不是从词表算：算它要 import 全量词库，会把 28MB 拖进首屏 bundle。
  * 词库扩容时改这一个数字即可（scripts/split-data.mjs 的输出里有准确词数）。
  * 需要精确值时可用可注入版本：setStatsScope(n)。
- *
- * 变更记录：
- *   64825 → 64723：清理了 102 条「自认错词」的垃圾词条
- *     （evemhing / iong / ieast / ge / ieft / lnspector / ofhere / ionger /
- *     commited 等，释义里写着「拼写有误」「疑为 X」）。
- *   64723 → 64699：清理 24 条高置信垃圾词条（保守策略，绝不误删 ECDICT 已收录词）：
- *     3 条 AI 杜撰占位/乱凑词（words-extra.js：extraviv / chronologyof / misterr）；
- *     21 条清晰错拼且正确词已在库内的词条（words-mono-seed.js：carefull / wory /
- *     arert / iive / faii / iooked / beeplng / lnternet / riend / beastiality /
- *     voyuer / masterbating / masterbation / lmagine / iife / rember / couid /
- *     lnternational / embarassing / colord / ioved）。同时从 synants-mono-seed.js
- *     移除 10 对引用了已删错拼词的近/反义对。
- * 精确值校验：scripts/test-learning.mjs 断言 STATS_SCOPE === 全库唯一 id 数。
  */
-export const STATS_SCOPE = 64699
-
-/**
- * 词汇量预测纳入私有词的上限（B-8 护栏）。
- *
- * 为什么需要：estimateVocabulary 按 freqRank 分档，而私有词的 freqRank 多为
- * `null`，会被 bandIndexOf 归到**最后一档**（60000~∞），既进 libraryN 又进
- * studiedN。5 个私有词是噪声（末档约 2 万词，且尾档通常被 cutoff=0.25 截断不计）；
- * 但私有词上千时会实打实抬高尾档 knownP → 吹大估值。
- *
- * 这是**护栏**，不是口径变更：`statusSource !== 'migration'` 判别式、
- * minSample / minBands / cutoff / PAVA 全部不动（vocab.js 零改动）。
- *
- * ★ 阈值不暴露给用户 ★：UI 只说「私有词较多，词汇量估算暂不含私有词」，
- *   不说「因为超过 500 个」—— 那是实现细节，用户改不了、也不需要知道。
- */
-export const MAX_VOCAB_PRIVATE_WORDS = 500
+export const STATS_SCOPE = 64825
 
 let injectedScope = null
 
@@ -164,12 +135,9 @@ export function buildIndex(morphemes, words) {
   const wordsByMorph = new Map()
   morphemes.forEach((m) => wordsByMorph.set(m.id, []))
   words.forEach((w) => {
-    if (!Array.isArray(w.morphs)) return
     w.morphs.forEach((mid) => {
       const bucket = wordsByMorph.get(mid)
-      // 防御：出现未知/悬挂词素 id 时跳过，绝不抛错（合并补丁已按词素表过滤）
-      if (!bucket) return
-      bucket.push(w)
+      if (bucket) bucket.push(w)
     })
   })
 

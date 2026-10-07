@@ -1,6 +1,5 @@
 import React, { useMemo, useRef, useState } from 'react'
 import { TYPES, cefrScore, effectiveStatus } from '../lib/derive.js'
-import { BULK_SELECT_CAP } from '../hooks/useLearn.js'
 import WordRow from './WordRow.jsx'
 import BulkActionBar from './BulkActionBar.jsx'
 
@@ -30,10 +29,6 @@ export default function ListView({
   onMarkKnown,
   onSetReview,
   onReset,
-  /* ★ C-02：「加入小站」的透传 props（G1 第 1 处调用点）★
-     默认值 = 空对象 → BulkActionBar 的 addToStation 保持 false → 按钮不渲染，
-     所以「不传新 prop」的既有调用点行为完全不变。 */
-  addToStationProps = {},
 }) {
   const [sortKey, setSortKey] = useState('freqRank')
   const [asc, setAsc] = useState(true)
@@ -141,34 +136,6 @@ export default function ListView({
   }, [groups])
 
   /**
-   * ★ A-07：唯一真相源 ★
-   *
-   * 「全选当前结果」能实际选中的 id 列表 —— **只在这里算一次**。
-   * 按钮文案里的数字、传给 onSelectMany 的数组、以及调用后 BulkActionBar 显示的
-   * count，全部由这一个变量派生，因此**在数学上不可能出现「文案说 2000 而实际
-   * 写了 1500」**。
-   *
-   * 禁止的写法（每处各算一遍，任何一侧漏改就不一致）：
-   *     label  = `全选前 ${BULK_SELECT_CAP} 个（当前结果 ${allIds.length} 个）`
-   *     onClick = () => onSelectMany(allIds.slice(0, BULK_SELECT_CAP), 'replace')
-   *
-   * 为什么要上限：6.4 万条一次 applyMany → setRecords 6 万条卡死，且
-   * writeLearn 写的是**整个 records 映射**（`{version, records}`），6.4 万条新记录
-   * 极可能直接 QuotaExceededError —— 徽标转红、内存态已更新而磁盘没更新，
-   * 刷新即丢。详见 useLearn.applyMany 的注释。
-   */
-  const selectableAllIds = useMemo(
-    () => (allIds.length > BULK_SELECT_CAP ? allIds.slice(0, BULK_SELECT_CAP) : allIds),
-    [allIds],
-  )
-
-  /** 截断文案：数字全部来自 selectableAllIds / allIds，不另写常量 */
-  const selectAllLabel =
-    allIds.length > BULK_SELECT_CAP
-      ? `全选前 ${selectableAllIds.length} 个（当前结果 ${allIds.length} 个）`
-      : `全选当前结果（${selectableAllIds.length}）`
-
-  /**
    * 勾选：Shift + 点击时把两次点击之间的行一并选中/取消。
    * 整段模式由「这段区间当前是否已经整段选中」决定 —— 已全选就整段取消，否则整段选中。
    * 注意不能只看锚点行：普通点击设下锚点时必然把它勾上，若按"锚点已选中→取消"判定，
@@ -202,10 +169,10 @@ export default function ListView({
     <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
       <div className="flex items-center gap-2 px-2 pt-2 pb-1 text-xs">
         <button
-          onClick={() => onSelectMany(selectableAllIds, 'replace')}
+          onClick={() => onSelectMany(allIds, 'replace')}
           className="px-2 py-1 rounded-md border border-slate-300 text-slate-600 hover:bg-white"
         >
-          {selectAllLabel}
+          全选当前结果（{allIds.length}）
         </button>
         <button
           onClick={onClearSelection}
@@ -226,8 +193,6 @@ export default function ListView({
             onSetReview={onSetReview}
             onReset={onReset}
             onClear={onClearSelection}
-            /* ★ G1 第 1 处调用点（列表页）★ */
-            {...addToStationProps}
           />
         </div>
       )}

@@ -42,12 +42,6 @@ export default function Sidebar({
   onImport,
   onClear,
   vocab = null,
-  privateWordCount = 0,
-  privateWordsOpen = false,
-  onTogglePrivateWords,
-  privateWordsPanel = null,
-  mobileOpen = false,
-  onCloseMobile,
 }) {
   const patch = (p) => setFilters((f) => ({ ...f, ...p }))
 
@@ -58,22 +52,7 @@ export default function Sidebar({
     })
 
   return (
-    <aside
-      className={[
-        'w-72 shrink-0 h-full overflow-y-auto bg-white border-r border-slate-200 p-4 text-slate-700 z-40',
-        mobileOpen
-          ? 'fixed md:relative inset-y-0 left-0 block h-screen md:h-full'
-          : 'hidden md:block md:relative md:h-full h-full',
-      ].join(' ')}
-    >
-      <button
-        type="button"
-        onClick={onCloseMobile}
-        className="md:hidden absolute top-2 right-2 p-1 text-slate-400 hover:text-slate-600"
-        aria-label="关闭筛选"
-      >
-        ✕
-      </button>
+    <aside className="w-72 shrink-0 h-full overflow-y-auto bg-white border-r border-slate-200 p-4 text-slate-700">
       <div className="mb-4">
         <h1 className="text-base font-bold text-slate-800">词根词缀单词云</h1>
         <p className="text-xs text-slate-400 mt-0.5">词素为干，单词为叶</p>
@@ -94,17 +73,7 @@ export default function Sidebar({
           className="w-full px-2.5 py-1.5 text-sm border border-slate-300 rounded-md focus:outline-none focus:border-blue-400"
         />
         {filters.query && (
-          /* ★ A-05：命中数只统计「搜索命中」，与筛选器无关 ★
-             原先这里传的是 applyFilters 的 stats.morphCount，而那个 stats 吃
-             types/origins/minCefr/status/hideAutoKnown —— 于是「把难度收到 B2 再
-             搜 spec」会让这个数字变小，读起来像是「搜索本身命中变少了」。
-             现在它读 searchResult.morphs.length（零新增开销：searchResult 本来就
-             被 hitWordIds / visibleOrphans 消费，读 .length 是 O(1) 字段访问），
-             并补一行小字把口径写明。 */
-          <p className="text-xs text-slate-400 mt-1.5">
-            命中 {hitCount} 个词群
-            <span className="block text-slate-400">（当前筛选下的可见词群，不随筛选变化）</span>
-          </p>
+          <p className="text-xs text-slate-400 mt-1.5">命中 {hitCount} 个词群</p>
         )}
         {filters.query && wordHits.length > 0 && (
           <div className="mt-2">
@@ -141,36 +110,6 @@ export default function Sidebar({
             </Chip>
           ))}
         </div>
-
-        {/* ★ T04：我的私有词入口 ★
-            放在「掌握状态」区下方 —— 私有词正是「按掌握状态管理我的词」的一部分，
-            放在这里符合用户心智（上面就是三态筛选）。
-            ★ 它是 B 组「移出小站」的硬前置：私有词被移出小站后仍留在 user_words，
-              若没有这个入口就彻底失去编辑 / 重新生成 / 删除入口，成为清不掉的幽灵词
-              （照样计入统计、照样出现在复习队列）。
-            0 个时显示「暂无」且不可点 —— 给一个点进去必然是空的入口没有意义。 */}
-        <div className="mt-2 pt-2 border-t border-slate-100">
-          <button
-            onClick={privateWordCount > 0 ? onTogglePrivateWords : undefined}
-            disabled={privateWordCount === 0}
-            title={
-              privateWordCount > 0
-                ? '查看 / 编辑 / 彻底删除我的私有词'
-                : '还没有私有词：在「小站」里粘贴不在公共库的生词即可自动生成'
-            }
-            className="w-full text-left text-xs text-slate-500 hover:text-blue-600 disabled:text-slate-400 disabled:hover:text-slate-400 py-0.5"
-          >
-            我的私有词{' '}
-            {privateWordCount > 0 ? `${privateWordCount} 个` : '（暂无）'}
-            {privateWordCount > 0 && (
-              <span className="ml-1 text-slate-400">{privateWordsOpen ? '▾ 收起' : '· 查看'}</span>
-            )}
-          </button>
-        </div>
-
-        {/* 面板内联展开在「掌握状态」区下方，不开新页签、不进「列表」页 ——
-            理由：allIds 的语义与 A-07 的批量上限口径会被搅在一起 */}
-        {privateWordsOpen && privateWordsPanel}
       </Section>
 
       <Section title="最低难度">

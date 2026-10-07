@@ -33,81 +33,6 @@ const EXTRA_PATH = path.join(ROOT, 'src/data/words-mono-seed.js')
 const REL_PATH = path.join(ROOT, 'src/data/synants-mono-seed.js')
 const CACHE_PATH = path.join(ROOT, 'scripts/.gen-mono-seed-cache.json')
 
-// ---------------- 垃圾词条黑名单（防复活） ----------------
-/**
- * JUNK_FORM_BLOCKLIST —— 已确认的「自认错词」词形黑名单。
- *
- * 为什么需要：scripts/seed-words.txt 里混进了一批非词（OCR/切分残渣、
- * 拼写错误串，如 evemhing / iong / slpowlcz）。DeepSeek 标注时被如实标成
- * 「（拼写有误，疑为 everything）」这类释义，于是它们像正常单词一样进了
- * 学习队列、词云和统计，用户在学习卡上直接看到了这些垃圾。
- *
- * 这些条目已于本次清理中从 src/data/words-mono-seed.js 移除。若只删数据、
- * 不加黑名单，下次跑 gen-mono-seed.mjs 会按 seed-words.txt 原样重新标注、
- * 原样写回 —— 垃圾会复活。所以这里显式拉黑，三重拦截：
- *   1) loadSeed()：黑名单种子根本不进标注批次（省 API 调用）；
- *   2) normalize()：即便模型返回了，也按「不合规」拒绝；
- *   3) writeOutputs()：落盘前再过滤一遍，防止旧的 .gen-mono-seed-cache.json
- *      里已缓存的脏条目被重新写回。
- *
- * 维护：新增确认的垃圾词直接往数组里加即可（顺序无所谓，内部转 Set 比较）。
- */
-const JUNK_FORM_BLOCKLIST = [
-  // —— 用户在学习卡上实际看到的、已确认的自认错词 ——
-  'evemhing', // （拼写有误，疑为 everything）
-  'iong', // （拼写有误，无法释义）
-  'ieast', // （疑似拼写有误）
-  'ge', // （疑似拼写有误）
-  'ieft', // （拼写有误，无法释义）
-  'lnspector', // 检查员（拼写有误）
-  'ofhere', // （拼写有误，疑为 of here）
-  'ionger', // （拼写有误，无常见义）
-  'commited', // 犯（错）；承诺（拼写有误）
-  // —— 同批扫描出的其它自认错词（scripts/scan-junk-words.mjs A 类）——
-  'aren', 'weren', 'iike', 'nder', 'a-a', 'iove', 'dum', 'the-the',
-  'alphahff', 'wasrt', 'ther', 'we-we', 'hes', 'everytime', 'gots', 'ifwe',
-  'dok', 'aegisshi', 'wouid', 'noone', 'eveything', 'holdin', 'shes',
-  'lmpossible', 'doesnt', 'iook', 'tlhe', 'happend', 'eveyone', 'hopin',
-  'knowed', 'fleed', 'brung', 'foryour', 'childrens', 'blowin', 'theyre',
-  'subxpacio', 'ofher', 'fiind', 'dreamin', 'butyou', 'ofit', 'bringin',
-  'werert', 'momento', 'realy', 'eveybody', 'tthe', 'vel', 'shouidn',
-  'didrt', 'tought', 'slpowlcz', 'occured', 'appartment', 'affraid',
-  'lifes', 'growed', 'hejust', 'knowin', 'couidn', 'smilin', 'throwed',
-  'someting', 'embarassed', 'youself', 'begining', 'everthing', 'curiouser',
-  't-the', 'ngs', 'thet', 'goverment', 'strenght', 'tommorow', 'wouidn',
-  'heared', 'lov', 'catched', 'seperate', 'shoud', 'transfered', 'believin',
-  'foto', 'accomodation', 'ments', 'amature', 'insest', 'amatuer',
-  'definately', 'millenium', 'lingere',
-]
-const JUNK_FORMS = new Set(JUNK_FORM_BLOCKLIST.map((f) => f.toLowerCase()))
-
-/**
- * 通用护栏：判断一条释义是否**自认**本条目是错词。
- *
- * 只拉黑已知词形不够 —— 将来 seed-words.txt 里出现新的垃圾串，模型照样会
- * 标出「（疑似拼写错误）」。所以这里再做一层语义拦截：释义里出现
- * 「拼写有误 / 误拼 / 疑似乱码 / 无实义」等自认字样，一律拒收。
- *
- * 注意与正常词区分：cacography（词义是「拼写错误」）、misspell（「拼错」）
- * 这类词本身合法，它们的释义不含括号自认、也不含「X 的误拼」引用式表述，
- * 因此不会被误杀。
- *
- * @param {string} gloss 中文释义
- * @returns {boolean} true 表示这是自认的错词，应丢弃
- */
-function isSelfAdmittedErrorGloss(gloss) {
-  const text = String(gloss || '')
-  if (!text) return false
-  const SELF_ERROR_RE =
-    /(拼写有误|拼写错误|错误拼写|疑似拼写|拼写异常|误拼|错拼|拼错|错别字|疑似乱码|乱码|无实义|无意义拼写|未明词|非标准拼写|非标准过去式|非标准过去分词|非标准比较级|非标准词)/
-  if (!SELF_ERROR_RE.test(text)) return false
-  // 必须出现在括号里（「（拼写有误，疑为 X）」），或以「X 的<关键词>」引用式出现，
-  // 才判定为**本条目**自认错误；否则可能只是某词的正常释义。
-  const parenHit = (text.match(/（[^）]*）/g) || []).some((seg) => SELF_ERROR_RE.test(seg))
-  const refHit = /的(拼写有误|拼写错误|错误拼写|误拼|错拼|非标准拼写|非标准过去式|非标准过去分词|非标准比较级)/.test(text)
-  return parenHit || refHit
-}
-
 // ---------------- env ----------------
 function loadEnv() {
   const p = path.join(ROOT, '.env')
@@ -167,8 +92,6 @@ function loadSeed() {
   for (const line of fs.readFileSync(SEED_PATH, 'utf8').split(/\r?\n/)) {
     const t = line.trim().toLowerCase()
     if (!SEED_RE.test(t) || t.length < 2 || t.length > 24 || seen.has(t)) continue
-    // 拦截 1：黑名单里的垃圾种子直接跳过，不浪费标注调用
-    if (JUNK_FORMS.has(t)) continue
     seen.add(t)
     out.push(t)
   }
@@ -195,39 +118,6 @@ if (fs.existsSync(CACHE_PATH)) {
     cache = []
   }
 }
-
-/** 判断一条已缓存词条是否是垃圾（黑名单词形 或 自认错词的释义） */
-function isJunkWord(w) {
-  if (!w || typeof w.form !== 'string') return true
-  return JUNK_FORMS.has(w.form.toLowerCase()) || isSelfAdmittedErrorGloss(w.gloss)
-}
-
-/** 判断一对近义/反义关系是否引用了垃圾词 */
-function isJunkPair(p) {
-  if (!p || typeof p.a !== 'string' || typeof p.b !== 'string') return true
-  return JUNK_FORMS.has(p.a.toLowerCase()) || JUNK_FORMS.has(p.b.toLowerCase())
-}
-
-// 拦截 3（自愈）：旧缓存里已标注的脏条目就地剔除，绝不回写进产物
-{
-  const before = cache.length
-  cache = cache.filter((w) => !isJunkWord(w))
-  const junkForms = new Set(JUNK_FORMS)
-  for (const list of [relCache.syn, relCache.ant]) {
-    for (const p of list) {
-      if (isJunkPair(p)) {
-        junkForms.add(String(p.a).toLowerCase())
-        junkForms.add(String(p.b).toLowerCase())
-      }
-    }
-  }
-  relCache.syn = relCache.syn.filter((p) => !isJunkPair(p))
-  relCache.ant = relCache.ant.filter((p) => !isJunkPair(p))
-  if (before !== cache.length) {
-    console.log(`[junk-guard] 已从续跑缓存剔除 ${before - cache.length} 条垃圾词条`)
-  }
-}
-
 for (const w of cache) {
   usedIds.add(w.id)
   usedForms.add(w.form.toLowerCase())
@@ -313,9 +203,6 @@ function normalize(w, seedRank) {
   if (form.length > 60) return 'form too long'
   const lower = form.toLowerCase()
   if (usedForms.has(lower)) return 'dup form'
-  // 拦截 2：黑名单词形 + 自认错词的释义，一律拒收（防垃圾复活）
-  if (JUNK_FORMS.has(lower)) return 'junk blocklisted form'
-  if (isSelfAdmittedErrorGloss(w.gloss)) return 'self-admitted error gloss'
 
   // 标注模式容错：kind 非法回退 mono；loan 的 origin 非法则降级为 mono
   let kind = KINDS.includes(w.kind) ? w.kind : 'mono'
@@ -401,11 +288,6 @@ function collectRelations(rawWords, newWordForms, formIndex) {
 
 // ---------------- 落盘 ----------------
 function writeOutputs() {
-  // 拦截 4（兜底）：落盘前再过滤一次，杜绝任何路径把垃圾写回产物
-  cache = cache.filter((w) => !isJunkWord(w))
-  relCache.syn = relCache.syn.filter((p) => !isJunkPair(p))
-  relCache.ant = relCache.ant.filter((p) => !isJunkPair(p))
-
   const header =
     '/**\n' +
     ' * 词表种子标注扩充的无词素词条库（DeepSeek 标注 seed-words.txt）\n' +

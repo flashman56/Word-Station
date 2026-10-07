@@ -2,10 +2,8 @@ import React, { useEffect, useState } from 'react'
 import { MASTER_THRESHOLD, statusLabel } from '../lib/learning.js'
 // 红线：音标只查表（public/data/v1/phon/*.json，源头是 ECDICT），严禁模型生成
 import { phoneticsOfAsync } from '../lib/dict.js'
-import { shouldShowPhoneticPending } from '../lib/phoneticDisplay.js'
 import { useSpeech } from '../hooks/useSpeech.js'
 import SpeakerButton from './SpeakerButton.jsx'
-import UsageSupplement from './UsageSupplement.jsx'
 
 /**
  * 单张学习 / 复习卡片。
@@ -45,7 +43,7 @@ export default function StudyCard({
   // StudyCard 在 StudySession 中以 key=index 挂载，故换卡即重挂 → 每次只读新词一次。
   useEffect(() => {
     if (!autoSpeak) return
-    speak(word.form, { lang: 'en-US', rate: 0.85 })
+    speak(word.form, { lang: 'en-US', rate: 0.9 })
   }, [word.form, autoSpeak, speak])
 
   const handleAnswer = (r) => {
@@ -98,9 +96,9 @@ export default function StudyCard({
         <SpeakerButton text={word.form} size="md" className="mb-1" />
         {phonetic ? (
           <span className="text-lg text-slate-400">/{phonetic.replace(/^\/|\/$/g, '')}/</span>
-        ) : shouldShowPhoneticPending(word, phonetic) ? (
+        ) : (
           <span className="text-xs text-amber-600">音标待补</span>
-        ) : null}
+        )}
         {word.pos && (
           <span className="px-2 py-0.5 rounded text-xs bg-slate-100 text-slate-600">
             {word.pos}
@@ -181,9 +179,6 @@ export default function StudyCard({
               <p className="text-slate-600 text-sm leading-relaxed">{usage}</p>
             </div>
           )}
-
-          {/* 用法补充：固定搭配 / 背景 / 用法（按需异步加载，无条目则无渲染） */}
-          <UsageSupplement form={word.form} />
 
           <div className="mt-4">
             <p className="text-xs font-semibold text-slate-500 mb-1.5">构词拆解</p>

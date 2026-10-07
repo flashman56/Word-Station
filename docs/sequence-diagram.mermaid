@@ -1,256 +1,62 @@
-%% 词根词缀单词云 · 小站打磨 · 关键流程时序图
-%% 源文档：docs/station-polish-design.md §4
-%% 共 4 张：① 离线建站/加词→草稿→联网补传 ② 移出小站（含私有词孤儿） ③ 学习侧加入小站 ④ 小站缓存读/写/失效
-
-%% ============================================================
-%% 图 ① 离线建站 / 加词 → 草稿 → 联网补传（含 enqueue('stations') 接通后）
-%% ============================================================
 sequenceDiagram
     autonumber
-    participant U as 用户
-    participant SB as StationBar
-    participant US as useStations
-    participant MC as lib/migrate
-    participant O as cloud/offline
-    participant AW as AddWordsPanel
-    participant AS as lib/addToStation
-    participant SW as cloud/stationWords
-    participant UW as useStationWords
-    participant UY as useSync
+    actor U as 用户
+    participant SB as SpeakerButton
+    participant H as useSpeech
+    participant M as SpeechModule(单例)
+    participant SS as window.speechSynthesis
 
-    Note over U: —— 断网（navigator.onLine = false）——
-    U->>SB: 点「+ 新建」→ 输入「雅思」→ 创建
-    SB->>US: createStation('雅思')
-    US->>US: 本地校验：trim 非空 / ≤40 / lower(trim) 不与已有重名
-    alt 校验不通过
-        US-->>SB: setError({code:'DUPLICATE_NAME'|'BAD_REQUEST'})
-        Note over US: ★ 不入队 —— 23505 不在 isPermanentError 白名单，<br/>入队会变成每 30s 重试、永不消除的 pending
-    else 校验通过
-        US->>US: id = newStationId()（crypto.randomUUID + 非安全上下文兜底）
-        US->>O: enqueue('stations', {row:{id,ownerId,name,pinned:false,createdAt}}, scope)
-        Note over O: DRAIN_ORDER 已含 'stations'，无需新增 kind
-        O->>O: 写入 drafts 键，notifyPendingChanged()
-        US->>US: setStations([row, ...prev]) + setCurrentId(id)
-        US-->>SB: 返回 row（乐观）
-        SB-->>U: 小站条立即出现「雅思」+「已存为离线草稿」
-        Note over UY: pending +1 → 徽标转琥珀「离线 · 1 条待传」
+    Note over U,SS: 流程 1 · 发音点击
+    U->>SB: 点击喇叭
+    SB->>SB: e.stopPropagation()
+    SB->>H: speak(word.form)
+    H->>H: supported? 否 → 直接返回（按钮本就 disabled）
+    H->>SS: cancel()
+    alt 同一文本正在播
+        H->>SS: cancel() → 停止，speaking=false
+    else 播放
+        H->>M: pickVoice()  // en-US → en-GB → en* → null
+        M-->>H: voice | null
+        H->>SS: new SpeechSynthesisUtterance(form)
+        H->>SS: u.lang=en-US; u.rate=0.9; u.voice=voice
+        H->>SS: speak(u)
+        SS-->>H: onstart → speaking=true
+        SS-->>H: onend / onerror → speaking=false（静默复位）
     end
 
-    U->>AW: 粘贴 20 个生词 → 点「加入小站（20）」
-    AW->>AS: addToStation({ownerId, stationId, items, online:false, scope})
-    AS->>O: enqueue('stationWords', {ownerId, stationId, items}, scope)
-    Note over AS,O: ★ payload 与 claim('stationWords') 逐字对齐：<br/>stationId 真值 + items 是数组 + ownerId === uid
-    AS-->>AW: {ok:true, inserted:0, skipped:0, offline:20}
-    AW-->>U: 「已加入 0 词 · 20 条存为离线草稿」（amber 部分失败色）
-    AW->>UW: onDone → refresh()
-    UW->>O: readDrafts(scope)
-    O-->>UW: stationWords[0].items = 20 个 {wordKey, source}
-    UW->>UW: 反查：w.* → dict.loadWords（IndexedDB ✅）<br/>u.* → useUserWords 缓存 ✅
-    UW-->>U: 列表立即出现 20 行「待上传」（灰体斜置，按钮全 disabled）<br/>+「20 个词待上传」单独计数（不计入 counts.total）
-    Note over U: ★ 此时 F5：首帧读 stationsCache / stationWordsCache → 小站与词条仍在
+    Note over U,SS: 流程 2 · 词汇量计算
+    participant LH as LearnHome/Sidebar
+    participant V as vocab.js
+    participant ST as AppShell(useMemo)
+    ST->>V: estimateVocabulary(words, learn.records)
+    V->>V: 去重 + 按 freqRank 分档 → libraryN[b]
+    V->>V: 遍历 records：仅 statusSource!=='migration' 计入样本
+    V->>V: knownP[b] = known/studied
+    V->>V: PAVA 非增约束 + 无样本档插值
+    V->>V: Σ over 档(knownP≥0.25) × libraryN → estimate
+    V->>V: 二项方差传播 → low/high；sufficient 闸门
+    V-->>ST: VocabResult
+    ST-->>LH: vocab (prop)
+    LH-->>U: sufficient ? "≈ N 词 ±D" : "样本不足"
+    U->>LH: 点「怎么算的」
+    LH-->>U: 展开 bands[] 分档表
 
-    Note over U,UY: —— 恢复网络（online 事件 / 回前台 / 30s 轮询）——
-    UY->>O: drain({scope, uid})
-    loop DRAIN_ORDER 四类逐条，认领先行
-        O->>O: claim(kind, item, uid)
-        alt ownerId 不等于 uid
-            O->>O: park 保留（不推送、不阻塞后续、不计入 pending）
-        else 认领通过
-            O->>SW: kind='stations' → stationsApi.upsert(row) onConflict 'id'（幂等）
-            SW-->>O: ok
-            O->>O: splice 移除该条，pushed++
-        end
+    Note over U,SS: 流程 3 · 词源展开
+    participant WD as WordDetail/MorphDetail
+    participant EP as EtymologyPanel
+    participant E as etym.js
+    participant D as morph-etym.js(动态 chunk)
+    U->>WD: 点击词素（step.morph → index.morphById）
+    WD->>EP: 挂载 panel(morph)
+    EP->>E: resolveEtymology(morph)
+    alt 首次调用
+        E->>D: import('./data/morph-etym.js')  // 懒加载，只一次
+        D-->>E: { [morphId]: EtymEntry }
     end
-    O->>O: notifyPendingChanged()
-    UW->>UW: 投影重算：草稿已空 → 20 行转正为正常行
-    Note over UW: ★ 词条本体来自云端 listByStation；<br/>generate 类草稿补传时若小站已删 → stationAdded:false → notice 提示
-
-
-%% ============================================================
-%% 图 ② 移出小站（含私有词孤儿场景）
-%% ============================================================
-sequenceDiagram
-    autonumber
-    participant U as 用户
-    participant SL as StationLearn
-    participant A as App
-    participant H as useStationWords
-    participant API as cloud/stationWords
-    participant PW as PrivateWordsPanel
-    participant L as useLearn(Cloud)
-    participant DB as (station_words / user_words / learn_records)
-
-    Note over SL: 词条行：私有词词形可点 → UserWordEditor<br/>操作区：[StatusPill] [我会了] [加入待复习] [移出小站]
-    U->>SL: 点「移出小站」
-    alt !online
-        SL-->>U: 按钮 disabled + title「离线时不能移除词条，联网后再试」
-        Note over SL: ★ 不产生任何 stationWords 草稿<br/>（pendingCount 前后相等，DRAIN_ORDER 仍 4 项）
-    else online
-        SL->>SL: window.confirm（三行：删什么 / 不删什么 / 不可撤销）
-        Note over SL: 从「雅思」移出 photosynthesis？<br/>· 只是从这个小站移除，不会删除这个词条本身<br/>· 你的学习记录保留，仍会出现在「学习」页的复习队列里<br/>· 移出后可以随时从学习页重新加回<br/>此操作不可撤销。
-        U->>SL: 取消
-        SL-->>U: 词条仍在列表中（无任何变更）
+    alt map[morph.id] 存在
+        E-->>EP: curated entry
+    else 缺失
+        E->>E: composeEtymology(morph)  // 本地组合叙述
+        E-->>EP: composed entry
     end
-
-    U->>SL: 确定移出
-    SL->>H: removeWord(wordKey)
-    H->>API: remove(stationId, wordKey)  DELETE … match{station_id, word_key}
-    Note over API,DB: RLS station_words_owner 的 using 覆盖 delete<br/>★ 只删这一行引用
-    API-->>H: {error:null}
-    H->>H: await refresh() → 重写 stationWordsCache 的该站条目
-    H-->>SL: words 变小 → counts / stats / 站内 reviewQueue 全部自动派生
-    SL-->>U: 事后反馈「已从「雅思」移出 photosynthesis · 学习记录保留」（非仅 confirm）
-
-    Note over DB: 三方状态（移出后）：
-    rect rgb(255,235,235)
-      note over DB: station_words：该行消失 ✅
-    end
-    rect rgb(235,255,235)
-      note over DB: user_words：私有词条**仍在** ✅（含所有小站都没有的孤儿词）
-    end
-    rect rgb(235,255,235)
-      note over DB: learn_records：逐字段不变 ✅（nextDueAt / consecutiveCorrect / incorrectCount）
-    end
-
-    alt 该词是私有词（u.*）
-        U->>PW: 打开侧栏「我的私有词」
-        PW->>PW: 该词仍在列表里（数据源 useUserWords 全量，与小站无关）
-        PW-->>U: ✅ 孤儿场景闭环：仍可 编辑 / 重新生成 / 加入小站 / 彻底删除
-        Note over PW,DB: ★ 这正是「我的私有词」列表必须排在 B 之前的原因：<br/>没有它，被移出的私有词就彻底失去管理入口
-        U->>PW: 点「彻底删除」（红色，与「移出小站」文案/颜色/位置三维度都不同）
-        PW->>PW: confirm「彻底删除…所有小站里的引用也会一并移除；学习记录不受影响」
-        PW->>DB: userWordsApi.remove(ownerId, id, wordKey)<br/>① delete station_words where owner_id+word_key<br/>② delete user_words where id
-        PW->>PW: onRefresh → useUserWords.refresh() + useStationWords.refresh()
-    end
-
-    Note over L: 该词仍在 statWords → 学习页三态与复习队列不变；<br/>nextDueAt 到期后**仍出现在学习页复习队列**（这正是要向用户说明的语义）
-
-
-%% ============================================================
-%% 图 ③ 学习侧加入小站（下拉选站 + 无站引导新建 + 已在站标记）
-%% ============================================================
-sequenceDiagram
-    autonumber
-    participant U as 用户
-    participant M as AddToStationMenu
-    participant P as PrivateWordsPanel
-    participant BA as BulkActionBar
-    participant WD as WordDetail(App 内)
-    participant A as App
-    participant AS as lib/addToStation
-    participant API as cloud/stationWords
-    participant O as cloud/offline
-    participant MC as lib/migrate
-
-    U->>WD: 点开一个公共词的详情 → 点「加入小站 ▾」
-    U->>BA: 列表/聚焦多选 20 个 → 点「加入小站 ▾」
-    U->>P: 私有词行 → 点「加入小站 ▾」
-    Note over M: 三处共用同一组件，同一 addToStation() 路径
-
-    M->>A: 读 stations / loading / online / existingKeys（当前小站）
-    alt stations.length === 0（零小站）
-        M-->>U: 下拉只有「你还没有小站」+「＋ 新建小站…」
-        U->>M: 点「＋ 新建小站…」→ 行内输入「雅思」
-        M->>A: createStation('雅思')
-        alt 建站成功（在线）
-            A-->>M: Station{id}
-            M->>AS: addToStation({stationId: 新建站, wordKeys, sources})
-            AS->>API: addMany(ownerId, stationId, items) upsert onConflict 'station_id,word_key' ignoreDuplicates
-            API-->>AS: {inserted, skipped}
-            AS-->>M: ok
-            M-->>U: 「已新建「雅思」并加入该词」（一气呵成，不让用户做两件事）
-        else 建站失败（离线）
-            A->>O: enqueue('stations', {row:{id:newStationId(), ownerId, name, pinned:false, createdAt}}, scope)
-            A-->>M: Station{id}（乐观）
-            M->>AS: addToStation(...)
-            AS->>O: enqueue('stationWords', {ownerId, stationId, items}, scope)
-            AS-->>M: {ok:true, offline:N}
-            M-->>U: 「已存为离线草稿，联网后自动加入小站」
-            Note over M: 词条立即以「待上传」样式出现在小站列表
-        end
-    else 有小站
-        M-->>U: 下拉：置顶优先 + 各站词数 + 「✓ 已在」标记
-        Note over M: ★ P0 只标当前小站（复用 existingKeys，零新增请求）<br/>下拉头部小字：「✓ 已在 只标注当前小站」<br/>重复由 station_words_uniq + ignoreDuplicates 静默跳过
-        U->>M: 选「雅思」
-        M->>AS: addToStation({ownerId, stationId, items, online, scope})
-        alt online
-            AS->>API: addMany(...)
-            API-->>AS: {inserted, skipped}
-            AS-->>M: {ok:true, inserted, skipped}
-            M-->>U: 「已加入「雅思」」；批量时「已加入 18 个 · 2 个已在小站中，已跳过」
-        else 网络失败 / 离线
-            AS->>O: enqueue('stationWords', {ownerId, stationId, items}, scope)
-            Note over O: ★ payload 命中 claim('stationWords')：<br/>stationId 真值 + items 数组 + ownerId === uid<br/>跨账号由 claim 判 owner-mismatch → park，不推送
-            AS-->>M: {ok:true, offline:N}
-            M-->>U: 「已存为离线草稿，联网后自动加入小站」
-        end
-        M->>A: onDone → useStationWords.refresh() + 重写 stationWordsCache
-    end
-
-    Note over U: 私有词路径与公共词**完全相同**，只是 source='user'：<br/>toUserWordView 保证 id === wordKey（u.&lt;formKey&gt;），<br/>所以同一份 records 同时服务小站与学习页 —— 无需为私有词单独设计
-
-
-%% ============================================================
-%% 图 ④ 小站缓存的读 / 写 / 失效时机
-%% ============================================================
-sequenceDiagram
-    autonumber
-    participant B as 浏览器 localStorage
-    participant MC as lib/migrate
-    participant US as useStations
-    participant UW as useStationWords
-    participant SB as StationBar
-    participant SL as StationLearn
-    participant EV as storage 事件
-    participant AF as affectsLocalScope
-
-    Note over B: —— ① 写：什么时候落缓存 ——
-    US->>API: refresh() → stationsApi.list(ownerId)
-    API-->>US: Station[]
-    US->>MC: writeStationsCache(stations, scope)
-    MC->>MC: LRU 上限 10 站 / 256KB 护栏（超限拒写，不抛错）
-    MC->>B: 整键写 stationsCache
-    UW->>API: refresh() → stationWordsApi.listByStation(stationId)
-    API-->>UW: StationWordRef[]
-    UW->>MC: writeStationRefs(stationId, refs, scope)
-    MC->>B: 整键写 stationWordsCache.byStation[stationId]
-
-    Note over B: —— ② 读：断网首帧怎么来（F5 红线 6 的核心）——
-    B->>US: 挂载，useState 初始化函数
-    US->>MC: readStationsCache(scope)
-    MC->>B: 读缓存键
-    B-->>MC: {v:1, savedAt, stations:[雅思, 论文阅读]}
-    MC-->>US: stations（非空）
-    US-->>SB: 小站条**首帧**就列出全部小站，当前小站高亮正确
-    Note over SB: ★ 不等 refresh()：refresh 在离线时 setError 后 return，<br/>但首帧已经是缓存内容 —— 这正是 A-05 要修的「刷新后小站消失」
-    B->>UW: 挂载
-    UW->>MC: readStationRefs(currentId, scope)
-    MC-->>UW: {refs:[128 条]}
-    UW-->>SL: 词条列表首帧即完整（私有词词条由 loadWords / userWordsCache 反查）
-
-    Note over B: —— ③ 失效：什么时候清 ——
-    U->>SB: 删除小站「雅思」
-    SB->>US: removeStation(id)
-    US->>MC: dropStationRefs(id, scope)
-    MC->>B: 从 byStation 删掉该站条目（配额回收点，Q8）
-    Note over US: stationsCache 不手动清 —— refresh() 成功时整体重写覆盖
-    U->>SL: 点侧栏「清空标注」
-    SL->>MC: dropAllStationRefs(scope)
-    Note over MC: learn 分区与草稿队列**均不触碰**
-
-    Note over B: —— ④ 换号：多标签页不重读的坑 ——
-    T2->>B: 标签 2 登录 B → 写 stationsCache:B
-    B-->>EV: 标签 1 收到 storage 事件（key 带 :B 后缀）
-    EV->>AF: affectsLocalScope(key)
-    AF->>AF: family = split(':')[0]，与 base(keysFor(guest).stationsCache) 比
-    alt 命中本标签当前 scope 的 family
-        AF-->>EV: true → 强制重载（切号可能已在别处发生）
-    else 其他 scope / 其他键
-        AF-->>EV: false → 忽略
-    end
-    Note over AF: ★ 必须走 base() 截断到最后一个冒号前 ——<br/>拿「…:guest」直接比「…:uid-A」永远不相等，<br/>这个函数会静默失效，症状只是「多标签页不重读」，极难归因
-
-    Note over B: —— ⑤ 隐私模式 / 配额满 ——
-    MC->>B: setItem 抛 QuotaExceededError
-    MC-->>UW: false（静默）
-    Note over UW: ★ 缓存写失败**绝不影响主流程**：<br/>内存态照常、UI 照常、学习记录照常落盘。<br/>缓存只是「断网首帧」的加速器，不是数据源
+    EP-->>U: 来源 / 演变时间线 / 同源词 chips（pie 标注「重构形」）

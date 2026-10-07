@@ -20,25 +20,11 @@ import wordsMono from './words-mono.js'
 import wordsMonoExtra from './words-mono-extra.js'
 import wordsMonoSeed from './words-mono-seed.js'
 import phonetics, { phoneticsOf } from './phonetics.js'
-import wordsRemorph from './words-remorph.js'
 
 export const WORD_FILES = [wordsLatin, wordsGreek, wordsAffix, wordsExtra, wordsMono, wordsMonoExtra, wordsMonoSeed]
 
-/**
- * 与 src/data/words-entry.js 保持完全一致的再切分补丁合并逻辑，
- * 让离线脚本（validate / test:*）看到的 morphs 与线上运行时一致。
- */
-const REMORPH = new Map(wordsRemorph.map((p) => [p.id, p]))
-const MORPH_IDS = new Set(morphemes.map((m) => m.id))
-
-const rawWords = WORD_FILES.flat()
-export const words = rawWords.map((w) => {
-  const patch = REMORPH.get(w.id)
-  if (!patch) return w
-  const hints = patch.morphHints.filter((mid) => MORPH_IDS.has(mid))
-  if (hints.length === 0) return w
-  return { ...w, morphs: [...(w.morphs || []), ...hints], chain: patch.chain }
-})
+/** 全量单词（合并后） */
+export const words = WORD_FILES.flat()
 
 export { morphemes, phonetics, phoneticsOf }
 export default { morphemes, words, phonetics, phoneticsOf }
