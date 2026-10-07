@@ -1,8 +1,0 @@
-目标 10000 词 / 每批 30 / 窗口 12 / 已有 3020
-  [r.spect…r.tend] +15 → 共 3035
-  [r.ven…r.graph] +4 → 共 3039
-  [r.path…p.trans] +21 → 共 3060
-  [p.con…s.ize] +14 → 共 3074
-  [s.ist…r.fer] +15 → 共 3089
-  [r.pos…r.phon] +5 → 共 3094
-EXIT=127
