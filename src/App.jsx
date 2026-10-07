@@ -743,6 +743,7 @@ function AppShell({ words, auth, stations, sync }) {
             onMarkKnown={bulkMarkKnown}
             onSetReview={bulkSetReview}
             onReset={bulkReset}
+            addToStationProps={addToStationProps}
           />
         ) : (
           <div className="text-xs text-slate-400 leading-relaxed">
@@ -773,6 +774,16 @@ function MorphDetail({
   onMarkKnown,
   onSetReview,
   onReset,
+  /* ★ C-02：G1 第 3 处调用点。
+     ★★ 踩过的坑（QA 独立验出的白屏）★★
+     MorphDetail 是**顶层函数**（缩进 0），拿不到 AppShell 里的
+     addToStationProps —— 早先只在函数体内写了 {...addToStationProps} 而没在
+     签名里解构它，于是「右侧词群详情里勾选任意一个词」就 ReferenceError
+     白屏。触发条件极浅，而它能过 build（esbuild 不做作用域分析）、
+     也能过我的源码正则断言（那断言只检查「字符串在不在」）。
+     ⇒ 教训：凡「某组件用了新 prop」，必须**渲染那个组件**来验，
+       而不是只对源码做字符串匹配。 */
+  addToStationProps = EMPTY_ADD_PROPS,
 }) {
   const typeCfg = TYPES[morph.type]
   const ids = morph.words.map((w) => w.id)
