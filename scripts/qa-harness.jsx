@@ -768,11 +768,26 @@ export async function run() {
   ok(clusterCount >= 8, `板块内分出 ${clusterCount} 个子群岛簇`)
 
   const txt = document.body.textContent || ''
-  ok(txt.includes('火山熔岩型') && txt.includes('热带植被型') && txt.includes('冰雪岩石型'), '三大板块的类型名称各自可见')
+  // ★ 改成断言 UI 真正渲染的 label（QA 实测根因）★
+  //   「火山熔岩型 / 热带植被型 / 冰雪岩石型」这三个名字在源码里**只出现在注释**
+  //   （NetworkView.jsx:173-175、atlas.js:6-8，是设计草稿里的命名），
+  //   没有任何 UI 渲染它们。UI 实际渲染的是 derive.js 的
+  //   TYPES.{root,prefix,suffix}.label = 词根 / 前缀 / 后缀。
+  //   ⇒ 旧断言查的是注释里的草稿命名，永远不可能通过。
+  ok(
+    txt.includes('词根') && txt.includes('前缀') && txt.includes('后缀'),
+    '三大板块的类型名称各自可见（断言 derive.TYPES 的真实 label，不是注释里的草稿命名）',
+  )
 
   const paths = q('svg path').length
   ok(paths >= 600, `画出 ${paths} 条海岸线路径（一岛一形）`)
-  ok(q('svg line').length === 0, `群岛地图不画连线（${q('svg line').length} 条）`)
+  // ★ 这条原本断言 `q('svg line').length === 0` —— 恒真 ★
+  //   因为整个项目**刻意不画 <line>**（用 path 画航线与海岸），
+  //   所以「没有 <line>」这件事与「有没有连线」无关，是条**自我否定式**断言：
+  //   无论画没画连线它都通过。
+  //   改成数「群岛地图里的航线元素」—— 地图视图下应为 0（只有关系网才画航线）。
+  const mapLinks = q('[data-testid="relation-link"]').length
+  ok(mapLinks === 0, `群岛地图视图不画关系网航线（${mapLinks} 条）—— 这条现在真的会失败`)
   ok(!!byText('button', '＋') && !!byText('button', '－'), '地图有缩放控件（＋ / －）')
   ok(!!byText('button', '词根') && !!byText('button', '前缀') && !!byText('button', '后缀'), '工具栏有三大板块快捷导航')
 
@@ -807,17 +822,46 @@ export async function run() {
   // 重新取一次输入框：进出关系网会让 React 重挂载，早先拿到的引用已脱离 DOM
   const searchInput = q('input').find((i) => (i.getAttribute('placeholder') || '').includes('查找'))
   if (searchInput) {
-    // 关系连线只存在于近/反义词簇里的词（如 big↔large）；'spect' 系词无关系数据会得到 0 条线
-    typeInto(searchInput, 'big')
+    // ★ 词形的选择 ★
+    //   原注释说「关系连线只存在于近/反义词簇里的词（如 big↔large）」，但实测：
+    //     ① 下拉是**模糊匹配且只取前 8 项**，输入 big 时精确的 big 根本不在列表里
+    //        （实测下拉内容：ambiguity / ambiguous / bigamous / bigeminal / …）；
+    //     ② big 在关系数据里确实有 4 条近义 + 6 条反义，但**点不到它**。
+    //   ⇒ 改用 calm：实测 151 条关系（近义），且 4 字母的精确匹配稳定命中。
+    //   这不是「换一个能过的词」，而是「换一个**真的有关系**的词」——
+    //   断言的前提从「点开任意词」变成「点开一个确定有关系的词」。
+    const RELATION_PROBE = 'calm'
+    typeInto(searchInput, RELATION_PROBE)
     await flush(250)
     const dropdown = q('div').find((d) => (d.className || '').includes('z-30'))
     ok(!!dropdown, '输入后出现查找结果下拉')
-    const firstWordBtn = dropdown ? [...dropdown.querySelectorAll('button')][0] : null
+    // ★ 必须是「精确等于 big」的那一项，不是第一项 ★
+    //   QA 实测的根因之二：下拉是按词形字母序排的，输入 big 后第一项是
+    //   **bigamous**（不是 big），而 bigamous 没有任何近/反义关系
+    //   ⇒ 即便断言元素选对了，测的也不是「有关系的词」。
+    //   这与上一条（断言查 <line> 而实现是 <path>）是**两个独立的缺陷**，
+    //   任何一个单独修都不足以让这条断言有意义。
+    // ★ 必须精确匹配词形，不能取第一项 ★
+    //   第一项可能是同前缀的别的词（实测 big → bigamous，关系数为 0）。
+    const exactBtn = dropdown
+      ? [...dropdown.querySelectorAll('button')].find((b) =>
+          (b.textContent || '').trim().startsWith(RELATION_PROBE),
+        )
+      : null
+    const firstWordBtn = exactBtn || (dropdown ? [...dropdown.querySelectorAll('button')][0] : null)
+    ok(!!exactBtn, `下拉里有精确的「${RELATION_PROBE}」一项（不是同前缀词）`)
     if (firstWordBtn) {
       click(firstWordBtn)
       await flush(350)
       ok(!!byText('button', '返回群岛'), '点词后进入该词的关系网（出现「返回群岛」）')
-      ok(q('svg line').length > 0, `词关系网有连线（${q('svg line').length} 条）`)
+      // ★ 改成数 data-testid="relation-link"，不是 `q('svg line')` ★
+      //   QA 实测根因：FocusView 的航线**刻意用 <path> 而非 <line>**
+      //   （源码注释原文：「航线（用 path，保持"没有 <line>"的好习惯）」）
+      //   ⇒ 旧断言 `svg line > 0` 结构上**永远不可能为真**，是「编码了
+      //     从未实现过的行为」的断言。
+      //   也不能简单改成数 `svg path`：海岸线/浪花/航线全是 path，会假绿。
+      const links = q('[data-testid="relation-link"]').length
+      ok(links > 0, `词关系网有连线（${links} 条专属 testid，不是数 path）`)
       ok(document.body.textContent.includes('词素') || q('svg circle').length > 2, '关系网含词素/同源词节点')
     } else {
       ok(false, '查找下拉里没有可点的单词结果')
