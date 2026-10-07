@@ -133,6 +133,8 @@ export const KEYS = {
  * @property {string} drafts          wrc.drafts.v1:<scope>
  * @property {string} stationCurrent  wrc.station.current:<scope>
  * @property {string} userWordsCache  wrc.userwords.v1:<scope>
+ * @property {string} stationsCache    wrc.stations.v1:<scope>     （小站列表本地缓存）
+ * @property {string} stationWordsCache wrc.stationwords.v1:<scope>（各小站词条引用本地缓存）
  * @property {string} settings        wrc.settings.v2            （设备级，不分区）
  * @property {string} partition       wrc.partition.v1           （全局升级标记）
  * @property {string} draftsDiscarded wrc.drafts.discarded       （全局丢弃日志）
@@ -157,6 +159,10 @@ export function keysFor(scope) {
     drafts: `${STORAGE_PREFIX}drafts.v1${suffix}`,
     stationCurrent: `${STORAGE_PREFIX}station.current${suffix}`,
     userWordsCache: `${STORAGE_PREFIX}userwords.v1${suffix}`,
+    // 小站本地缓存（A-02 / A-06）：断网 + F5 时首帧就能读出小站与词条，
+    // 否则界面会显示「还没有小站」，用户以为被删了。
+    stationsCache: `${STORAGE_PREFIX}stations.v1${suffix}`,
+    stationWordsCache: `${STORAGE_PREFIX}stationwords.v1${suffix}`,
     // 设备级 / 全局键：跨账号共享（难度档、词族成组、自动朗读本就与账号无关）
     settings: KEYS.settings,
     partition: KEYS.partition,
@@ -182,7 +188,9 @@ export function isStorageKey(key) {
  * 该键变化时，是否要强制重载当前 scope 的内存态（切号可能已在别处发生）。
  *
  * 覆盖：分区 learn 键（另一个标签写了别的 scope 的进度）、cloudMigration 标记、
- * 设备级设置键。**故意不包括** drafts：草稿入队 / 补传只影响计数，
+ * 设备级设置键，以及**小站与词条缓存键**（多标签页在别处登录了另一个账号时，
+ * 本标签的内存态必须重读缓存，否则 A 的小站会挂在 B 的界面上）。
+ * **故意不包括** drafts：草稿入队 / 补传只影响计数，
  * 由 onPendingChange 通知即可，没必要整表重载。
  *
  * @param {string} key
@@ -203,6 +211,10 @@ export function affectsLocalScope(key) {
     family === base(k.prefs) ||
     family === base(k.cloudMigration) ||
     family === base(k.migration) ||
+    // 小站缓存：漏掉这两条的症状是「另一个标签切了号，本标签还显示旧小站」——
+    // 而小站里可能有几百个词条，用户会以为词被删了。
+    family === base(k.stationsCache) ||
+    family === base(k.stationWordsCache) ||
     // 设备级 / 全局键本来就没有后缀，base 是恒等变换
     family === k.settings ||
     // 冻结的 v1 源与备份：另一个标签重跑迁移时会写备份，此时本标签应重读。
@@ -658,4 +670,259 @@ export function clearMigration(scope = GUEST_SCOPE) {
   const keys = keysFor(scope)
   removeKey(keys.learn)
   removeKey(keys.migration)
+}
+
+// ---------------------------------------------------------------- 小站本地缓存
+//
+// ★ 这两个键里的一切都可以随时丢弃 —— 它们**不是数据源**，只是「断网首帧」的加速器。
+//   读不中就回落到网络请求；写不进就静默跳过。这条定位是下面所有写失败路径
+//   都能静默的根本理由：缓存写失败绝不能影响内存态、UI 与学习记录。
+//
+// ★ 缓存形状直接存 API 的行对象（stationsApi.stationFromRow /
+//   stationWordsApi.stationWordFromRow 的输出），零转换 —— 任何转换都是一处
+//   可能与云端漂移的副本。
+
+/**
+ * 缓存里最多保留几个小站的词条条目（按 savedAt 做 LRU）。
+ *
+ * ★ 为什么必须有这个上限 ★
+ *   `byStation` 是一个**只增不减**的 map：用户建站 → 加词 → 删站，只要曾经
+ *   缓存过，那个条目就会一直留在键里。这正是 localStorage 配额的「慢漏」——
+ *   不报错、不显眼，直到某天学习记录写不进去，而那时没人会想到是小站缓存干的。
+ *   A-07 刚修好的正是同一个配额问题，这里不能换个地方再犯一次。
+ */
+const MAX_CACHED_STATIONS = 10
+
+/**
+ * 序列化后的体积上限（两个键各自独立计算）。超限则**拒写**（返回 false）。
+ *
+ * 取 256KB 的依据：一行 station_word 引用约 100B，500 词的小站约 50KB，
+ * 10 站满配接近 learn 分区的量级。宁可少缓存几个站，也不能挤掉学习进度。
+ */
+const MAX_CACHE_BYTES = 256 * 1024
+
+/** 读一个缓存键的原始载荷；结构异常一律回落 null（绝不抛错） */
+function readCacheRaw(scope, keyName) {
+  if (!hasStorage()) return null
+  const raw = readJSON(keysFor(scope)[keyName], null)
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null
+  return raw
+}
+
+/**
+ * 序列化后是否超过体积护栏。
+ * @param {object} payload
+ * @returns {boolean} true = 超限（应拒写）
+ */
+function exceedsCacheBudget(payload) {
+  try {
+    return JSON.stringify(payload).length > MAX_CACHE_BYTES
+  } catch {
+    // 序列化不了（循环引用等）→ 视为超限，静默拒写
+    return true
+  }
+}
+
+// ---------------------------------------------------------------- 小站列表缓存
+
+/**
+ * 读小站列表缓存（断网时首帧用，避免界面显示「还没有小站」）。
+ * @param {string} [scope]
+ * @returns {{ stations: object[], savedAt: string|null }}
+ */
+export function readStationsCache(scope = GUEST_SCOPE) {
+  const raw = readCacheRaw(scope, 'stationsCache')
+  if (!raw) return { stations: [], savedAt: null }
+  const stations = Array.isArray(raw.stations)
+    ? raw.stations.filter((s) => s && typeof s === 'object' && typeof s.id === 'string')
+    : []
+  return {
+    stations,
+    savedAt: typeof raw.savedAt === 'string' ? raw.savedAt : null,
+  }
+}
+
+/**
+ * 写小站列表缓存（**只在 refresh() 成功后调**）。
+ *
+ * ★ 写失败返回 false 而不抛错：缓存不是数据源，主流程不该因为它崩。
+ *
+ * @param {object[]} stations stationsApi.stationFromRow 的形状
+ * @param {string} [scope]
+ * @returns {boolean} false = 无存储 / 被体积护栏拒写 / setItem 抛错
+ */
+export function writeStationsCache(stations, scope = GUEST_SCOPE) {
+  if (!hasStorage()) return false
+  const payload = {
+    v: 1,
+    savedAt: new Date().toISOString(),
+    stations: Array.isArray(stations) ? stations : [],
+  }
+  if (exceedsCacheBudget(payload)) return false
+  try {
+    writeJSON(keysFor(scope).stationsCache, payload)
+    return true
+  } catch {
+    return false
+  }
+}
+
+// ---------------------------------------------------------------- 小站词条缓存
+
+/**
+ * 归一化 byStation：剔掉结构异常与体积异常（savedAt 缺失）的条目 */
+function normalizeByStation(raw) {
+  const out = {}
+  if (!raw || typeof raw.byStation !== 'object' || raw.byStation === null || Array.isArray(raw.byStation)) {
+    return out
+  }
+  Object.keys(raw.byStation).forEach((id) => {
+    const entry = raw.byStation[id]
+    if (!entry || typeof entry !== 'object') return
+    if (!Array.isArray(entry.refs)) return
+    out[id] = {
+      savedAt: typeof entry.savedAt === 'string' ? entry.savedAt : null,
+      seq: Number.isFinite(entry.seq) ? entry.seq : 0,
+      refs: entry.refs.filter((r) => r && typeof r === 'object' && typeof r.wordKey === 'string'),
+    }
+  })
+  return out
+}
+
+/**
+ * 同毫秒写入的次序判据（LRU 的兜底 tiebreaker）。
+ *
+ * ★ 为什么需要它（这是缺陷注入实测出来的，不是预想的）★
+ *   `new Date().toISOString()` 只有毫秒精度，而「连着刷新几个小站」完全可能
+ *   在同一毫秒内写两次。只按 savedAt 排序时，**同一毫秒内的先后关系会退化成
+ *   「按 stationId 字典序」** —— 于是「刚写过的那个站」可能被当成最旧的丢掉，
+ *   症状是「刚在小站 A 加完词，切走再切回来，离线就读不到了」。
+ *
+ *   这个计数器只在**本次会话内**用于打破平局。刷新页面后它从 0 重来，此时靠
+ *   savedAt 本身的差值决定（毫秒精度足够 —— 两次会话内的写入必然相隔 > 1ms），
+ *   仍平局才退到 id 字典序，而那仍是确定性的（不会每次排序结果都不同）。
+ */
+let writeSeq = 0
+
+/**
+ * 按 LRU 裁剪，只保留最近 MAX_CACHED_STATIONS 个小站条目。
+ * @param {Record<string, {savedAt: string|null, seq: number, refs: object[]}>} byStation
+ * @returns {Record<string, {savedAt: string|null, seq: number, refs: object[]}>}
+ */
+function lruTrim(byStation) {
+  const ids = Object.keys(byStation)
+  if (ids.length <= MAX_CACHED_STATIONS) return byStation
+  // savedAt 缺失的视为最旧（排到前面先被丢）；同刻再用 seq，最后才用 id
+  const sorted = ids.slice().sort((a, b) => {
+    const ta = typeof byStation[a].savedAt === 'string' ? Date.parse(byStation[a].savedAt) : 0
+    const tb = typeof byStation[b].savedAt === 'string' ? Date.parse(byStation[b].savedAt) : 0
+    if (ta !== tb) return ta - tb
+    const sa = Number.isFinite(byStation[a].seq) ? byStation[a].seq : 0
+    const sb = Number.isFinite(byStation[b].seq) ? byStation[b].seq : 0
+    if (sa !== sb) return sa - sb
+    return a < b ? -1 : a > b ? 1 : 0
+  })
+  const keep = new Set(sorted.slice(sorted.length - MAX_CACHED_STATIONS))
+  const out = {}
+  ids.forEach((id) => {
+    if (keep.has(id)) out[id] = byStation[id]
+  })
+  return out
+}
+
+/**
+ * 读某个小站的词条引用缓存（断网 + F5 时首帧用）。
+ *
+ * ★ 为什么是 map 而不是单槽：红线是「断网必须仍可查看小站」（复数）。单槽只能
+ *   记住最后看过的那个小站，切到别的站就空了 —— map 才能让「离线切小站」也出内容。
+ *
+ * @param {string} stationId
+ * @param {string} [scope]
+ * @returns {{ refs: object[], savedAt: string|null }}
+ */
+export function readStationRefs(stationId, scope = GUEST_SCOPE) {
+  if (!stationId) return { refs: [], savedAt: null }
+  const raw = readCacheRaw(scope, 'stationWordsCache')
+  if (!raw) return { refs: [], savedAt: null }
+  const entry = normalizeByStation(raw)[stationId]
+  if (!entry) return { refs: [], savedAt: null }
+  return { refs: entry.refs, savedAt: entry.savedAt }
+}
+
+/**
+ * 写某个小站的词条引用缓存（**只在 refresh() 成功后调**）。
+ *
+ * ★ 写入侧纪律（U3）★
+ *   这个键绝不能在批量操作的循环里被写（哪怕每批都更新内存态）——
+ *   那会让另一个标签页的 storage 监听被高频触发、反复重载。
+ *
+ * @param {string} stationId
+ * @param {object[]} refs stationWordsApi.stationWordFromRow 的形状
+ * @param {string} [scope]
+ * @returns {boolean} false = 被 LRU / 体积护栏拒写，或 setItem 抛错
+ */
+export function writeStationRefs(stationId, refs, scope = GUEST_SCOPE) {
+  if (!hasStorage()) return false
+  if (!stationId) return false
+  const raw = readCacheRaw(scope, 'stationWordsCache')
+  const byStation = lruTrim(
+    Object.assign(normalizeByStation(raw), {
+      [stationId]: {
+        savedAt: new Date().toISOString(),
+        seq: (writeSeq += 1),
+        refs: Array.isArray(refs) ? refs : [],
+      },
+    }),
+  )
+  const payload = { v: 1, savedAt: new Date().toISOString(), byStation }
+  if (exceedsCacheBudget(payload)) return false
+  try {
+    writeJSON(keysFor(scope).stationWordsCache, payload)
+    return true
+  } catch {
+    return false
+  }
+}
+
+/**
+ * 清掉某个小站的词条缓存条目（删站时调用）。
+ *
+ * ★ 为什么删站要顺手清这一条（Q8）★
+ *   1. 正确性：删站后 currentId 会落到另一个小站，若那个站有缓存条目，
+ *      切过去首帧就是对的，不会出现「刚删完还显示」的错位；
+ *   2. 配额：这是**唯一成本近似为零的回收点** —— byStation 只增不减，
+ *      「建站→删站」反复循环会无界增长，而 localStorage 配额正是 A-07 要保护的
+ *      同一个资源。
+ *
+ * @param {string} stationId
+ * @param {string} [scope]
+ */
+export function dropStationRefs(stationId, scope = GUEST_SCOPE) {
+  if (!hasStorage() || !stationId) return
+  const raw = readCacheRaw(scope, 'stationWordsCache')
+  if (!raw) return
+  const byStation = normalizeByStation(raw)
+  if (!(stationId in byStation)) return
+  delete byStation[stationId]
+  try {
+    writeJSON(keysFor(scope).stationWordsCache, {
+      v: 1,
+      savedAt: new Date().toISOString(),
+      byStation,
+    })
+  } catch {
+    /* 清不掉也不影响任何流程：缓存不是数据源 */
+  }
+}
+
+/**
+ * 清空全部小站词条缓存（「清空标注」等场景）。
+ *
+ * ★ 边界：只碰这个缓存键。learn 分区与草稿队列一律不触碰 ——
+ *   「清缓存」绝不能变成「清学习进度」。
+ *
+ * @param {string} [scope]
+ */
+export function dropAllStationRefs(scope = GUEST_SCOPE) {
+  removeKey(keysFor(scope).stationWordsCache)
 }
