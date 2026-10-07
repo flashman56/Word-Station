@@ -26,6 +26,11 @@ import StatusPill, { StatusLegend } from './StatusPill.jsx'
  *   行内徽标与学习页看到的状态、以及这里的复习队列，都来自同一个 `records`，
  *   所以「小站复习」和「学习复习」不是两套进度 —— 到期后两边都会出现该词。
  *
+ * ★ 离线草稿投影（A-06）★
+ *   `pending` 是「已入草稿队列、还没上云」的词。它们的操作按钮**全部 disabled** ——
+ *   标记状态会与草稿补传顺序产生竞态（草稿可能先于标记补传，于是标记落在一个
+ *   还没进小站的词上）。而且**不计入 counts.total**（否则离线时「共 128 词」虚高）。
+ *
  * props:
  *   words       小站词条（统一视图对象，wordKey 即记录 key）
  *   morphemes   词素表（词族成组用）
@@ -34,7 +39,11 @@ import StatusPill, { StatusLegend } from './StatusPill.jsx'
  *   markKnown   (wordKey) => void
  *   setReview   (wordKey) => void   —— 行内「加入待复习」
  *   retreat     (wordKey) => void   —— 行内「退回复习」
+ *   removeWord  (wordKey) => Promise<boolean> —— 「移出小站」（B-01）
+ *   online      是否在线（离线时禁用「移出小站」；Q1 已定：不做离线删除队列）
  *   ownerId     当前账号（B-6：UserWordEditor 需要真实 ownerId 才能保存）
+ *   pending     离线草稿投影行（默认 []）
+ *   onRetrySync 立即重试补传（→ learn.flush()）
  *   onRefresh   小站词条刷新回调
  */
 export default function StationLearn({
@@ -45,7 +54,11 @@ export default function StationLearn({
   markKnown,
   setReview,
   retreat,
+  removeWord,
+  online = true,
   ownerId = null,
+  pending = EMPTY_PENDING,
+  onRetrySync,
   onRefresh,
 }) {
   const [band, setBand] = useState('all')
@@ -56,6 +69,7 @@ export default function StationLearn({
   const activeBand = useMemo(() => normalizeBand(band), [band])
   const list = words || []
   const recs = records || {}
+  const pendingList = pending || EMPTY_PENDING
 
   /** 该词的记录（wordKey 与 word.id 天然对齐，无需再算） */
   const recordOf = useMemo(() => (w) => recs[w.id] || recs[w.wordKey], [recs])
@@ -154,6 +168,42 @@ export default function StationLearn({
               {/* B-7：行内有了状态色块后，「颜色代表什么」就成了新问题 —— 补三色图例 */}
               <StatusLegend className="ml-auto" />
             </div>
+
+            {/* ★ A-06：离线草稿投影 ★
+                单独一块、单独计数，不混进上面的「共 N 词」—— 混进去会让离线时
+                「共 128 词」虚高，而那 20 个词其实还没上云。 */}
+            {pendingList.length > 0 && (
+              <div className="px-3 py-2 bg-amber-50/60 border-b border-amber-100">
+                <div className="flex items-center gap-2 text-xs text-amber-800 mb-1">
+                  <span>
+                    {pendingList.length} 个词待上传（联网后自动加入本小站）
+                  </span>
+                  {onRetrySync && (
+                    <button
+                      onClick={onRetrySync}
+                      className="px-1.5 py-0.5 rounded border border-amber-300 text-amber-700 hover:bg-white"
+                    >
+                      立即重试
+                    </button>
+                  )}
+                </div>
+                <div className="max-h-32 overflow-auto divide-y divide-amber-100">
+                  {pendingList.map((w) => (
+                    <div
+                      key={w.wordKey}
+                      className="flex items-center gap-2 px-1 py-1 text-sm text-slate-500 italic"
+                      title="还没上传到云端，联网后会自动补传"
+                    >
+                      <span className="truncate">{w.form}</span>
+                      {w.pos && <span className="text-xs text-slate-400">{w.pos}</span>}
+                      {w.gloss && <span className="text-xs text-slate-400 truncate">{w.gloss}</span>}
+                      <span className="ml-auto text-[11px] text-amber-700 shrink-0">待上传</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="max-h-72 overflow-auto divide-y divide-slate-100">
               {list.length === 0 && (
                 <div className="px-3 py-6 text-center text-sm text-slate-400">
@@ -234,13 +284,21 @@ export default function StationLearn({
  *
  * 规格沿用本文件既有的「私有」标签（px-1.5 py-0.5 rounded border text-[11px]），
  * 不引入新的设计语言。
+ *
+ * @param disabled 时按钮禁用（离线态的「移出小站」用）—— 且**必须**由调用方
+ *   同时给出 title 说明原因，否则用户只看到一个点不动的按钮。
  */
-function GhostBtn({ onClick, title, children }) {
+function GhostBtn({ onClick, title, children, disabled = false, danger = false }) {
   return (
     <button
       onClick={onClick}
       title={title}
-      className="px-1.5 py-0.5 rounded border border-slate-300 text-slate-500 hover:bg-slate-50 text-[11px]"
+      disabled={disabled}
+      className={`px-1.5 py-0.5 rounded border text-[11px] disabled:opacity-50 disabled:hover:bg-transparent ${
+        danger
+          ? 'border-slate-300 text-slate-500 hover:border-red-300 hover:text-red-600 hover:bg-slate-50'
+          : 'border-slate-300 text-slate-500 hover:bg-slate-50'
+      }`}
     >
       {children}
     </button>
@@ -248,3 +306,6 @@ function GhostBtn({ onClick, title, children }) {
 }
 
 export { GhostBtn }
+
+/** 空数组哨兵：默认参数里的字面量 [] 每次渲染都是新身份，会让下游 memo 失效 */
+const EMPTY_PENDING = []
