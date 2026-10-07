@@ -230,12 +230,26 @@ export default function AddToStationMenu({
             {[...stations]
               .sort((a, b) => Number(Boolean(b.pinned)) - Number(Boolean(a.pinned)))
               .map((s) => {
-                const inHere = isMulti ? false : existing.has(keys[0])
+                /* ★ C-04：判据必须**同时**满足三件事 ★
+                   ① 批量时不标（批量里可能有词已在、也可能有不在，逐词不同）；
+                   ② **必须限定 s.id === currentStationId** ——
+                      existing 是「当前小站已有的 wordKey 集合」（App 传的是
+                      stationWords.refs），它对**别的**小站根本不成立。
+                      少了这一条，词只要在当前小站里，**每个**小站都显示「✓ 已在」
+                      （QA 实测：2 个站全标），用户会以为别的站也有了、也不敢点；
+                   ③ 该词确实在 currentStation 的 refs 里。
+                   ①②③ 同时成立才标「✓ 已在」且**禁点**（PRD C-04 / US-C3）。 */
+                const inHere = !isMulti && s.id === currentStationId && existing.has(keys[0])
                 return (
                   <button
                     key={s.id}
                     onClick={() => doAdd(s)}
-                    disabled={busy}
+                    /* ★ 已「✓ 已在」的那项**不可点** ★
+                       不禁的话用户点了只拿到「已在小站中，已跳过」——
+                       而重复添加是被 DB 的 ignoreDuplicates **静默跳过**的，
+                       也就是说请求发出去了、什么反馈都没有。
+                       禁掉是唯一能让「已在」这个标记真正生效的做法。 */
+                    disabled={busy || inHere}
                     className="w-full text-left px-2 py-1.5 hover:bg-blue-50 flex items-center gap-2 disabled:opacity-50"
                   >
                     <span className={s.pinned ? 'text-amber-600' : ''}>{s.pinned ? '📌' : '·'}</span>
