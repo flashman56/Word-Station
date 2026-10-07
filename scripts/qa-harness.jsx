@@ -819,6 +819,51 @@ export async function run() {
     ok(false, '没有可点击的小岛')
   }
 
+  // ==== K6：搜索「精确匹配置顶」（主链路 48.6% 失败的回归）====
+  //
+  // ★ 为什么这条断言必须存在 ★
+  //   NetworkView 的下拉对单词只取前 8 条。修好之前是「过滤完直接 slice」，
+  //   而词库不是严格字母序 ⇒ 用户输入的词常常排在第 9 位之后
+  //   ⇒ 搜了、看到下拉、**选不到自己输入的词**。
+  //   实测（均匀抽样 500 词形，命中 > 8 的 35 个里 17 个选不到 = 48.6%）：
+  //     搜 hi → 命中 2012 个，hi 排第 **613** 位（前 8 是 graphic/philosophy/…）
+  //   ⇒ 触发条件是「命中数 > 上限」，与词频/字母序都无关。
+  //
+  // ★ 这条断言与上面「关系网」那段用同一个输入框，所以必须重新取一次 ★
+  {
+    const k6Input = q('input').find((i) => (i.getAttribute('placeholder') || '').includes('查找'))
+    ok(!!k6Input, '前置：找到查找输入框')
+    if (k6Input) {
+      typeInto(k6Input, 'hi')
+      await flush(300)
+      const k6dd = q('div').find((d) => (d.className || '').includes('z-30'))
+      ok(!!k6dd, 'K6：输入 hi ���出现下拉')
+      if (k6dd) {
+        const k6btns = [...k6dd.querySelectorAll('button')]
+        // ★ 取**词形**而不是整段 textContent ★
+        //   精确匹配那一项渲染成「★hi嗨；你好」（★ 是我加的精确标记，
+        //   后面跟着 gloss），所以必须取第一个 span 的文本。
+        //   ⇒ 这也是「先实现、再写断言」的一个例子：我第一版直接比 textContent，
+        //     结果把自己的 UI 标记算进了词形里。
+        const k6labels = k6btns.map((b) => {
+          const span = b.querySelector('span')
+          return (span ? span.textContent : b.textContent || '').replace(/^★/, '').trim()
+        })
+        ok(k6btns.length > 0, `K6：下拉有 ${k6btns.length} 项`)
+        ok(k6labels[0] === 'hi', `★★ K6：精确匹配的「hi」排首项（实际首项 = ${JSON.stringify(k6labels[0])}）—— 修好前它排第 613 位`)
+        // ★ 且前 8 项里确实只有它精确匹配（防止「碰巧首项是别的词」）
+        const exactCount = k6labels.filter((t) => t === 'hi').length
+        ok(exactCount === 1, `★ 前 8 项里「hi」恰好出现 1 次（实际 ${exactCount} 次）`)
+        // ★ 总数提示：截断时必须诚实告知（否则用户以为「只有这些」）
+        const headerText = (k6dd.textContent || '')
+        ok(
+          headerText.includes('2012') || headerText.includes('共'),
+          '★ 下拉头告知了「精确匹配已置顶，共 N 个」—— 截断时诚实告知总数',
+        )
+      }
+    }
+  }
+
   // 重新取一次输入框：进出关系网会让 React 重挂载，早先拿到的引用已脱离 DOM
   const searchInput = q('input').find((i) => (i.getAttribute('placeholder') || '').includes('查找'))
   if (searchInput) {

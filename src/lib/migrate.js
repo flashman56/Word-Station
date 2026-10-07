@@ -696,8 +696,17 @@ const MAX_CACHED_STATIONS = 10
 /**
  * 序列化后的体积上限（两个键各自独立计算）。超限则**拒写**（返回 false）。
  *
- * 取 256KB 的依据：一行 station_word 引用约 100B，500 词的小站约 50KB，
- * 10 站满配接近 learn 分区的量级。宁可少缓存几个站，也不能挤掉学习进度。
+ * 取 256KB 的依据（★ 数字已按 T06 列裁剪后的实测更新 ★）：
+ *   裁剪后单条 **17 B（短词）/ 36 B（长词 `w.internationalization`）**，
+ *   500 词的小站约 8.3~17.6 KB，10 站满配约 83~175.8 KB
+ *   ⇒ 256KB 能存 14~30 站，而 MAX_CACHED_STATIONS 只有 10
+ *   ⇒ **这条护栏在正常路径上永不触发**，它退化为纯兜底。
+ *
+ * 裁剪前是 299.7 B/条 ⇒ 10 站满配 1463 KB ⇒ 护栏在**第 2 个站就拒写**，
+ * 而拒写是**静默**的（返回 false、不抛错），症状是「离线读不到自己的站」。
+ * 这就是下面 `projectRef` 必须**内置在写入器里**的原因。
+ *
+ * 宁可少缓存几个站，也不能挤掉学习进度。
  */
 const MAX_CACHE_BYTES = 256 * 1024
 
@@ -861,16 +870,82 @@ export function readStationRefs(stationId, scope = GUEST_SCOPE) {
  * @param {string} [scope]
  * @returns {boolean} false = 被 LRU / 体积护栏拒写，或 setItem 抛错
  */
+/**
+ * ★★ 缓存投影：落盘前把引用行裁到只剩 wordKey ★★
+ *
+ * ★★ 为什么必须内置在**写入器**里，而不是靠每个调用方自觉 ★★
+ *   这是 T06 返工的直接原因：防线原本建在调用方
+ *   （`useStationWords.js` 里的 `list.map(pickCacheRef)`）——
+ *   而 QA 的脚本无意中扮演了「第二个调用方」，**原样传入 8 字段行**，
+ *   照出来一个静默故障：写进缓存的是 8 字段（299.7 B/条）⇒ 10 站满配 1463 KB
+ *   ⇒ 护栏在第 2 个站**静默拒写**（返回 false、不抛错、无日志）
+ *   ⇒ 症状是「**离线读不到自己的站**」，直接违反红线 6。
+ *
+ *   ⇒ **防线必须落在写入器内部**。调用方仍然可以传全字段（本函数会裁），
+ *   也可以传已裁剪的（幂等，裁完还是只有 wordKey）。
+ *
+ * ★ 为什么只留 wordKey（实测省 91.3%）★
+ *   消费点只用 wordKey：`useStationWords` 的 noteByKey / isUserKey 分流 /
+ *   排序 / synced 去重，以及 App.jsx 的 existingKeys。
+ *
+ * ★★ 为什么连 `source` 也裁（这条最容易被人当成漏了字段）★★
+ *   `source` 与 wordKey 的前缀是**同一信息的两份副本**：
+ *     · 落盘侧的 `r.source` 来自 `stationWordFromRow`，是 DB 的列；
+ *     · 消费侧分流用的是 `isUserKey(r.wordKey)`（即 `startsWith('u.')`），
+ *       **从不读 `r.source`**；
+ *     · 而 UI 上的 `words[].source` 是**硬编码**的（public 分支写 'public'、
+ *       user 分支由 `toUserWordView` 写 'user'）—— 根本不来自 refs。
+ *   ⇒ 保留它就是保留一个「看着有用但没人读」的 5.9%。
+ *   ⚠️ 与 `note` 不同：`note` 至少还有「K5 接 UI 后要走 refresh」这条解释链，
+ *     `source` 没有 —— 将来若有人在缓存里找不到 source，会误以为是漏了字段
+ *     而「补」回去，白白多付 5.9%。补回来只需改这一行 + 补一条测试。
+ *
+ * ★ `note` 为什么也裁（对照）★
+ *   PRD §8-3 / B-08：站内笔记本期不做（无入口、无展示）；实测所有写入路径的
+ *   note 恒为 null（`addToStation` 构造的 item 是 `{wordKey, source}`）。
+ *   ⚠️ K5 接 UI 时**必须走 `refresh()`（云端），不得读缓存** ——
+ *     这是「缓存不是数据源」这条纪律的具体化。
+ *
+ * ★ 向后兼容（实测，scripts/test-cache-compat.mjs）★
+ *   · 读侧 `normalizeByStation` 的过滤条件只要求 `typeof r.wordKey === 'string'`
+ *     ⇒ 新代码读**旧缓存**（8 字段）行不丢、消费点全部成立；
+ *   · 旧代码读**新缓存**（1 字段）不崩：`noteByKey` 的 `?? null` 把 undefined
+ *     兜成 null，`isUserKey` 分流与 `existingKeys` 不受影响；
+ *   · 新旧混存在同一站也正常（升级瞬间的真实状态）。
+ *   ⇒ **不需要迁移、不需要作废旧缓存**。
+ *   ⚠️ 这个结论依赖「读侧过滤只要求 wordKey 是字符串」这个**不变量**：
+ *     若将来给缓存加版本门槛（如 `if (raw.v !== 2) return []`），
+ *     必须同步处理旧形状，否则会**静默作废所有用户的离线缓存**。
+ *
+ * @param {object} r stationWordsApi.stationWordFromRow 的输出
+ * @returns {{wordKey: string}} 落盘用的最小投影
+ */
+export function projectRef(r) {
+  return { wordKey: r && r.wordKey }
+}
+
+/**
+ * 写入一个小站的词条引用缓存。
+ *
+ * ★ refs 会被 `projectRef` 裁到只剩 wordKey ★
+ *   传全字段是安全的（会被裁）；传已裁剪的也是（幂等）。
+ *   调用方的显式投影只作文档用途，**不是防线** —— 见 projectRef 的注释。
+ *
+ * @returns {boolean} 是否写成功。**false = 超限拒写或存储不可用**（不抛错，
+ *   旧值保持完好）—— 调用方可以选择提示，但绝不应当作「已缓存」。
+ */
 export function writeStationRefs(stationId, refs, scope = GUEST_SCOPE) {
   if (!hasStorage()) return false
   if (!stationId) return false
   const raw = readCacheRaw(scope, 'stationWordsCache')
+  // ★★★ 防线在这里：任何调用方传进来的行都会被裁 ★★★
+  const projected = (Array.isArray(refs) ? refs : []).map(projectRef)
   const byStation = lruTrim(
     Object.assign(normalizeByStation(raw), {
       [stationId]: {
         savedAt: new Date().toISOString(),
         seq: (writeSeq += 1),
-        refs: Array.isArray(refs) ? refs : [],
+        refs: projected,
       },
     }),
   )
