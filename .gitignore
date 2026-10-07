@@ -18,3 +18,7 @@ scripts/.ecdict/
 
 # Wrangler 本地开发缓存（不应入库）
 .wrangler/
+
+# e2e / 探针的 esbuild 临时产物
+scripts/.qa-bundle.mjs
+scripts/.a12-bundle.mjs
