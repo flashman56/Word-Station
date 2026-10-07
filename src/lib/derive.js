@@ -52,49 +52,13 @@ export const FREQ_BANDS = [
 export const AUTO_KNOWN_RANK = 2500
 
 /**
- * 词库分母常量（**仅作空态兜底**）。
+ * 词库分母（进度条用 known / STATS_SCOPE，三态之和恒等于它）。
  *
- * ★ 语义已随屈折归并（Step-2）收敛 ★
- *   学习页进度条的分母实际取 `stats.total`（= 折叠后的**学习单元数**，动态：
- *   词库总量 − 被折叠形数），而**不是**这个常量。理由：被折叠的屈折形不再是
- *   独立学习单元，若分母仍用词库总量，进度条永远到不了头。
- *   因此「三态之和恒等于它」这句话**只对空态成立**（无数据时 stats.total 为 0，
- *   组件回落 STATS_SCOPE 显示 0%）——勿据此常量做任何一致性断言。
- *
- * 为什么仍保留常量而不是删掉：算「词库总量」要 import 全量词库（28MB）会拖进首屏
- * bundle；空态又需要一个非 0 分母避免除零。词库扩容时改这一个数字即可
- * （scripts/split-data.mjs 的输出里有准确词数）。需要精确值时可用可注入版本：setStatsScope(n)。
- *
- * 变更记录：
- *   64825 → 64723：清理了 102 条「自认错词」的垃圾词条
- *     （evemhing / iong / ieast / ge / ieft / lnspector / ofhere / ionger /
- *     commited 等，释义里写着「拼写有误」「疑为 X」）。
- *   64723 → 64699：清理 24 条高置信垃圾词条（保守策略，绝不误删 ECDICT 已收录词）：
- *     3 条 AI 杜撰占位/乱凑词（words-extra.js：extraviv / chronologyof / misterr）；
- *     21 条清晰错拼且正确词已在库内的词条（words-mono-seed.js：carefull / wory /
- *     arert / iive / faii / iooked / beeplng / lnternet / riend / beastiality /
- *     voyuer / masterbating / masterbation / lmagine / iife / rember / couid /
- *     lnternational / embarassing / colord / ioved）。同时从 synants-mono-seed.js
- *     移除 10 对引用了已删错拼词的近/反义对。
- * 精确值校验：scripts/test-learning.mjs 断言 STATS_SCOPE === 全库唯一 id 数。
+ * 为什么是常量而不是从词表算：算它要 import 全量词库，会把 28MB 拖进首屏 bundle。
+ * 词库扩容时改这一个数字即可（scripts/split-data.mjs 的输出里有准确词数）。
+ * 需要精确值时可用可注入版本：setStatsScope(n)。
  */
-export const STATS_SCOPE = 64699
-
-/**
- * 词汇量预测纳入私有词的上限（B-8 护栏）。
- *
- * 为什么需要：estimateVocabulary 按 freqRank 分档，而私有词的 freqRank 多为
- * `null`，会被 bandIndexOf 归到**最后一档**（60000~∞），既进 libraryN 又进
- * studiedN。5 个私有词是噪声（末档约 2 万词，且尾档通常被 cutoff=0.25 截断不计）；
- * 但私有词上千时会实打实抬高尾档 knownP → 吹大估值。
- *
- * 这是**护栏**，不是口径变更：`statusSource !== 'migration'` 判别式、
- * minSample / minBands / cutoff / PAVA 全部不动（vocab.js 零改动）。
- *
- * ★ 阈值不暴露给用户 ★：UI 只说「私有词较多，词汇量估算暂不含私有词」，
- *   不说「因为超过 500 个」—— 那是实现细节，用户改不了、也不需要知道。
- */
-export const MAX_VOCAB_PRIVATE_WORDS = 500
+export const STATS_SCOPE = 64825
 
 let injectedScope = null
 
@@ -161,54 +125,6 @@ export function recordOf(word, records = {}) {
 // ---------------------------------------------------------------- 索引构建
 
 /**
- * 「这个词有没有构词拆解」——**全站唯一判据**。
- * ------------------------------------------------------------------
- * ★ 为什么不能用 `word.morphless` ★
- *   `morphless: true` 是**数据层的「我承认没拆解」声明**，不是 UI 的显示开关。
- *   remorph 补丁（scripts/resegment-morphs.mjs）给 morphless 词补上了 morphs/chain，
- *   但为了不破坏 validate-data.mjs 的硬约束（morphs 为空必须显式标记 morphless:true）
- *   必须**保留** morphless:true —— 于是数据说「有拆解」、标记说「无拆解」，
- *   而 UI 判的是标记，结果 2244 条补丁一条都没生效（点开全是空面板）。
- *   判据改成「chain 是否有内容」后，数据与 UI 才自洽。
- *
- * 全量实测（64699 词）：`chain.length > 0` ⟺ `morphs` 非空且非 x.unk 占位，
- * 两种写法零分歧，所以这里取语义更直接的 chain。
- *
- * @param {object} word 词条（公共词或私有词视图对象）
- * @returns {boolean} 有可展示的构词拆解
- */
-export function hasDecomposition(word) {
-  return Boolean(word && Array.isArray(word.chain) && word.chain.length > 0)
-}
-
-/**
- * 「无词素」词条的类型标签 —— **只读展示**，供 UI 在无拆解时补一行说明。
- * ------------------------------------------------------------------
- * ★ 与 hasDecomposition **同源** ★
- *   二者共同构成「无词素」语义的两半：hasDecomposition 回答「有没有拆解」，
- *   本函数回答「既然没有，它属于哪类词」。任何需要「无词素 · X」文案的 UI
- *   面（WordDetail、StudyCard …）都必须调用本函数，不得各自内联三元 ——
- *   两个 UI 面各写一份映射迟早漂移（一处改了词另一处没改），用户就会在
- *   学习卡和词云里看到同一个词被叫成两种类型。收敛到一处正是为此。
- *
- * ★ 映射口径（与 WordDetail 原内联三元逐字符串一致，纯提取、零行为变更）★
- *   mono   → '单纯词'   （单语素，无词缀可拆）
- *   loan   → '外来词'   （整体借入，内部无构词层级）
- *   proper → '专有名词' （地名/人名等，不作构词切分）
- *   其余   → '固定搭配' （含 phrase / user / 历史 undefined 等一切兜底）
- *
- * @param {object} word 词条（公共词或私有词视图对象）
- * @returns {string} 无词素词的类型标签
- */
-export function morphlessKindLabel(word) {
-  const kind = word && word.kind
-  if (kind === 'mono') return '单纯词'
-  if (kind === 'loan') return '外来词'
-  if (kind === 'proper') return '专有名词'
-  return '固定搭配'
-}
-
-/**
  * 建索引：词素 id -> 词素；词素 id -> 其下单词数组；单词 id -> 单词。
  * 一个单词可以挂在多个词素下（网状结构的关键）。
  */
@@ -219,12 +135,9 @@ export function buildIndex(morphemes, words) {
   const wordsByMorph = new Map()
   morphemes.forEach((m) => wordsByMorph.set(m.id, []))
   words.forEach((w) => {
-    if (!Array.isArray(w.morphs)) return
     w.morphs.forEach((mid) => {
       const bucket = wordsByMorph.get(mid)
-      // 防御：出现未知/悬挂词素 id 时跳过，绝不抛错（合并补丁已按词素表过滤）
-      if (!bucket) return
-      bucket.push(w)
+      if (bucket) bucket.push(w)
     })
   })
 

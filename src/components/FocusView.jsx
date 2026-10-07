@@ -34,9 +34,6 @@ export default function FocusView({
   onSetReview,
   onReset,
   onBackToMap,
-  /* ★ C-02：「加入小站」的透传 props（G1 第 2 处调用点）★
-     默认值 = 空对象 → 按钮不渲染，既有调用点行为完全不变。 */
-  addToStationProps = {},
 }) {
   const [hover, setHover] = useState(null)
   const [centerWord, setCenterWord] = useState(null)
@@ -432,8 +429,6 @@ export default function FocusView({
             onReset={onReset}
             onClear={onClearSelection}
             layout="column"
-            /* ★ G1 第 2 处调用点（聚焦视图浮层）★ */
-            {...addToStationProps}
           />
         </div>
       ) : (

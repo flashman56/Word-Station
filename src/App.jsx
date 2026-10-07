@@ -8,47 +8,30 @@ import {
   applyFilters,
   buildIndex,
   freqBand,
-  hasDecomposition,
-  morphlessKindLabel,
   recordOf,
   search,
 } from './lib/derive.js'
 import { buildRelations, pairKey, relationsOf } from './lib/relations.js'
-import { buildStemIndex, familyOf } from './lib/stemFamily.js'
-import { buildWordForms } from './lib/wordForms.js'
 import { phoneticsOfAsync } from './lib/dict.js'
-import { shouldShowPhoneticPending } from './lib/phoneticDisplay.js'
 import { estimateVocabulary } from './lib/vocab.js'
-import { buildWeeklySummary, rewindNewlyMastered } from './lib/daily.js'
-import { MAX_VOCAB_PRIVATE_WORDS } from './lib/derive.js'
 import { useSettings } from './hooks/useSettings.js'
 import { buildBands, normalizeBand } from './hooks/useLearn.js'
-import { usePlacement } from './hooks/usePlacement.js'
-import { scopeOf } from './lib/migrate.js'
-import { isFolded } from './lib/lemmaFold.js'
 import { useAuth } from './hooks/useAuth.js'
 import { useStations } from './hooks/useStations.js'
 import { useSync } from './hooks/useSync.js'
 import { useLearnCloud } from './hooks/useLearnCloud.js'
 import { useStationWords } from './hooks/useStationWords.js'
-import { useUserWords } from './hooks/useUserWords.js'
 import Sidebar from './components/Sidebar.jsx'
 import LearnHome from './components/LearnHome.jsx'
-import PlacementTest from './components/PlacementTest.jsx'
 import StudySession from './components/StudySession.jsx'
-import WeeklySummary from './components/WeeklySummary.jsx'
 import WordRow from './components/WordRow.jsx'
 import SpeakerButton from './components/SpeakerButton.jsx'
 import EtymologyPanel from './components/EtymologyPanel.jsx'
-import UsageSupplement from './components/UsageSupplement.jsx'
-import WordForms from './components/WordForms.jsx'
 import BulkActionBar from './components/BulkActionBar.jsx'
-import AddToStationMenu from './components/AddToStationMenu.jsx'
 import AuthPanel from './components/AuthPanel.jsx'
 import StationBar from './components/StationBar.jsx'
 import AddWordsPanel from './components/AddWordsPanel.jsx'
 import StationLearn from './components/StationLearn.jsx'
-import PrivateWordsPanel from './components/PrivateWordsPanel.jsx'
 import SyncBadge from './components/SyncBadge.jsx'
 
 // 词云三视图：懒加载。用户不点「总览 / 聚焦 / 列表」就永远不下载这几个 chunk
@@ -69,15 +52,7 @@ const DEFAULT_FILTERS = {
   groupByFamily: true,
   // 增量：学习卡进入新词时自动朗读单词（默认关，仅朗读单词、不读例句）
   autoSpeak: false,
-  // 专有名词开关：**默认必须关** —— 全库约 1.4 万个（占 21%），
-  // 默认开启会让绝大多数用户莫名其妙地「少了一批常见词」。
-  // 判定只用 word.kind === 'proper'（不按 origin / 首字母大写：sandwich、boycott
-  // 这类 eponym 是普通词）。读老 settings 用 === true 兜底（老用户该字段 undefined）。
-  excludeProper: false,
 }
-
-/** WordDetail 的 addToStationProps 缺省值：空对象 = 按钮不渲染（默认行为不变） */
-const EMPTY_ADD_PROPS = {}
 
 /** ISO 时间格式化：YYYY-MM-DD HH:mm；无值回落「尚未学习」 */
 function formatDateTime(iso) {
@@ -129,11 +104,7 @@ export default function App() {
   )
 }
 
-/**
- * @param {object} [learn] useLearnCloud() 的返回值；词库未加载完时还没有它，
- *   此时徽标退化为只看 sync（仍可用，只少一态）。
- */
-function TopBar({ auth, stations, sync, view, setView, stats, sessionMode, learn = null, onBeforeSignOut = null, pending = 0, stuck = 0, manualInherited = 0, onMenuToggle }) {
+function TopBar({ auth, stations, sync, view, setView, stats, sessionMode }) {
   const tabs = [
     ['station', '小站'],
     ['learn', sessionMode !== 'none' ? '学习 · 进行中' : '学习'],
@@ -144,47 +115,27 @@ function TopBar({ auth, stations, sync, view, setView, stats, sessionMode, learn
   return (
     <>
       <div className="flex items-center gap-2 px-4 h-12 shrink-0 bg-white border-b border-slate-200">
-        <button
-          type="button"
-          onClick={onMenuToggle}
-          className="md:hidden -ml-1 p-1 rounded-md text-slate-600 hover:bg-slate-100"
-          aria-label="打开筛选"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="4" y1="6" x2="20" y2="6" />
-            <line x1="4" y1="12" x2="20" y2="12" />
-            <line x1="4" y1="18" x2="20" y2="18" />
-          </svg>
-        </button>
-        <span className="hidden md:inline text-sm font-semibold text-slate-700 mr-2">词根词缀单词云</span>
-        <div className="flex-1 min-w-0 flex items-center gap-2 overflow-x-auto">
-          {tabs.map(([key, label]) => (
-            <button
-              key={key}
-              onClick={() => setView && setView(key)}
-              className={`shrink-0 px-3 py-1 rounded-md text-sm ${
-                view === key ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-100'
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-        <div className="ml-auto flex items-center gap-2 shrink-0">
+        <span className="text-sm font-semibold text-slate-700 mr-2">词根词缀单词云</span>
+        {tabs.map(([key, label]) => (
+          <button
+            key={key}
+            onClick={() => setView && setView(key)}
+            className={`px-3 py-1 rounded-md text-sm ${
+              view === key ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-100'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+        <div className="ml-auto flex items-center gap-2">
           {/* 口径与左栏「可见单词」一致（都按 word.id 去重）；保持纯文本 div 便于回归测试断言 */}
           {stats && (
-            <div className="hidden sm:block text-xs text-slate-400">
+            <div className="text-xs text-slate-400">
               {`词群 ${stats.morphCount} · 单词 ${stats.uniqueWords ?? stats.wordCount}`}
             </div>
           )}
-          <SyncBadge sync={sync} ownerId={auth.userId} learn={learn} />
-          <AuthPanel
-            auth={auth}
-            beforeSignOut={onBeforeSignOut}
-            pendingCount={pending}
-            pendingStuck={stuck}
-            manualInherited={manualInherited}
-          />
+          <SyncBadge sync={sync} ownerId={auth.userId} />
+          <AuthPanel auth={auth} />
         </div>
       </div>
       <StationBar stations={stations} auth={auth} />
@@ -198,33 +149,16 @@ function TopBar({ auth, stations, sync, view, setView, stats, sessionMode, learn
 function AppShell({ words, auth, stations, sync }) {
   const [filters, setFilters] = useSettings(DEFAULT_FILTERS)
   const activeBand = useMemo(() => normalizeBand(filters.learnBand), [filters.learnBand])
-  // 防御式读取：settings v2 是整对象写入，老用户没有这个字段（undefined）→ 关
-  const excludeProper = filters.excludeProper === true
-
-  // T05：私有词并入统计 / 复习队列 / 词汇量预测（B-3 / B-4 / Q4）
-  const userWords = useUserWords(auth.userId)
 
   const learn = useLearnCloud(words, {
     ownerId: auth.userId,
     online: sync.online,
-    privateWords: userWords.words,
     learnOpts: {
       band: activeBand,
       groupByFamily: filters.groupByFamily !== false,
       morphemes,
-      excludeProper,
     },
   })
-
-  /** Q7：登出前把该传的传完；返回 false 表示还没准备好、应中止登出 */
-  const beforeSignOut = useCallback(async () => {
-    try {
-      await learn.flush()
-      return true
-    } catch {
-      return true // 收尾失败不阻塞登出：用户要的是登出
-    }
-  }, [learn])
 
   const [view, setView] = useState(auth.userId ? 'station' : 'learn')
   const [sessionMode, setSessionMode] = useState('none')
@@ -236,42 +170,13 @@ function AppShell({ words, auth, stations, sync }) {
   const [networkFocusWordId, setNetworkFocusWordId] = useState(null)
   const [orderBy, setOrderBy] = useState('cefr')
   const [selectedIds, setSelectedIds] = useState(() => new Set())
-  // T04：「我的私有词」侧栏面板的展开态（不开新页签 —— 理由见 Sidebar 注释）
-  const [privateWordsOpen, setPrivateWordsOpen] = useState(false)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  /* 搜索零命中 → 小站面板的预填词（见 Sidebar 的「去小站生成『X』」按钮）
-   *
-   * ★ 为什么必须存在 App 层，而不能直接在 Sidebar 里改小站面板★
-   *   Sidebar 与小站页分属两个分支（一个是常驻左栏，一个在 view 里），
-   *   彼此没有 ref、没有事件通道；而本应用**没有路由**
-   *   （无 react-router / 无 hash / 无 URLSearchParams），深链不可用。
-   *   ⇒ 「跳过去」只能靠这一份顶层 state 携带 payload。
-   *
-   * ★ 何时清空★
-   *   用户提交成功、或切离小站页时清掉，否则下次进小站会被上一次搜的词预填 ——
-   *   一个查不到出处的输入框内容比空输入框更坏。 */
-  const [stationPrefill, setStationPrefill] = useState('')
 
   // 登录状态变化时把用户带到「小站」页签（首次进入未登录则留学习页）
   useEffect(() => {
     if (auth.userId) setView((v) => (v === 'learn' && sessionMode === 'none' ? 'station' : v))
   }, [auth.userId, sessionMode])
 
-  /* 预填词只在「小站」页内有效：切走即清。
-     ★ 为什么用 view 做依赖而不是让小站面板自己上报★
-       面板卸载即等价于「离开小站」，而卸载没有回调可挂 —— 用 view 判是唯一
-       不需要面板配合的做法（也让 AddWordsPanel 保持纯展示 + 提交两件事）。 */
-  useEffect(() => {
-    if (view !== 'station') setStationPrefill('')
-  }, [view])
-
-  const stationWords = useStationWords(stations.currentId, auth.userId, {
-    // ★ A-06 / M3：私有词的**离线反查来源**。
-    //   useUserWords 已全量缓存私有词，断网时草稿里的 u.* 靠它反查出 form/gloss。
-    //   绝不能改成走 userWordsApi.listByKeys —— 那是纯网络请求，离线必然失败，
-    //   而离线正是需要投影的那一刻。
-    privateWords: userWords.words,
-  })
+  const stationWords = useStationWords(stations.currentId, auth.userId)
   const existingKeys = useMemo(
     () => new Set((stationWords.refs || []).map((r) => r.wordKey)),
     [stationWords.refs],
@@ -293,19 +198,7 @@ function AppShell({ words, auth, stations, sync }) {
     () => buildRelations(words, { synonyms: SYNONYMS, antonyms: ANTONYMS }),
     [words],
   )
-  // ★ 无拆解词（「无词素」组）的唯一判据是「chain 里没有内容」★
-  //   原来按 `word.morphless === true` 过滤，而 remorph 补丁给 2244 个 morphless 词
-  //   补了 morphs/chain 却保留了 morphless:true（validate 的硬约束要求保留）——
-  //   于是这 2244 个词同时出现在「词素岛屿」和「无词素孤儿组」里，
-  //   数据与 UI 自相矛盾：岛屿里能点开看到拆解，孤儿组里却标着「无词素」。
-  const orphanWords = useMemo(() => words.filter((word) => !hasDecomposition(word)), [words])
-  // ★ 同族词反查索引：无拆解词没有词素锚点，只能按词形找同族 ★
-  //   一次建好、整个会话复用；WordDetail 只查表，绝不在渲染期遍历词库。
-  const stemIndex = useMemo(() => buildStemIndex(words), [words])
-  // ★ 常见变形 / 派生词 反查模型（Step-1/2 折叠关系 + 词素派生）★
-  //   以 words 引用缓存；WordForms / StudyCard / WordDetail 只做 O(1) 查表，
-  //   绝不在渲染期重建索引，也绝不把词库数据 import 进 UI（见 lib/wordForms.js 约束）。
-  const wordForms = useMemo(() => buildWordForms(words, index, stemIndex), [words, index, stemIndex])
+  const orphanWords = useMemo(() => words.filter((word) => word.morphless === true), [words])
 
   const maxRank = useMemo(
     () =>
@@ -318,59 +211,8 @@ function AppShell({ words, auth, stations, sync }) {
   )
   const bands = useMemo(() => buildBands(maxRank), [maxRank])
 
-  /* 起点测评：出题 / 作答 / 评分 / 落盘全在 usePlacement 里，纯算分在 lib/placement.js。
-   *
-   * ★ 它**一条 learn.records 都不写** ★
-   *   vocab.js 的证据判别式是「records[id] 存在且 statusSource !== 'migration'」，
-   *   也就是任何 status:'known' 都被读成「实测已知」。测评作答 100% 是自报，
-   *   写进去的话「全答认识」= 64,700 词（全库）。详见 lib/placement.js 头部。
-   *
-   * ★ scope 从 scopeOf(ownerId) 取，不自己拼 ★
-   *   键名只存在于 lib/migrate.js（scripts/check-storage-keys.mjs 的 R1 会拦）。
-   */
-  const placement = usePlacement(words, bands, scopeOf(auth.userId))
-
-  /** 采用推荐档：写进与「难度分档」同一个字段 learnBand —— 见下方生效点说明。 */
-  const applyPlacementBand = useCallback(
-    (band) => {
-      if (!band) return
-      setFilters((prev) => ({ ...prev, learnBand: band }))
-    },
-    [setFilters],
-  )
-
   // 预测词汇量：纯本地派生（离线 / 未登录天然可用），随学习记录变化重算
-  //
-  // B-8 护栏：私有词 freqRank 多为 null，会被归到最后一档而抬高尾档 knownP。
-  // 超过上限就回退到公共词（vocab.js 的判别式与闸门一律不动），
-  // 并用一行小字告诉用户「暂不含私有词」—— 阈值本身不暴露。
-  const vocabIncludesPrivate = userWords.words.length <= MAX_VOCAB_PRIVATE_WORDS
-  const vocabInput = vocabIncludesPrivate ? learn.statWords : words
-  const vocab = useMemo(() => estimateVocabulary(vocabInput, learn.records), [vocabInput, learn.records])
-
-  /**
-   * 最近 7 天小结（纯本地；无网络、无新数据）。
-   *
-   * ★ 为什么「上周的词汇量估算」是**反事实**而不是快照 ★
-   *   学习记录是就地覆盖的，每次答题重写同一条，本地不留历史版本 ——
-   *   7 天前那份估算无从重算。所以这里做的唯一诚实的事是：把「本周新增掌握」
-   *   这一个事件回退掉，再跑一遍**同一个** vocab.js 估算器（vocab.js 本身零改动），
-   *   得到一个明确定义的假设值。UI 上照实标注「假设…」，不冒充历史。
-   *
-   * ★ 为什么两次估算共用 vocabInput ★
-   *   必须与上面那个 vocab 走**完全相同**的输入词表（含 B-8 私有词回退护栏），
-   *   否则「从 → 到」的两端口径不同，算出来的差值毫无意义。
-   *
-   * ★ 成本 ★
-   *   vocab.js 每次约 55ms（6.4 万词 × 2 遍），与已有的 vocab 同为
-   *   「records 变化才重算」，不进渲染热路径。
-   */
-  const weekly = useMemo(() => {
-    const now = learn.daily ? learn.daily.now : new Date().toISOString()
-    const rewind = rewindNewlyMastered(learn.records, now)
-    const vocabBefore = estimateVocabulary(vocabInput, rewind.records)
-    return buildWeeklySummary({ records: learn.records, now, vocab, vocabBefore })
-  }, [vocabInput, learn.records, learn.daily, vocab])
+  const vocab = useMemo(() => estimateVocabulary(words, learn.records), [words, learn.records])
 
   const bandCounts = useMemo(() => {
     const counts = {}
@@ -381,14 +223,6 @@ function AppShell({ words, auth, stations, sync }) {
     words.forEach((w) => {
       if (!w || seen.has(w.id)) return
       seen.add(w.id)
-      // ★ 与 learnPool 同一个过滤条件 ★
-      //   否则「0~3000 · 3000 词」写的仍是未过滤的口径，用户照着分档选完，
-      //   实际开出来的队列却少几千 —— 计数与真实队列对不上是最难自查的一类 bug。
-      if (excludeProper && w.kind === 'proper') return
-      // ★ 屈折归并（Step-2）：被折叠形不构成独立学习单元，须与 learnPool 同口径剔除 ★
-      //   learnPool 已按 isFolded 折叠（见 useLearn 的 buildFoldView），这里少剔一次
-      //   就会让每个分档都虚高几千 —— 正是上面注释警告的那类「计数与队列对不上」。
-      if (isFolded(w)) return
       counts.all += 1
       const r = w.freqRank
       if (typeof r !== 'number' || !Number.isFinite(r)) return
@@ -400,7 +234,7 @@ function AppShell({ words, auth, stations, sync }) {
       }
     })
     return counts
-  }, [words, bands, excludeProper])
+  }, [words, bands])
 
   const query = (filters.query || '').trim()
 
@@ -416,6 +250,7 @@ function AppShell({ words, auth, stations, sync }) {
   )
 
   const wordHits = useMemo(() => (query ? searchResult.words.slice(0, 10) : []), [query, searchResult])
+
   const { visibleMorphs, stats } = useMemo(
     () =>
       applyFilters(morphemes, words, index.wordsByMorph, learn.records, {
@@ -523,42 +358,6 @@ function AppShell({ words, auth, stations, sync }) {
   const bulkSetReview = useCallback(() => learn.applyMany([...selectedIds], 'review'), [selectedIds, learn])
   const bulkReset = useCallback(() => learn.applyMany([...selectedIds], 'reset'), [selectedIds, learn])
 
-  /**
-   * ★ C 组「加入小站」三处共用的 props（G1）★
-   * BulkActionBar 有三个调用点（ListView / FocusView / MorphDetail），语义都成立，
-   * 所以这里抽一份共用的 —— 三处任一漏传都会让那处的按钮静默 disabled，
-   * 而界面上看不出原因（这是「看起来改了其实只生效两处」的典型）。
-   */
-  const addToStationProps = useMemo(
-    () => ({
-      addToStation: true,
-      ownerId: auth.userId,
-      stations: stations.stations,
-      stationsLoading: stations.loading,
-      online: sync.online,
-      currentStationId: stations.currentId,
-      currentStationName: stations.current ? stations.current.name : '',
-      existingKeys,
-      createStation: stations.createStation,
-      onRefreshStations: async () => {
-        await stations.refresh()
-        await stationWords.refresh()
-      },
-    }),
-    [
-      auth.userId,
-      stations.stations,
-      stations.loading,
-      stations.currentId,
-      stations.current,
-      stations.createStation,
-      stations.refresh,
-      sync.online,
-      existingKeys,
-      stationWords.refresh,
-    ],
-  )
-
   // ---------------------------------------------------------------- 导入 / 导出 / 清空
 
   const handleExport = () => {
@@ -598,26 +397,8 @@ function AppShell({ words, auth, stations, sync }) {
     if (confirm('重新迁移将覆盖当前学习记录，确定？')) learn.rerunMigration(next)
   }
 
-  /* 搜索零命中 → 跳小站并预填。
-     ★ 不做登录 / 小站守卫★
-       AddWordsPanel 的 canSubmit 已经自己给出「请先登录」「请先新建 / 选择一个小站」，
-       那套提示是这个面板的既有正确行为。在跳转前再插一道守卫，用户就会先撞上一个
-       不解释的「什么也没发生」—— 反而把面板里说清楚的因果藏起来了。
-       让用户看见「已填好 X，但需要先登录」，比不跳过去更好。 */
-  const handleGenerateMissing = useCallback((form) => {
-    if (!form) return
-    setStationPrefill(form)
-    setView('station')
-  }, [])
-
   return (
     <>
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/30 z-30 md:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
       <Sidebar
         filters={filters}
         setFilters={setFilters}
@@ -626,35 +407,13 @@ function AppShell({ words, auth, stations, sync }) {
         migrationReport={learn.migrationReport}
         inheritFreqKnown={learn.inheritFreqKnown}
         onToggleInherit={handleToggleInherit}
-        hitCount={searchResult.morphs.length}
+        hitCount={stats.morphCount}
         wordHits={wordHits}
         onSelectWordHit={openWordFromSearch}
-        onGenerateMissing={handleGenerateMissing}
         onExport={handleExport}
         onImport={handleImport}
         onClear={handleClear}
         vocab={vocab}
-        privateWordCount={userWords.words.length}
-        privateWordsOpen={privateWordsOpen}
-        onTogglePrivateWords={() => setPrivateWordsOpen((v) => !v)}
-        mobileOpen={sidebarOpen}
-        onCloseMobile={() => setSidebarOpen(false)}
-        privateWordsPanel={
-          <PrivateWordsPanel
-            userWords={userWords.words}
-            records={learn.records}
-            ownerId={auth.userId}
-            existingKeys={existingKeys}
-            currentStationName={stations.current ? stations.current.name : ''}
-            addToStationProps={addToStationProps}
-            onClose={() => setPrivateWordsOpen(false)}
-            onRefresh={async () => {
-              // 彻底删除会同时动 user_words 与 station_words → 两边都要刷
-              await userWords.refresh()
-              await stationWords.refresh()
-            }}
-          />
-        }
       />
 
       <main className="flex-1 min-w-0 flex flex-col">
@@ -666,12 +425,6 @@ function AppShell({ words, auth, stations, sync }) {
           setView={setView}
           stats={visibleStats}
           sessionMode={sessionMode}
-          learn={learn}
-          onBeforeSignOut={beforeSignOut}
-          pending={learn.pending}
-          stuck={learn.stuck}
-          manualInherited={learn.migrationReport?.migratedManual || 0}
-          onMenuToggle={() => setSidebarOpen(true)}
         />
 
         {view === 'focus' && (
@@ -702,49 +455,20 @@ function AppShell({ words, auth, stations, sync }) {
                 stationId={stations.currentId}
                 existingKeys={existingKeys}
                 online={sync.online}
-                initialText={stationPrefill}
-                onDone={() => {
-                  /* 提交成功（含「零失败零草稿」那条收敛路径，面板已自己清空输入框）
-                     ⇒ 这份预填的使命结束，此刻不撤，下次进小站会凭空多出一个词。 */
-                  setStationPrefill('')
-                  stationWords.refresh()
-                }}
+                onDone={() => stationWords.refresh()}
               />
               <div className="px-4 py-2 bg-slate-50 text-xs text-slate-500 border-t border-slate-200">
                 {stations.current
-                  ? `当前小站：${stations.current.name} · 共 ${stationWords.counts.total} 词（公共 ${stationWords.counts.public} · 私有 ${stationWords.counts.user}）${
-                      stationWords.pendingCount > 0 ? ` · 另有 ${stationWords.pendingCount} 词待上传` : ''
-                    }`
+                  ? `当前小站：${stations.current.name} · 共 ${stationWords.counts.total} 词（公共 ${stationWords.counts.public} · 私有 ${stationWords.counts.user}）`
                   : '还没有小站：在上方新建一个（如「雅思」「论文阅读」）'}
               </div>
               <StationLearn
                 words={stationWords.words}
                 morphemes={morphemes}
                 records={learn.records}
-                /* 小站背词遵守同一个专有名词开关（学习队列设置是全局的，
-                   不是某一页的视图筛选）—— 不传的话小站会把学习页排除掉的词
-                   照常出给用户，等于开关只生效一半。 */
-                excludeProper={excludeProper}
                 answer={learn.answer}
                 markKnown={learn.markKnown}
-                setReview={learn.setReview}
-                retreat={learn.retreat}
-                ownerId={auth.userId}
-                online={sync.online}
-                currentStationName={stations.current ? stations.current.name : ''}
-                pending={stationWords.pending}
-                onRetrySync={learn.flush}
-                /* ★ B-01 的补漏（架构师 G-补漏）：此前根本没传 ★
-                   useStationWords 早就 return 了 removeWord，但这里只传了
-                   words / records / answer / markKnown / setReview / retreat /
-                   ownerId / onRefresh —— 不补这个 prop，「移出小站」按钮点了
-                   没反应。这正是「看起来改了其实没生效」的典型。 */
-                removeWord={stationWords.removeWord}
-                onRefresh={async () => {
-                  // 私有词可能被编辑过 → 顺手刷新全局私有词，否则学习页统计会停在旧值
-                  await stationWords.refresh()
-                  await userWords.refresh()
-                }}
+                onRefresh={stationWords.refresh}
               />
             </div>
           )}
@@ -756,7 +480,6 @@ function AppShell({ words, auth, stations, sync }) {
                 stats={learn.stats}
                 learnQueue={learn.learnQueue}
                 reviewQueue={learn.reviewQueue}
-                daily={learn.daily}
                 onStartLearn={startLearn}
                 onStartReview={startReview}
                 migrationReport={learn.migrationReport}
@@ -768,48 +491,8 @@ function AppShell({ words, auth, stations, sync }) {
                 onToggleGroupByFamily={() =>
                   setFilters((prev) => ({ ...prev, groupByFamily: prev.groupByFamily === false }))
                 }
-                excludeProper={excludeProper}
-                onToggleExcludeProper={() =>
-                  setFilters((prev) => ({ ...prev, excludeProper: prev.excludeProper !== true }))
-                }
                 vocab={vocab}
-                showSharedNote
-                privateCount={userWords.words.length}
-                vocabIncludesPrivate={vocabIncludesPrivate}
               />
-
-              {/* 起点测评：放在 LearnHome 之后、周报之前。
-                  · 它要读的是同一个 bands（上面 buildBands(maxRank) 的结果），故放在本层；
-                  · 推荐档通过 filters.learnBand 生效（见 applyPlacementBand 注释）。
-                  · ★ 不放进 LearnHome 内部 ★：LearnHome 被 StationLearn 复用，
-                    小站里弹一个「你该从哪档开始背」的全局测评会把小站语境弄乱。 */}
-              <div className="max-w-3xl mx-auto">
-                <PlacementTest
-                  size={placement.size}
-                  items={placement.items}
-                  answeredCount={placement.answeredCount}
-                  answers={placement.answers}
-                  running={placement.running}
-                  done={placement.done}
-                  result={placement.result}
-                  hasResult={placement.hasResult}
-                  startError={placement.startError}
-                  onStart={placement.start}
-                  onAnswer={placement.answer}
-                  onSubmit={placement.submit}
-                  onRetake={placement.retake}
-                  onCancel={placement.cancel}
-                  onApplyBand={applyPlacementBand}
-                  activeBandId={activeBand === 'all' ? null : activeBand.id}
-                />
-              </div>
-
-              {/* 周报独立成块而不是塞进 LearnHome：它只在「学习」页签渲染，
-                  而 LearnHome 还被小站复用 —— 小站用户看到的应是本站的今日任务，
-                  不该混进一份全库口径的周报。 */}
-              <div className="max-w-3xl mx-auto">
-                <WeeklySummary summary={weekly} />
-              </div>
             </div>
           )}
 
@@ -824,8 +507,6 @@ function AppShell({ words, auth, stations, sync }) {
                 onExit={exitSession}
                 onViewInCloud={openWordFromStudy}
                 autoSpeak={filters.autoSpeak === true}
-                relatedOf={wordForms.relatedFor}
-                daily={learn.daily}
               />
             </div>
           )}
@@ -844,8 +525,8 @@ function AppShell({ words, auth, stations, sync }) {
                 onSelectMorph={openMorph}
                 onSelectWord={setSelectedWord}
                 onOpenFocus={openMorph}
-                width={window.innerWidth < 768 ? window.innerWidth : Math.max(560, window.innerWidth - 620)}
-                height={window.innerWidth < 768 ? window.innerHeight - 120 : Math.max(420, window.innerHeight - 140)}
+                width={Math.max(560, window.innerWidth - 620)}
+                height={Math.max(420, window.innerHeight - 140)}
               />
             </Suspense>
           )}
@@ -867,10 +548,9 @@ function AppShell({ words, auth, stations, sync }) {
                   onMarkKnown={bulkMarkKnown}
                   onSetReview={bulkSetReview}
                   onReset={bulkReset}
-                  addToStationProps={addToStationProps}
                   onBackToMap={() => setView('overview')}
-                  width={window.innerWidth < 768 ? window.innerWidth : Math.max(520, window.innerWidth - 640)}
-                  height={window.innerWidth < 768 ? window.innerHeight - 120 : Math.max(420, window.innerHeight - 140)}
+                  width={Math.max(520, window.innerWidth - 640)}
+                  height={Math.max(420, window.innerHeight - 140)}
                 />
               </Suspense>
             ) : (
@@ -898,57 +578,26 @@ function AppShell({ words, auth, stations, sync }) {
                 onMarkKnown={bulkMarkKnown}
                 onSetReview={bulkSetReview}
                 onReset={bulkReset}
-                addToStationProps={addToStationProps}
               />
             </Suspense>
           )}
         </div>
       </main>
 
-      {/* 右侧详情：桌面（md+）常驻 320px 列；移动端默认隐藏，
-          仅当已选中词/词群时以全屏浮层出现（否则会挤压主区成窄条） */}
-      <aside
-        className={[
-          'bg-white border-slate-200 overflow-y-auto p-4 z-40',
-          selectedWord || selectedMorph
-            ? 'fixed inset-0 w-full h-full md:static md:w-80 md:shrink-0 md:h-full md:border-l'
-            : 'hidden md:block md:static md:w-80 md:shrink-0 md:h-full md:border-l',
-        ].join(' ')}
-      >
-        {(selectedWord || selectedMorph) && (
-          <button
-            type="button"
-            onClick={() => {
-              setSelectedWord(null)
-              setSelectedMorphId(null)
-            }}
-            className="md:hidden mb-2 -ml-1 p-1 rounded-md text-slate-600 hover:bg-slate-100"
-            aria-label="关闭详情"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="6" y1="6" x2="18" y2="18" />
-              <line x1="18" y1="6" x2="6" y2="18" />
-            </svg>
-          </button>
-        )}
+      {/* 右侧详情 */}
+      <aside className="w-80 shrink-0 h-full overflow-y-auto bg-white border-l border-slate-200 p-4">
         {selectedWord ? (
           <WordDetail
             word={selectedWord}
             records={learn.records}
             index={index}
-            stemIndex={stemIndex}
             relationIndex={relationIndex}
-            relatedOf={wordForms.relatedFor}
             onSelectRelated={openRelatedWord}
             onJump={openMorph}
             onBack={() => setSelectedWord(null)}
             onMarkKnown={onMarkKnown}
             onSetReview={onSetReview}
             onRetreat={onRetreat}
-            /* ★ C-01：WordDetail 不是独立文件，是 App.jsx 内的内部函数 ★
-               「加入小站 ▾」加在既有「我会了 / 加入待复习」按钮组**同层** ——
-               同一组「对这个词做标记或归档」的操作，不另开一个区域。 */
-            addToStationProps={addToStationProps}
           />
         ) : selectedMorph ? (
           <MorphDetail
@@ -962,7 +611,6 @@ function AppShell({ words, auth, stations, sync }) {
             onMarkKnown={bulkMarkKnown}
             onSetReview={bulkSetReview}
             onReset={bulkReset}
-            addToStationProps={addToStationProps}
           />
         ) : (
           <div className="text-xs text-slate-400 leading-relaxed">
@@ -993,16 +641,6 @@ function MorphDetail({
   onMarkKnown,
   onSetReview,
   onReset,
-  /* ★ C-02：G1 第 3 处调用点。
-     ★★ 踩过的坑（QA 独立验出的白屏）★★
-     MorphDetail 是**顶层函数**（缩进 0），拿不到 AppShell 里的
-     addToStationProps —— 早先只在函数体内写了 {...addToStationProps} 而没在
-     签名里解构它，于是「右侧词群详情里勾选任意一个词」就 ReferenceError
-     白屏。触发条件极浅，而它能过 build（esbuild 不做作用域分析）、
-     也能过我的源码正则断言（那断言只检查「字符串在不在」）。
-     ⇒ 教训：凡「某组件用了新 prop」，必须**渲染那个组件**来验，
-       而不是只对源码做字符串匹配。 */
-  addToStationProps = EMPTY_ADD_PROPS,
 }) {
   const typeCfg = TYPES[morph.type]
   const ids = morph.words.map((w) => w.id)
@@ -1071,10 +709,6 @@ function MorphDetail({
             onReset={onReset}
             onClear={onClearSelection}
             layout="column"
-            /* ★ G1 第 3 处调用点（右侧词群详情）★
-               语义与 ListView / FocusView 相同（已选若干公共词 → 批量操作），
-               所以第 4 个「加入小站」按钮在这里同样成立。 */
-            {...addToStationProps}
           />
         </div>
       )}
@@ -1100,16 +734,13 @@ function WordDetail({
   word,
   records,
   index,
-  stemIndex,
   relationIndex,
-  relatedOf,
   onSelectRelated,
   onJump,
   onBack,
   onMarkKnown,
   onSetReview,
   onRetreat,
-  addToStationProps = EMPTY_ADD_PROPS,
 }) {
   const rec = recordOf(word, records)
   const st = rec.status
@@ -1118,7 +749,7 @@ function WordDetail({
   // 构词拆解：点词素 chip 内联展开其词源故事
   const [expandedMorphId, setExpandedMorphId] = useState(null)
   const expandedMorph = expandedMorphId ? index.morphById.get(expandedMorphId) || null : null
-  // 音标 / 例句 / 用法：异步查表（红线：严禁生成；单词查不到显示「音标待补」）
+  // 音标 / 例句 / 用法：异步查表（红线：严禁生成，查不到显示「音标待补」）
   const [phon, setPhon] = useState(null)
   useEffect(() => {
     let alive = true
@@ -1137,15 +768,9 @@ function WordDetail({
 
   const phonetic = word.phoneticBr || (phon && phon.phonetic) || null
   const example = word.example || (phon && phon.example) || null
-  const usage = word.usage || (phon && phon.usage) || null
+  const usage = (phon && phon.usage) || null
   const progress = `${Math.min(rec.consecutiveCorrect || 0, 2)}/2`
   const related = relationsOf(relationIndex, word.id)
-  // 同族词：只有「无拆解」的词才需要（它是空面板时的救命出口）。
-  // 查表 O(桶大小)，索引在 AppShell 建一次，这里不做任何全表扫描。
-  const stemFamily = useMemo(
-    () => (hasDecomposition(word) ? [] : familyOf(stemIndex, word)),
-    [stemIndex, word],
-  )
   const conflictPairs = new Set((relationIndex?.conflicts || []).map((item) => item.pairKey))
   const gradeStars = (grade) => `${'★'.repeat(4 - grade)}${'☆'.repeat(grade - 1)}`
 
@@ -1187,12 +812,12 @@ function WordDetail({
       <p className="text-xs text-slate-400">{word.pos}</p>
       <p className="text-sm text-slate-700 mt-1">{word.gloss}</p>
 
-      {/* 音标（英式 DJ，有则显示；普通单词查不到显示「音标待补」） */}
+      {/* 音标（英式 DJ，有则显示；查不到显示「音标待补」） */}
       {phonetic ? (
         <p className="text-sm text-slate-500 mt-1 font-medium">{phonetic}</p>
-      ) : shouldShowPhoneticPending(word, phonetic) ? (
+      ) : (
         <p className="text-xs text-amber-600 mt-1">音标待补</p>
-      ) : null}
+      )}
 
       {example && example.en && example.zh && (
         <div className="mt-2 rounded-md bg-slate-50 border border-slate-100 p-2 text-xs leading-relaxed">
@@ -1207,9 +832,6 @@ function WordDetail({
           {usage}
         </div>
       )}
-
-      {/* 用法补充：固定搭配 / 背景 / 用法（按需异步加载，无条目则无渲染） */}
-      <UsageSupplement form={word.form} />
 
       {related.synonyms.length > 0 && (
         <section className="mt-3">
@@ -1274,56 +896,14 @@ function WordDetail({
               退回复习
             </button>
           )}
-          {/* ★ C-01「加入小站 ▾」★
-              放在同一按钮组的**同层**（不是另开一块）：它与「我会了」同属
-              「对这个词做一个动作」，拆到别处会让用户以为这是页面级操作。
-              ★ 私有词与公共词走**完全相同**的这条路径：wordView 的
-                id === wordKey 让同一份 records 同时服务小站与学习页，
-                而 source 由 sources 显式给出（私有词恒为 'user'，不能靠猜）。 */}
-          <AddToStationMenu
-            {...addToStationProps}
-            wordKeys={[word.wordKey || word.id]}
-            sources={[word.source === 'user' ? 'user' : 'public']}
-            size="md"
-          />
         </div>
       </div>
 
       <h3 className="text-xs font-semibold text-slate-500 mt-4 mb-1.5">构词拆解</h3>
-      {/* ★ 判据是「chain 里有没有内容」，不是 word.morphless ★
-          remorph 补丁给 2244 个 morphless 词补了 morphs/chain，但必须保留
-          morphless:true（validate-data.mjs 的硬约束），判标记会让这 2244 条补丁
-          一条都不显示 —— 用户点开全是空面板。判 chain 后补丁全部生效。 */}
-      {!hasDecomposition(word) ? (
-        <>
-          <div className="px-2 py-1.5 rounded border border-amber-200 bg-amber-50 text-xs text-amber-700">
-            无词素 · {morphlessKindLabel(word)}
-          </div>
-          {/* ★ 同族词互链 ★
-              无拆解词没有词素锚点，点不出任何内容 —— 这是「空面板」的第二层原因。
-              这里按**词根**反查同族词（索引在 AppShell 建好），给的每个 chip 都是
-              「有真实拆解」的词，点进去能看到构词拆解，不会又撞回空面板。
-              ★ 只有「有词根」的词才查得到：无词根的词一律返回空、不按拼写凑 ——
-                宁缺毋滥，一个拼写相近但不同源的词比没有更伤。
-                找不到时只剩上面那行 amber 提示。 */}
-          {stemFamily.length > 0 && (
-            <div className="mt-2">
-              <div className="text-xs text-slate-500 mb-1">该词无词根拆解，但同族词：</div>
-              <div className="flex flex-wrap gap-1">
-                {stemFamily.map((fam) => (
-                  <button
-                    key={fam.id}
-                    type="button"
-                    onClick={() => onSelectRelated(fam.id)}
-                    className="px-2 py-1 rounded-full border border-blue-200 bg-blue-50 text-xs text-blue-700 hover:bg-blue-100"
-                  >
-                    {fam.form}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </>
+      {word.morphless ? (
+        <div className="px-2 py-1.5 rounded border border-amber-200 bg-amber-50 text-xs text-amber-700">
+          无词素 · {word.kind === 'mono' ? '单纯词' : word.kind === 'loan' ? '外来词' : word.kind === 'proper' ? '专有名词' : '固定搭配'}
+        </div>
       ) : (
         <>
           <div className="flex items-center flex-wrap gap-1">
@@ -1366,17 +946,6 @@ function WordDetail({
           )}
         </>
       )}
-
-      {/* 常见变形 / 派生词：与学习卡（StudyCard）**同一组件、同一顺序**，
-          两处共用一份渲染 → 文案与排序永不漂移。
-          ★ showDerivatives：无拆解词在上方已有「同族词」区块（同一批按词形反查的
-            结果），这里不再重复列一遍派生词；「常见变形」不受影响、照常展示。 */}
-      <WordForms
-        word={word}
-        relatedOf={relatedOf}
-        onSelect={onSelectRelated}
-        showDerivatives={hasDecomposition(word)}
-      />
 
       <h3 className="text-xs font-semibold text-slate-500 mt-4 mb-1.5">所属词群</h3>
       <div className="flex flex-wrap gap-1">

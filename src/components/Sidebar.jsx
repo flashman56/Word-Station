@@ -1,6 +1,5 @@
 import React from 'react'
 import { CEFR, ORIGINS, STATUS, TYPES, AUTO_KNOWN_RANK } from '../lib/derive.js'
-import { describeMigrationReport } from '../lib/migrationCopy.js'
 import VocabCard from './VocabCard.jsx'
 
 function Section({ title, children }) {
@@ -39,24 +38,12 @@ export default function Sidebar({
   hitCount,
   wordHits = [],
   onSelectWordHit,
-  onGenerateMissing,
   onExport,
   onImport,
   onClear,
   vocab = null,
-  privateWordCount = 0,
-  privateWordsOpen = false,
-  onTogglePrivateWords,
-  privateWordsPanel = null,
-  mobileOpen = false,
-  onCloseMobile,
 }) {
   const patch = (p) => setFilters((f) => ({ ...f, ...p }))
-
-  /* 迁移提示：与 LearnHome 共用 lib/migrationCopy.js 的同一份措辞。
-     两处曾各写一遍「已从旧版保留…」，于是新访客（实际是按词频自动继承、
-     根本没有旧版数据）在两处同时被误导。单一数据源消除这个重复。 */
-  const migrationNote = describeMigrationReport(migrationReport)
 
   const toggleIn = (key, value) =>
     setFilters((f) => {
@@ -65,30 +52,16 @@ export default function Sidebar({
     })
 
   return (
-    <aside
-      className={[
-        'w-72 shrink-0 h-full overflow-y-auto bg-white border-r border-slate-200 p-4 text-slate-700 z-40',
-        mobileOpen
-          ? 'fixed md:relative inset-y-0 left-0 block h-screen md:h-full'
-          : 'hidden md:block md:relative md:h-full h-full',
-      ].join(' ')}
-    >
-      <button
-        type="button"
-        onClick={onCloseMobile}
-        className="md:hidden absolute top-2 right-2 p-1 text-slate-400 hover:text-slate-600"
-        aria-label="关闭筛选"
-      >
-        ✕
-      </button>
+    <aside className="w-72 shrink-0 h-full overflow-y-auto bg-white border-r border-slate-200 p-4 text-slate-700">
       <div className="mb-4">
         <h1 className="text-base font-bold text-slate-800">词根词缀单词云</h1>
         <p className="text-xs text-slate-400 mt-0.5">词素为干，单词为叶</p>
       </div>
 
-      {migrationNote && (
+      {migrationReport && (
         <div className="mb-4 rounded-md bg-blue-50 border border-blue-100 px-2.5 py-2 text-xs text-blue-700 leading-relaxed">
-          {migrationNote.text}
+          已从旧版保留 {migrationReport.known} 个已掌握、{migrationReport.review} 个待复习、
+          {migrationReport.unknown} 个未知。
         </div>
       )}
 
@@ -100,46 +73,7 @@ export default function Sidebar({
           className="w-full px-2.5 py-1.5 text-sm border border-slate-300 rounded-md focus:outline-none focus:border-blue-400"
         />
         {filters.query && (
-          /* ★ A-05：命中数只统计「搜索命中」，与筛选器无关 ★
-             原先这里传的是 applyFilters 的 stats.morphCount，而那个 stats 吃
-             types/origins/minCefr/status/hideAutoKnown —— 于是「把难度收到 B2 再
-             搜 spec」会让这个数字变小，读起来像是「搜索本身命中变少了」。
-             现在它读 searchResult.morphs.length（零新增开销：searchResult 本来就
-             被 hitWordIds / visibleOrphans 消费，读 .length 是 O(1) 字段访问），
-             并补一行小字把口径写明。
-             ★ 小字口径必须与代码一致 ★
-               这里曾写「当前筛选下的可见词群」，可这句话同时说了两件互相矛盾的事：
-               「当前筛选下」= 受筛选器影响，「不随筛选变化」= 不受筛选器影响。
-               而数字读的是 searchResult.morphs.length，**根本不吃筛选器** ——
-               照字面理解的用户会以为「调筛选能让这个数变」，去试一次发现纹丝不动，
-               反而怀疑自己看错了。现在只说「搜索命中」，与实现同义。 */
-          <p className="text-xs text-slate-400 mt-1.5">
-            命中 {hitCount} 个词群
-            <span className="block text-slate-400">（搜索命中数，不随下方筛选器变化）</span>
-          </p>
-        )}
-        {/* ★ 搜索零命中的出口（A-05 的下半段）★
-             零命中时这一区只渲染「命中 0 个词群」，wordHits 也空 —— 用户搜了个
-             库里没有的生词，界面就此打住：既不知道这个词在哪儿，也没有下一步。
-             搜不到的词恰恰是「批量加词」面板的输入域，所以出口就是它：
-             一点直接跳到小站页，输入框已填好这个词，下一步（加入 / 生成）现成。
-             ★ 判据用 hitCount === 0 && wordHits.length === 0★
-               两者是**独立**的搜索产物（词群命中 vs 单词命中），只判前者会出现
-               「词群 0 但单词有命中」时 CTA 与词表同时消失的分支 —— 那时用户明明
-               搜到了东西（单词命中列表就在下面），给他一个「去生成」的按钮是错的。 */}
-        {filters.query && hitCount === 0 && wordHits.length === 0 && (
-          <div className="mt-2 rounded-md bg-slate-50 border border-slate-200 px-2.5 py-2">
-            <p className="text-xs text-slate-500 leading-relaxed">
-              词库里没有匹配「{filters.query.trim()}」的词群或单词。
-            </p>
-            <button
-              type="button"
-              onClick={() => onGenerateMissing?.(filters.query.trim())}
-              className="mt-1.5 w-full px-2 py-1.5 rounded-md border border-blue-300 bg-white text-xs text-blue-600 hover:bg-blue-50 transition-colors"
-            >
-              去小站生成「{filters.query.trim()}」
-            </button>
-          </div>
+          <p className="text-xs text-slate-400 mt-1.5">命中 {hitCount} 个词群</p>
         )}
         {filters.query && wordHits.length > 0 && (
           <div className="mt-2">
@@ -176,36 +110,6 @@ export default function Sidebar({
             </Chip>
           ))}
         </div>
-
-        {/* ★ T04：我的私有词入口 ★
-            放在「掌握状态」区下方 —— 私有词正是「按掌握状态管理我的词」的一部分，
-            放在这里符合用户心智（上面就是三态筛选）。
-            ★ 它是 B 组「移出小站」的硬前置：私有词被移出小站后仍留在 user_words，
-              若没有这个入口就彻底失去编辑 / 重新生成 / 删除入口，成为清不掉的幽灵词
-              （照样计入统计、照样出现在复习队列）。
-            0 个时显示「暂无」且不可点 —— 给一个点进去必然是空的入口没有意义。 */}
-        <div className="mt-2 pt-2 border-t border-slate-100">
-          <button
-            onClick={privateWordCount > 0 ? onTogglePrivateWords : undefined}
-            disabled={privateWordCount === 0}
-            title={
-              privateWordCount > 0
-                ? '查看 / 编辑 / 彻底删除我的私有词'
-                : '还没有私有词：在「小站」里粘贴不在公共库的生词即可自动生成'
-            }
-            className="w-full text-left text-xs text-slate-500 hover:text-blue-600 disabled:text-slate-400 disabled:hover:text-slate-400 py-0.5"
-          >
-            我的私有词{' '}
-            {privateWordCount > 0 ? `${privateWordCount} 个` : '（暂无）'}
-            {privateWordCount > 0 && (
-              <span className="ml-1 text-slate-400">{privateWordsOpen ? '▾ 收起' : '· 查看'}</span>
-            )}
-          </button>
-        </div>
-
-        {/* 面板内联展开在「掌握状态」区下方，不开新页签、不进「列表」页 ——
-            理由：allIds 的语义与 A-07 的批量上限口径会被搅在一起 */}
-        {privateWordsOpen && privateWordsPanel}
       </Section>
 
       <Section title="最低难度">
@@ -318,18 +222,6 @@ export default function Sidebar({
             <div className="flex justify-between text-slate-400">
               <dt>学习库总计</dt>
               <dd>{learnStats.total ?? 0}</dd>
-            </div>
-          )}
-          {/* 「已排期」：待复习里今天还没到期的部分（明天起陆续到期）。
-              ★ 措辞用「其中」而非并列一栏 ★
-                countByStatus 只按 status 分桶、不看 nextDueAt，所以「明天到期」
-                的词本来就含在上面的「待复习」里 —— 两者是子集关系。
-                写成并列的「已排期 N」会让用户以为待复习之外还多出 N 个词。
-              N=0 时不渲染：显示「已排期 0」只是噪声（「待复习 0」已经说明没有）。 */}
-          {learnStats && (learnStats.scheduled ?? 0) > 0 && (
-            <div className="flex justify-between text-slate-400">
-              <dt>其中已排期</dt>
-              <dd>{learnStats.scheduled}</dd>
             </div>
           )}
         </dl>

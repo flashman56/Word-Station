@@ -1,0 +1,14 @@
+目标 15000 词 / 每批 30 / 窗口 12 / 已有 6676
+  [r.aug…r.gest] +24 → 共 6700
+  [r.prec…r.fund] +25 → 共 6725
+  [r.quer…r.idi] +25 → 共 6750
+  [r.top…r.merc] +25 → 共 6775
+  [r.mon…r.ops] +25 → 共 6800
+  [p.mega…r.tin] +24 → 共 6824
+  [r.fend…r.pond] +26 → 共 6850
+  [r.pil…p.vice] 第1次失败: Unexpected token 'r', ..."[{"morph":r.pil","fo"... is not valid JSON
+  [r.pil…p.vice] +25 → 共 6875
+  [r.empt…r.fol] +19 → 共 6894
+  [r.gymn…p.ana] +20 → 共 6914
+  [r.iter…r.burs] +30 → 共 6944
+EXIT=127

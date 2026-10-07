@@ -12,8 +12,6 @@ export default function StationBar({ stations: api, auth }) {
   const [name, setName] = useState('')
   const [renamingId, setRenamingId] = useState(null)
   const [renameValue, setRenameValue] = useState('')
-  // 离线建站的成功提示（A-10）：用户需要知道「这个站现在只是本机的一条草稿」
-  const [draftNotice, setDraftNotice] = useState(null)
 
   const submitCreate = async (e) => {
     e.preventDefault()
@@ -21,12 +19,6 @@ export default function StationBar({ stations: api, auth }) {
     if (created) {
       setName('')
       setCreating(false)
-      // 离线建站时 createStation 返回的是乐观插入的本地 row（尚未上云）。
-      // 提示必须说清「联网后会自动同步」，否则用户会以为已经存到云端了。
-      if (created.pendingSync) {
-        setDraftNotice(`「${created.name}」已存为离线草稿，联网后会自动同步`)
-        setTimeout(() => setDraftNotice(null), 4000)
-      }
     }
   }
 
@@ -40,18 +32,7 @@ export default function StationBar({ stations: api, auth }) {
   }
 
   const doRemove = async (station) => {
-    // ★ A-19：confirm 改三行，说清「删什么 / 连带删什么 / 不可撤销」★
-    //   原来只有一句「站内词条会一并移除」，用户不知道自己的**私有词条本身**
-    //   不会被删、以及学习记录也不受影响 —— 于是每次删站都是一次不确定的点击。
-    if (
-      !window.confirm(
-        `删除小站「${station.name}」？\n` +
-          `· 小站里的词条引用会一并移除（该小站将被清空）\n` +
-          `· 你在「学习」页的学习记录、以及这些词的私有词条都会保留\n` +
-          `此操作不可撤销。`,
-      )
-    )
-      return
+    if (!window.confirm(`删除小站「${station.name}」？站内词条会一并移除，不可撤销。`)) return
     await api.removeStation(station.id)
   }
 
@@ -99,15 +80,6 @@ export default function StationBar({ stations: api, auth }) {
                 {s.pinned ? '📌 ' : ''}
                 {s.name}
               </button>
-              {/* 离线草稿标记：只在本机会话内存在（不入库、不上行） */}
-              {s.pendingSync && (
-                <span
-                  className="text-[10px] px-1 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200"
-                  title="本机离线草稿，联网后会自动同步"
-                >
-                  待同步
-                </span>
-              )}
               <button
                 onClick={() => api.togglePin(s.id, !s.pinned)}
                 title={s.pinned ? '取消置顶' : '置顶'}
@@ -159,7 +131,6 @@ export default function StationBar({ stations: api, auth }) {
       )}
 
       {api.error && <span className="text-red-600">{api.error.message}</span>}
-      {draftNotice && <span className="text-amber-700">{draftNotice}</span>}
     </div>
   )
 }

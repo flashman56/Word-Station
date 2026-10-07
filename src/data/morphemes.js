@@ -3,10 +3,6 @@
  * ------------------------------------------------------------------
  * 字段说明：
  *   id       唯一标识。约定：词根 r.* ，前缀 p.* ，后缀 s.*
- *            ★ 例外：x.unk 是占位词素，表示「未拆解」。它的 id 被
- *            src/lib/cloud/userWords.js（冻结文件）与 scripts/test-private.mjs
- *            直接硬编码引用，**不可改名**，否则云端用户词会变成孤儿引用。
- *            前缀 x. 是刻意为之（unknown 的占位域），不是拼写错误。
  *   type     "root"（词根） | "prefix"（前缀） | "suffix"（后缀）
  *   form     主词形（不带连字符）
  *   display  展示用写法（含主要变体）
@@ -29,7 +25,7 @@ const morphemes = [
   { id: 'r.duc', type: 'root', form: 'duc', display: 'duc / duct', variants: ['duct'], gloss: '引导，带领', glossEn: 'to lead', origin: 'latin', note: 'duct（管道）即"引导东西的通道"。' },
   { id: 'r.cred', type: 'root', form: 'cred', display: 'cred / creed', variants: ['creed'], gloss: '相信，信任', glossEn: 'to believe, to trust', origin: 'latin', note: 'creed（信条）就是"所相信的东西"。' },
   { id: 'r.cap', type: 'root', form: 'cap', display: 'cap / cip / ceive / cept', variants: ['cip', 'ceive', 'cept', 'capt'], gloss: '抓，取，拿', glossEn: 'to take, to seize', origin: 'latin', note: '形态变化最活跃的词根之一：capture / receive / concept / participate。' },
-  { id: 'r.mit', type: 'root', form: 'mit', display: 'mit / miss', variants: ['miss'], gloss: '送，放出', glossEn: 'to send, to let go', origin: 'latin', note: 'missile（导弹）即"被送出去的东西"。⚠️ 只收 mit / miss「送」：commission / admit / submit / permit / transmit / dismiss / emit。易混：impet- 属 r.pet（petere 冲向）、-miser- 属 r.miser（miserari 哀怜）、mim- 属 r.mim（模仿），都不同源。' },
+  { id: 'r.mit', type: 'root', form: 'mit', display: 'mit / miss', variants: ['miss'], gloss: '送，放出', glossEn: 'to send, to let go', origin: 'latin', note: 'missile（导弹）即"被送出去的东西"。' },
   { id: 'r.fer', type: 'root', form: 'fer', display: 'fer / lat', variants: ['lat'], gloss: '带，承载，运送', glossEn: 'to carry, to bear', origin: 'latin', note: '变体 lat 出现在 translate、relate 等词里。' },
   { id: 'r.pos', type: 'root', form: 'pos', display: 'pos / pon / pose', variants: ['pon', 'pose'], gloss: '放，置', glossEn: 'to place, to put', origin: 'latin', note: 'pose（姿势）就是"摆放身体的方式"。' },
   { id: 'r.tend', type: 'root', form: 'tend', display: 'tend / tens / tent', variants: ['tens', 'tent'], gloss: '伸展，伸向', glossEn: 'to stretch', origin: 'latin', note: 'tension（张力）即"被拉伸的状态"。' },
@@ -57,7 +53,7 @@ const morphemes = [
   { id: 'p.un', type: 'prefix', form: 'un', display: 'un-', variants: [], gloss: '否定、相反；或表"解除"', glossEn: 'not, opposite; to reverse', origin: 'old_english', note: '本族语前缀，几乎可加在任何形容词前；undo 类词表"反向动作"。' },
   { id: 'p.re', type: 'prefix', form: 're', display: 're-', variants: ['red'], gloss: '回，再，重新', glossEn: 'back, again', origin: 'latin', note: '最高产的前缀之一；注意 reaction（反作用）里的 re- 表"反向"。' },
   { id: 'p.pre', type: 'prefix', form: 'pre', display: 'pre-', variants: [], gloss: '在…之前，预先', glossEn: 'before', origin: 'latin', note: '与 post- 成对记忆。' },
-  { id: 'p.in', type: 'prefix', form: 'in', display: 'in- / im- / il- / ir-', variants: ['im', 'il', 'ir'], gloss: '向内、进入；或表否定', glossEn: 'in, into; not', origin: 'latin', note: '两种含义：inject（注入）向内，impossible（不可能）否定。形随后面的辅音同化，故 in- 在 b/m/p/v 前变 im-、在 l 前变 il-、在 r 前变 ir-。' },
+  { id: 'p.in', type: 'prefix', form: 'im', display: 'in- / im- / il- / ir-', variants: ['in', 'il', 'ir'], gloss: '向内、进入；或表否定', glossEn: 'in, into; not', origin: 'latin', note: '两种含义：inject（注入）向内，impossible（不可能）否定。形随后面的辅音同化。' },
   { id: 'p.sub', type: 'prefix', form: 'sub', display: 'sub- / suc- / suf- / sup-', variants: ['suc', 'suf', 'sup', 'sus'], gloss: '在…之下，次于，暗中', glossEn: 'under, beneath', origin: 'latin', note: 'subway（地铁）、subtle（微妙的，原义"织得很细")。' },
   { id: 'p.inter', type: 'prefix', form: 'inter', display: 'inter- / intel-', variants: ['intel'], gloss: '在…之间，相互', glossEn: 'between, among', origin: 'latin', note: 'international（国家之间的）、intervene（来到中间）。' },
   { id: 'p.trans', type: 'prefix', form: 'trans', display: 'trans- / tra-', variants: ['tra'], gloss: '跨越，转变', glossEn: 'across, beyond, through', origin: 'latin', note: 'transform（变形）、transcend（超越）。' },
@@ -70,7 +66,7 @@ const morphemes = [
   // ---------------- 后缀 ----------------
   { id: 's.tion', type: 'suffix', form: 'tion', display: '-tion / -sion / -ation', variants: ['sion', 'ation', 'ion'], gloss: '名词后缀：动作、过程、结果', glossEn: 'action, process, result', origin: 'latin', note: '最常见的名词化后缀；加在动词或词根后。' },
   { id: 's.able', type: 'suffix', form: 'able', display: '-able / -ible', variants: ['ible'], gloss: '形容词后缀：可…的，能…的', glossEn: 'capable of, worthy of', origin: 'latin', note: '-able 多与本族语动词结合，-ible 多与拉丁词根结合。' },
-  { id: 's.ment', type: 'suffix', form: 'ment', display: '-mentum / -ment', variants: ['mentum'], gloss: '名词后缀：结果、产物、手段、行为', glossEn: 'result, product, means, action', origin: 'latin', note: '拉丁名词中缀 -mentum「工具、手段、行为之结果」，经古法语 -ment 进入英语：development、amazement、government。⚠️ 与拉丁词根 r.ment（mens「心」）形同义不同，不要混为一谈：comment / management / document / parliament / equipment / experiment / fragment 归本后缀，mental / mention / mentor / mentality 归 r.ment。' },
+  { id: 's.ment', type: 'suffix', form: 'ment', display: '-ment', variants: [], gloss: '名词后缀：结果、状态、手段', glossEn: 'result, state, means', origin: 'french', note: '经法语进入英语：development、amazement。' },
   { id: 's.ity', type: 'suffix', form: 'ity', display: '-ity / -ty', variants: ['ty'], gloss: '名词后缀：性质、状态', glossEn: 'quality, state', origin: 'latin', note: '常加在形容词后：ability、curiosity、density。' },
   { id: 's.ous', type: 'suffix', form: 'ous', display: '-ous / -ious / -eous', variants: ['ious', 'eous'], gloss: '形容词后缀：充满…的', glossEn: 'full of, having', origin: 'latin', note: 'dangerous、curious、gracious。' },
   { id: 's.ive', type: 'suffix', form: 'ive', display: '-ive / -ative', variants: ['ative'], gloss: '形容词后缀：有…倾向的', glossEn: 'tending to', origin: 'latin', note: 'creative、sensitive、decisive。' },
@@ -94,7 +90,7 @@ const morphemes = [
   { id: 'r.capit', type: 'root', form: 'capit', display: 'capit / cipit', variants: ['cipit'], gloss: '头，首', glossEn: 'head', origin: 'latin', note: 'capital（首都）、captain（首领）。' },
   { id: 'r.anim', type: 'root', form: 'anim', display: 'anim', variants: [], gloss: '生命，精神', glossEn: 'life, spirit', origin: 'latin', note: 'animate（使有生气）、unanimous（一致的）。' },
   { id: 'r.ver', type: 'root', form: 'ver', display: 'ver', variants: [], gloss: '真，真实', glossEn: 'true', origin: 'latin', note: 'verify（核实）、verdict（裁决）。' },
-  { id: 'r.fid', type: 'root', form: 'fid', display: 'fid', variants: [], gloss: '信任，忠诚', glossEn: 'to trust', origin: 'latin', note: 'fidelity（忠诚）、confide（信赖）。' },
+  { id: 'r.fid', type: 'root', form: 'fid', display: 'fid', variants: [], gloss: '信任， faith', glossEn: 'to trust', origin: 'latin', note: 'fidelity（忠诚）、confide（信赖）。' },
   { id: 'r.nom', type: 'root', form: 'nom', display: 'nom / nym', variants: ['nym'], gloss: '名字', glossEn: 'name', origin: 'latin', note: 'nominal（名义上的）、synonym（同义词）。' },
   { id: 'r.sens', type: 'root', form: 'sens', display: 'sens / sent', variants: ['sent'], gloss: '感觉，知觉', glossEn: 'to feel', origin: 'latin', note: 'sensitive（敏感的）、sentiment（情感）。' },
   { id: 'r.flu', type: 'root', form: 'flu', display: 'flu / flux', variants: ['flux'], gloss: '流', glossEn: 'to flow', origin: 'latin', note: 'fluent（流利的）、influence（影响）。' },
@@ -107,7 +103,7 @@ const morphemes = [
   { id: 'r.lumin', type: 'root', form: 'lumin', display: 'lumin / lum', variants: ['lum'], gloss: '光', glossEn: 'light', origin: 'latin', note: 'illuminate（照亮）、luminous（发光的）。' },
   { id: 'r.med', type: 'root', form: 'med', display: 'med / medi', variants: ['medi'], gloss: '中间', glossEn: 'middle', origin: 'latin', note: 'mediate（调解）、medium（媒介）。' },
   { id: 'r.mem', type: 'root', form: 'mem', display: 'mem / memor', variants: ['memor'], gloss: '记忆', glossEn: 'memory', origin: 'latin', note: 'memorial（纪念的）、commemorate（纪念）。' },
-  { id: 'r.ment', type: 'root', form: 'ment', display: 'ment（拉丁 mens, mentis）', variants: ['mens'], gloss: '心，思想，精神', glossEn: 'mind, thought, spirit', origin: 'latin', note: '⚠️ 只收拉丁 mens / mentis「心」：mental / mention（想到、说出）/ mentor / mentality / dementia / amentia。词尾 -ment（comment、management）不是本词根，而是拉丁名词后缀 -mentum，见 s.ment。' },
+  { id: 'r.ment', type: 'root', form: 'ment', display: 'ment', variants: [], gloss: '心，思，精神', glossEn: 'mind', origin: 'latin', note: 'mental（精神的）、mention（提及）。' },
   { id: 'r.merg', type: 'root', form: 'merg', display: 'merg / mers', variants: ['mers'], gloss: '沉，浸', glossEn: 'to sink, to dip', origin: 'latin', note: 'emerge（浮现）、immerse（浸入）。' },
   { id: 'r.min', type: 'root', form: 'min', display: 'min', variants: [], gloss: '小，少', glossEn: 'small, less', origin: 'latin', note: 'minor（较小的）、diminish（减少）。' },
   { id: 'r.mod', type: 'root', form: 'mod', display: 'mod', variants: [], gloss: '尺度，方式', glossEn: 'measure, manner', origin: 'latin', note: 'moderate（适度的）、modify（修改）。' },
@@ -128,13 +124,13 @@ const morphemes = [
   { id: 'r.popul', type: 'root', form: 'popul', display: 'popul', variants: [], gloss: '人民，民众', glossEn: 'people', origin: 'latin', note: 'popular（流行的）、populate（居住于）。' },
   { id: 'r.press', type: 'root', form: 'press', display: 'press', variants: [], gloss: '压，按', glossEn: 'to press', origin: 'latin', note: 'compress（压缩）、express（表达）。' },
   { id: 'r.prim', type: 'root', form: 'prim', display: 'prim / prin', variants: ['prin'], gloss: '第一，首要', glossEn: 'first', origin: 'latin', note: 'primary（首要的）、principle（原则）。' },
-  { id: 'r.quir', type: 'root', form: 'quir', display: 'quir / quest（拉丁 quaerere）', variants: ['quest'], gloss: '寻求，询问', glossEn: 'to seek, to ask', origin: 'latin', note: '★ 规范条目。拉丁 quaerere「寻求、询问」：require / question / inquire / acquire / request / requisite。同源同拼法见 r.quer（-quer 组），两者同源。' },
+  { id: 'r.quir', type: 'root', form: 'quir', display: 'quir / quest', variants: ['quest'], gloss: '寻求，询问', glossEn: 'to seek, to ask', origin: 'latin', note: 'require（需要）、question（问题）。' },
   { id: 'r.rect', type: 'root', form: 'rect', display: 'rect / reg', variants: ['reg'], gloss: '直，正，统治', glossEn: 'straight, to rule', origin: 'latin', note: 'correct（正确的）、direct（直接的）。' },
   { id: 'r.rupt', type: 'root', form: 'rupt', display: 'rupt', variants: [], gloss: '破，裂', glossEn: 'to break', origin: 'latin', note: 'interrupt（打断）、corrupt（腐败的）。' },
   { id: 'r.scient', type: 'root', form: 'scient', display: 'scient / sci', variants: ['sci'], gloss: '知，知道', glossEn: 'to know', origin: 'latin', note: 'science（科学）、conscious（有意识的）。' },
   { id: 'r.scop', type: 'root', form: 'scop', display: 'scop / scope', variants: ['scope'], gloss: '看，观察', glossEn: 'to look', origin: 'greek', note: 'telescope（望远镜）、microscope（显微镜）。' },
   { id: 'r.sequ', type: 'root', form: 'sequ', display: 'sequ / secut', variants: ['secut'], gloss: '跟随', glossEn: 'to follow', origin: 'latin', note: 'sequence（序列）、consecutive（连续的）。' },
-  { id: 'r.sess', type: 'root', form: 'sess', display: 'sess（拉丁 sedere 同源别名）', variants: ['sid'], gloss: '坐（同 r.sed）', glossEn: 'to sit', origin: 'latin', note: '⚠️ r.sed 的同源别名条目，非独立词根：拉丁 sedere「坐」的 -sess 组（session / possess / assess / obsession）。规范条目为 r.sed。' },
+  { id: 'r.sess', type: 'root', form: 'sess', display: 'sess / sid', variants: ['sid'], gloss: '坐', glossEn: 'to sit', origin: 'latin', note: 'session（会议）、reside（居住）。' },
   { id: 'r.sign', type: 'root', form: 'sign', display: 'sign', variants: [], gloss: '记号，标志', glossEn: 'sign, mark', origin: 'latin', note: 'signal（信号）、designate（指定）。' },
   { id: 'r.sim', type: 'root', form: 'sim', display: 'sim / simil', variants: ['simil'], gloss: '相似，相同', glossEn: 'same, like', origin: 'latin', note: 'similar（相似的）、simulate（模拟）。' },
   { id: 'r.sist', type: 'root', form: 'sist', display: 'sist', variants: [], gloss: '站立', glossEn: 'to stand', origin: 'latin', note: 'insist（坚持）、resist（抵抗）。' },
@@ -145,8 +141,7 @@ const morphemes = [
   { id: 'r.stat', type: 'root', form: 'stat', display: 'stat / stit', variants: ['stit'], gloss: '站立，状态', glossEn: 'to stand, state', origin: 'latin', note: 'stable（稳定的）、institute（设立）。' },
   { id: 'r.strict', type: 'root', form: 'strict', display: 'strict / string', variants: ['string'], gloss: '拉紧，束缚', glossEn: 'to draw tight', origin: 'latin', note: 'restrict（限制）、stringent（严格的）。' },
   { id: 'r.tact', type: 'root', form: 'tact', display: 'tact / tang', variants: ['tang'], gloss: '触摸', glossEn: 'to touch', origin: 'latin', note: 'contact（接触）、tangible（可触的）。' },
-  { id: 'r.tain', type: 'root', form: 'tain', display: 'tain / ten（拉丁 tenere）', variants: ['ten'], gloss: '持有，保持', glossEn: 'to hold, to keep', origin: 'latin', note: '★ 规范条目。拉丁 tenere「持有、保持」：contain / maintain / retain / detain / sustain / obtain / tenable。同源同拼法见 r.tin（-tin / -tent 组），两者同源，不必分记。' },
-  { id: 'r.tin', type: 'root', form: 'tin', display: 'tin / tent（拉丁 tenere 同源别名）', variants: ['tent'], gloss: '持有，保持（同 r.tain）', glossEn: 'to hold, to keep', origin: 'latin', note: '⚠️ r.tain 的同源别名条目，非独立词根：拉丁 tenere「持有」另一组拼法 -tin / -tent（continue / abstinence / retention / pertinent）。规范条目为 r.tain。' },
+  { id: 'r.tain', type: 'root', form: 'tain', display: 'tain / ten', variants: ['ten'], gloss: '持有，保持', glossEn: 'to hold', origin: 'latin', note: 'contain（容纳）、maintain（维持）。' },
   { id: 'r.termin', type: 'root', form: 'termin', display: 'termin', variants: [], gloss: '界限，终点', glossEn: 'boundary, end', origin: 'latin', note: 'terminal（终点站）、determine（决定）。' },
   { id: 'r.test', type: 'root', form: 'test', display: 'test', variants: [], gloss: '见证，证明', glossEn: 'witness', origin: 'latin', note: 'testify（作证）、protest（抗议）。' },
   { id: 'r.tex', type: 'root', form: 'tex', display: 'tex / text', variants: ['text'], gloss: '编织', glossEn: 'to weave', origin: 'latin', note: 'texture（质地）、context（语境）。' },
@@ -385,7 +380,7 @@ const morphemes = [
   { id: 'r.nav', type: 'root', form: 'nav', display: 'nav', variants: [], gloss: '船，航行', glossEn: 'ship, to sail', origin: 'latin', note: 'navy（海军）、navigate（航行）。' },
   { id: 'r.necr', type: 'root', form: 'necr', display: 'necr / necro', variants: ['necro'], gloss: '死', glossEn: 'death', origin: 'greek', note: 'necropolis（墓地）、necrosis（坏死）。' },
   { id: 'r.odont', type: 'root', form: 'odont', display: 'odont / odonto', variants: ['odonto'], gloss: '牙', glossEn: 'tooth', origin: 'greek', note: 'orthodontics（牙齿矫正）、periodontal（牙周的）。' },
-  { id: 'r.oxy', type: 'root', form: 'oxy', display: 'oxy', variants: [], gloss: '尖，酸；含氧的', glossEn: 'sharp, acid; oxygen-related', origin: 'greek', note: '希腊语 ὀξύς（oxys）「尖锐的、酸涩的」，与拉丁 r.ac 同出 PIE *h₂eḱ-「尖」——是**同源姐妹词而非同一词素**，故不合表：oxy- 在英语中主要表「含氧的」（oxygen / oxide / oxidation），ac- 表「尖、酸」（acute / acid / acumen）。 Lavoisier 用 oxy- + -gen「产生」命名氧，因他误以为一切酸都含氧。' },
+  { id: 'r.oxy', type: 'root', form: 'oxy', display: 'oxy', variants: [], gloss: '尖；酸', glossEn: 'sharp; acid', origin: 'greek', note: 'oxygen（氧）、oxymoron（矛盾修饰）。' },
   { id: 'r.paed', type: 'root', form: 'paed', display: 'paed / pedo', variants: ['pedo'], gloss: '儿童，教育', glossEn: 'child, education', origin: 'greek', note: 'paediatrics（儿科）、pedagogy（教育学）。' },
   { id: 'r.pent', type: 'root', form: 'pent', display: 'pent / penta', variants: ['penta'], gloss: '五', glossEn: 'five', origin: 'greek', note: 'pentagon（五边形）、pentathlon（五项全能）。' },
   { id: 'r.pharmac', type: 'root', form: 'pharmac', display: 'pharmac / pharma', variants: ['pharma'], gloss: '药', glossEn: 'drug', origin: 'greek', note: 'pharmaceutical（制药的）、pharmacy（药房）。' },
@@ -467,6 +462,7 @@ const morphemes = [
   { id: 'r.rid', type: 'root', form: 'rid', display: 'rid / ris', variants: ['ris'], gloss: '笑', glossEn: 'to laugh', origin: 'latin', note: 'ridicule（嘲笑）、derision（嘲弄）。' },
   { id: 'r.riv', type: 'root', form: 'riv', display: 'riv', variants: [], gloss: '河，岸；引水', glossEn: 'river, bank', origin: 'latin', note: 'river（河流）、derive（源于）。' },
   { id: 'r.stagn', type: 'root', form: 'stagn', display: 'stagn', variants: [], gloss: '停滞', glossEn: 'stagnant', origin: 'latin', note: 'stagnant（停滞的）、stagnate（停滞）。' },
+  { id: 'r.tin', type: 'root', form: 'tin', display: 'tin / tent', variants: ['tent'], gloss: '持有，保持', glossEn: 'to hold', origin: 'latin', note: 'continue（继续）、tenacious（顽强的）。' },
   { id: 'r.umbra', type: 'root', form: 'umbra', display: 'umbra', variants: [], gloss: '阴影', glossEn: 'shadow', origin: 'latin', note: 'umbrella（雨伞）、somber（阴郁的 之形近词）。' },
   { id: 'r.apt', type: 'root', form: 'apt', display: 'apt / ept', variants: ['ept'], gloss: '适合，恰当', glossEn: 'fit, suited', origin: 'latin', note: 'adapt（适应）、aptitude（才能）。' },
   { id: 'r.cinct', type: 'root', form: 'cinct', display: 'cinct / stinct', variants: ['stinct'], gloss: '围，刺', glossEn: 'to gird, to prick', origin: 'latin', note: 'distinct（明显的）、extinct（灭绝的）。' },
@@ -485,7 +481,7 @@ const morphemes = [
   { id: 'r.ple', type: 'root', form: 'ple', display: 'ple / plet', variants: ['plet'], gloss: '填满，充满', glossEn: 'to fill', origin: 'latin', note: 'complete（完整的）、supplement（补充）。' },
   { id: 'r.preci', type: 'root', form: 'preci', display: 'preci / pret', variants: ['pret'], gloss: '价值，价格', glossEn: 'price, value', origin: 'latin', note: 'precious（珍贵的）、appreciate（欣赏）。' },
   { id: 'r.pug', type: 'root', form: 'pug', display: 'pug / pugn', variants: ['pugn'], gloss: '打，斗', glossEn: 'to fight', origin: 'latin', note: 'pugnacious（好斗的）、repugnant（令人厌恶的）。' },
-  { id: 'r.quer', type: 'root', form: 'quer', display: 'quer（拉丁 quaerere 同源别名）', variants: [], gloss: '寻求，询问（同 r.quir）', glossEn: 'to seek, to ask', origin: 'latin', note: '⚠️ r.quir 的同源别名条目，非独立词根：拉丁 quaerere 另一组拼法 -quer（conquer / query / quest / inquisition）。规范条目为 r.quir。' },
+  { id: 'r.quer', type: 'root', form: 'quer', display: 'quer / quest', variants: ['quest'], gloss: '抱怨，寻求', glossEn: 'to complain, to seek', origin: 'latin', note: 'quarrel（争吵）、querulous（爱抱怨的）。' },
   { id: 'r.sen', type: 'root', form: 'sen', display: 'sen', variants: [], gloss: '老', glossEn: 'old', origin: 'latin', note: 'senior（年长的）、senile（衰老的）。' },
   { id: 'r.sever', type: 'root', form: 'sever', display: 'sever', variants: [], gloss: '严格，严肃', glossEn: 'serious, strict', origin: 'latin', note: 'severe（严厉的）、persevere（坚持）。' },
   { id: 'r.sit', type: 'root', form: 'sit', display: 'sit', variants: [], gloss: '食物，谷', glossEn: 'food, grain', origin: 'latin', note: 'parasite（寄生物）、sitology 之 sit 义为食物。' },
@@ -598,7 +594,7 @@ const morphemes = [
   { id: 'r.sag', type: 'root', form: 'sag', display: 'sag', variants: [], gloss: '智慧；嗅', glossEn: 'wise; to perceive', origin: 'latin', note: 'sagacious（睿智的）、saga（传奇）。' },
   { id: 'r.san', type: 'root', form: 'san', display: 'san', variants: [], gloss: '健康', glossEn: 'health', origin: 'latin', note: 'sane（理智的）、sanitary（卫生的）。' },
   { id: 'r.sculp', type: 'root', form: 'sculp', display: 'sculp', variants: [], gloss: '雕刻', glossEn: 'to carve', origin: 'latin', note: 'sculpture（雕塑）、sculpt（雕刻）。' },
-  { id: 'r.sed', type: 'root', form: 'sed', display: 'sed / sess（拉丁 sedere）', variants: ['sess'], gloss: '坐；安定', glossEn: 'to sit; to settle', origin: 'latin', note: '★ 规范条目。拉丁 sedere「坐、就座」：sedate（镇静的）/ sediment（沉淀物）/ supersede / preside（坐镇）/ sedulous（勤勉的）。同源同拼法见 r.sess（-sess 组），两者同源。' },
+  { id: 'r.sed', type: 'root', form: 'sed', display: 'sed / sess', variants: ['sess'], gloss: '坐；平静', glossEn: 'to sit; calm', origin: 'latin', note: 'sedate（镇静的）、sediment（沉淀物）。' },
   { id: 'r.semin', type: 'root', form: 'semin', display: 'semin', variants: [], gloss: '种子，播种', glossEn: 'seed', origin: 'latin', note: 'seminar（研讨会）、disseminate（传播）。' },
   { id: 'r.separ', type: 'root', form: 'separ', display: 'separ', variants: [], gloss: '分开', glossEn: 'to separate', origin: 'latin', note: 'separate（分开）、prepare 之 par 义为准备。' },
   { id: 'r.serv', type: 'root', form: 'serv', display: 'serv', variants: [], gloss: '服务；保存', glossEn: 'to serve; to keep', origin: 'latin', note: 'service（服务）、preserve（保存）。' },
@@ -670,7 +666,7 @@ const morphemes = [
   // ================= 扩充词素 第五批 =================
 
   // ---------------- 拉丁词根（第五批） ----------------
-  { id: 'r.ac', type: 'root', form: 'ac', display: 'ac / acr', variants: ['acr'], gloss: '尖，锐；酸', glossEn: 'sharp; sour', origin: 'latin', note: 'acute（敏锐的）、acid（酸）、acumen（敏锐）。源自 PIE *h₂eḱ-「尖」，希腊语同源姐妹词为 r.oxy（ὀξύς）——同源但不同语族，故分立两条，不合并。' },
+  { id: 'r.ac', type: 'root', form: 'ac', display: 'ac / acr', variants: ['acr'], gloss: '尖，锐；酸', glossEn: 'sharp; sour', origin: 'latin', note: 'acute（敏锐的）、acid（酸）。' },
   { id: 'r.aestim', type: 'root', form: 'aestim', display: 'aestim', variants: [], gloss: '评估，估价', glossEn: 'to value', origin: 'latin', note: 'estimate（估计）、esteem（尊重）。' },
   { id: 'r.al', type: 'root', form: 'al', display: 'al', variants: [], gloss: '养育，滋养', glossEn: 'to nourish', origin: 'latin', note: 'aliment（食物）、alimony（赡养费）。' },
   { id: 'r.argent', type: 'root', form: 'argent', display: 'argent', variants: [], gloss: '银', glossEn: 'silver', origin: 'latin', note: 'argent（银色）、Argentina（阿根廷）。' },
@@ -726,7 +722,6 @@ const morphemes = [
   { id: 'r.scind', type: 'root', form: 'scind', display: 'scind / sciss', variants: ['sciss'], gloss: '切，割', glossEn: 'to cut', origin: 'latin', note: 'rescind（废除）、scissors（剪刀）。' },
   { id: 'r.stell', type: 'root', form: 'stell', display: 'stell / stellat', variants: ['stellat'], gloss: '星', glossEn: 'star', origin: 'latin', note: 'stellar（恒星的）、constellation（星座）。' },
   { id: 'r.stud', type: 'root', form: 'stud', display: 'stud', variants: [], gloss: '热忱，努力', glossEn: 'zeal', origin: 'latin', note: 'study（学习）、student（学生）。' },
-  { id: 'r.miser', type: 'root', form: 'miser', display: 'miser / miserari', variants: ['miserari'], gloss: '可怜，悲惨；哀怜', glossEn: 'wretched, unhappy; to pity', origin: 'latin', note: '拉丁 miser「可怜的、不幸的」，动词 miserari「哀怜」：miserable / misery / miser（守财奴）/ commiserate（同情的）。⚠️ 与 r.mit（mit「送」）形近义远，勿混。' },
 
   // ---------------- 希腊词根（第五批） ----------------
   { id: 'r.aesth', type: 'root', form: 'aesth', display: 'aesth / esthe', variants: ['esthe'], gloss: '感觉，感知', glossEn: 'perception', origin: 'greek', note: 'aesthetics（美学）、anesthesia（麻醉）。' },
