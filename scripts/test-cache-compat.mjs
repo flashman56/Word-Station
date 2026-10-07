@@ -246,10 +246,16 @@ test('★ 结论：不需要迁移作废（filter 条件对两种形状都成立
 
 test('★ 源码纪律：裁剪只在写盘那一个点发生（read 侧零改动）', () => {
   const src = readFileSync(HOOK, 'utf8')
-  // 写盘：投影
+  // 写盘：投影（★ 现已统一到 migrate.js 的 projectRef ——
+  //   真正的防线内置在 writeStationRefs 里，这行只是文档化的显式投影）
   assert.ok(
-    /writeStationRefs\(\s*stationId,\s*list\.map\(pickCacheRef\)/.test(src),
-    '★ 写盘走 list.map(pickCacheRef)',
+    /writeStationRefs\(\s*stationId,\s*list\.map\(projectRef\)/.test(src),
+    '★ 写盘走 list.map(projectRef)（与 migrate.js 的 projectRef 是同一份实现）',
+  )
+  // 旧的 pickCacheRef 必须只是 projectRef 的薄包装（不能有两份裁剪实现）
+  assert.ok(
+    /export function pickCacheRef\(r\) \{\s*return projectRef\(r\)\s*\}/.test(src),
+    '★ pickCacheRef 必须是 projectRef 的薄包装（避免两份裁剪实现漂移）',
   )
   // 读盘：零投影（读回来的形状就是写进去的形状）
   const readLine = /readStationRefs\(([^)]*)\)\.refs/.exec(src)
@@ -267,6 +273,84 @@ test('★ 内存态零转换：setRefs(list) 仍是原始 API 行对象', () => 
   assert.ok(
     !calls.some((a) => a.includes('pickCacheRef')),
     '★ 内存态绝不投影（将来 K5 接笔记 UI 要靠它）',
+  )
+})
+
+// ================================================================ ⑧ 加固②
+// 防线必须建在**写入器**里：直调 writeStationRefs 传 8 字段行，落盘仍只含 wordKey。
+//
+// ★ 这条是 QA 的脚本无意中照出来的 ★
+//   它扮演了「第二个调用方」，原样传入 8 字段行 → 写进缓存 299.7 B/条
+//   → 10 站满配 1463 KB → 护栏在第 2 个站**静默拒写**（返回 false、不抛错、无日志）
+//   → 症状是「**离线读不到自己的站**」（红线 6 违反）且**零报错**。
+//   ⇒ 防线不能建在调用方自觉上，必须内置在 writeStationRefs 里。
+
+test('★★ 加固②：直调 writeStationRefs 传 8 字段行，落盘仍只含 wordKey', () => {
+  reset()
+  // ★ 刻意**不经** pickCacheRef / projectRef —— 完全模拟「第二个调用方」
+  const raw8 = [legacyRow(11), legacyRow(12), legacyRow(13)]
+  const okWrite = writeStationRefs('s-raw8', raw8, SCOPE)
+  assert.equal(okWrite, true, '前置：写入成功')
+
+  const { refs } = readStationRefs('s-raw8', SCOPE)
+  assert.equal(refs.length, 3, '★ 三行都在（投影不该丢行）')
+  // ★ 用 Object.keys **精确匹配键名集合**，不用 length === 1
+  refs.forEach((r, i) => {
+    assert.deepEqual(
+      Object.keys(r),
+      ['wordKey'],
+      '★ 第 ' + (i + 1) + ' 行的键集合必须恰好是 ["wordKey"]，实际：' + JSON.stringify(Object.keys(r)),
+    )
+  })
+  assert.deepEqual(refs.map((r) => r.wordKey), raw8.map((r) => r.wordKey), 'wordKey 全部原样保留')
+})
+
+test('★★ 加固②：投影是幂等的（传已裁剪的行，形状不变）', () => {
+  reset()
+  const already = [{ wordKey: KEY(1) }, { wordKey: KEY(2) }]
+  writeStationRefs('s-idem', already, SCOPE)
+  const { refs } = readStationRefs('s-idem', SCOPE)
+  assert.equal(refs.length, 2, '两行都在')
+  refs.forEach((r) => {
+    assert.deepEqual(Object.keys(r), ['wordKey'], '★ 已裁剪的行再裁一次，键集合不变')
+  })
+})
+
+test('★★ 加固②：投影不改变行数、不丢词、不改 wordKey 值', () => {
+  reset()
+  const mixed = [legacyRow(21), { wordKey: KEY(22) }, legacyRow(23)]
+  writeStationRefs('s-mixed', mixed, SCOPE)
+  const { refs } = readStationRefs('s-mixed', SCOPE)
+  assert.equal(refs.length, 3, '★ 混合输入行数不变')
+  assert.deepEqual(refs.map((r) => r.wordKey), mixed.map((r) => r.wordKey), '★ 词序与 wordKey 值都不变')
+})
+
+test('★★ 加固②：投影对空数组 / 非数组 / 脏行都安全', () => {
+  reset()
+  assert.equal(writeStationRefs('s-e1', [], SCOPE), true, '空数组可写')
+  assert.equal(writeStationRefs('s-e2', null, SCOPE), true, 'null 不抛错')
+  assert.equal(writeStationRefs('s-e3', undefined, SCOPE), true, 'undefined 不抛错')
+  assert.equal(writeStationRefs('s-e4', [null, undefined, { wordKey: KEY(31) }], SCOPE), true, '脏行不抛错')
+  // 脏行的 wordKey 是 undefined —— 读侧的 filter 会把它剔掉（这正是我们要的）
+  const { refs } = readStationRefs('s-e4', SCOPE)
+  assert.equal(refs.length, 1, '★ 唯一有效行留下，无 wordKey 的行被读侧过滤')
+  assert.equal(refs[0].wordKey, KEY(31), '有效行内容正确')
+})
+
+test('★★ 加固②：源码纪律 —— 投影在写入器内部，不在调用方', () => {
+  const migrateSrc = readFileSync(resolve('src/lib/migrate.js'), 'utf8')
+  const wrStart = migrateSrc.indexOf('export function writeStationRefs')
+  assert.ok(wrStart !== -1, '找得到 writeStationRefs')
+  const wrBody = migrateSrc.slice(wrStart, wrStart + 900)
+  assert.ok(
+    /\.map\(projectRef\)/.test(wrBody) && /refs: projected/.test(wrBody),
+    '★★ writeStationRefs 内部必须对 refs 做 .map(projectRef) 并落盘 projected ——' +
+      '这是唯一的防线，不能只靠调用方自觉',
+  )
+  // 反向：不得存在「直接把入参原样落盘」的路径（那正是 T06 返工前的写法）
+  assert.ok(
+    !/refs: Array\.isArray\(refs\)\s*\?\s*refs\s*:\s*\[\]/.test(wrBody),
+    '★ 不得把入参原样落盘（那正是 T06 返工前的写法）',
   )
 })
 

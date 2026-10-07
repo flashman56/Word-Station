@@ -394,17 +394,56 @@ export default function NetworkView({
   const results = useMemo(() => {
     const q = query.trim().toLowerCase()
     if (!q) return null
-    const hitWords = words
-      .filter((w) => w.form.toLowerCase().includes(q) || (w.gloss || '').toLowerCase().includes(q))
-      .slice(0, 8)
-    const hitMorphs = morphemes
-      .filter((m) =>
-        [m.form, m.display, m.gloss, m.glossEn, ...(m.variants || [])]
-          .filter(Boolean)
-          .some((s) => String(s).toLowerCase().includes(q)),
-      )
-      .slice(0, 6)
-    return { hitWords, hitMorphs }
+    /* ★★ K6：精确匹配置顶（主链路搜索缺陷）★★
+     *
+     * 症状：用户输入一个词，**命中数超过下拉上限**时，他要找的那个词
+     * 恰好排在第 9 位之后 ⇒ 搜了、看到下拉、但**选不到自己输入的词**。
+     *
+     * 实测（均匀抽样 500 个词形，命中数 > 8 的 35 个里 17 个选不到 = 48.6%；
+     * 架构师在真实查询上测得 55.9%）：例
+     *   搜 hi  → 命中 2012 个，hi 排第 **613** 位
+     *   搜 of  → 命中  404 个
+     *   搜 mel → 命中  131 个
+     *
+     * ★ 触发条件是「命中数 > 上限」，与词频/字母序无关 ★
+     *   词库不是严格字母序（实测 `严格字母序？false`），但无论按什么顺序，
+     *   只要精确匹配的那个词排在第 9 位之后，它就必然被截断掉。
+     *
+     * 修法：**精确匹配项排在最前**，再做 slice。
+     *   为什么不能靠「按长度/词频排序」—— 那只能降低概率，不能消除；
+     *   用户输入的就是那个词，最该出现在第一条。
+     *
+     * ★ 为什么这不是「无关紧要的小体验问题」★
+     *   这是**搜索主链路**：`hitWords` 有 8 条上限，而精确匹配往往排在后面。
+     *   用户搜不到自己要搜的词，会以为「这个词库里没有」——
+     *   而它其实在词库里。这是 48.6% 概率的**主链路失败**，不是排序偏好。
+     */
+    const allWordHits = words.filter(
+      (w) => w.form.toLowerCase().includes(q) || (w.gloss || '').toLowerCase().includes(q),
+    )
+    // 精确匹配：form 全等（不分大小写，已把 q 归一化过）
+    const exactWords = allWordHits.filter((w) => w.form.toLowerCase() === q)
+    const otherWords = allWordHits.filter((w) => w.form.toLowerCase() !== q)
+    // ★ 稳定排序：精确组内保留原序（词库序），两组拼接后再截断
+    const hitWords = [...exactWords, ...otherWords].slice(0, 8)
+
+    // 词素侧同形问题、同一手法（上限 6）
+    const allMorphHits = morphemes.filter((m) =>
+      [m.form, m.display, m.gloss, m.glossEn, ...(m.variants || [])]
+        .filter(Boolean)
+        .some((s) => String(s).toLowerCase().includes(q)),
+    )
+    // ★ 词素的「精确匹配」要覆盖多个字段：form / display / variants 任一全等
+    //   （词素常以变体形式被搜索，只比 form 会漏）
+    const isExactMorph = (m) =>
+      [m.form, m.display, ...(m.variants || [])]
+        .filter(Boolean)
+        .some((s) => String(s).toLowerCase() === q)
+    const exactMorphs = allMorphHits.filter(isExactMorph)
+    const otherMorphs = allMorphHits.filter((m) => !isExactMorph(m))
+    const hitMorphs = [...exactMorphs, ...otherMorphs].slice(0, 6)
+
+    return { hitWords, hitMorphs, totalWords: allWordHits.length, totalMorphs: allMorphHits.length }
   }, [query, words, morphemes])
 
   const wordColor = (word) => {
@@ -640,17 +679,35 @@ export default function NetworkView({
               />
               {results && (results.hitWords.length > 0 || results.hitMorphs.length > 0) && (
                 <div className="absolute z-30 mt-1 w-72 max-h-80 overflow-auto bg-white border border-slate-200 rounded-xl shadow-lg p-1.5 text-sm">
-                  {results.hitWords.length > 0 && <div className="text-[11px] text-slate-400 px-2 pt-1 pb-0.5">单词</div>}
-                  {results.hitWords.map((w) => (
-                    <button
-                      key={w.id}
-                      onClick={() => pickWord(w)}
-                      className="w-full text-left px-2 py-1 rounded-lg hover:bg-slate-100 flex justify-between gap-2"
-                    >
-                      <span className="font-medium text-slate-700">{w.form}</span>
-                      <span className="text-slate-400 truncate">{w.gloss}</span>
-                    </button>
-                  ))}
+                  {results.hitWords.length > 0 && (
+                    <div className="text-[11px] text-slate-400 px-2 pt-1 pb-0.5 flex items-center gap-1.5">
+                      <span>单词</span>
+                      {/* ★ 被截断时诚实告知总数 —— 否则用户以为「只有这些」★ */}
+                      {results.totalWords > results.hitWords.length && (
+                        <span className="text-slate-400">
+                          · 精确匹配已置顶，共 {results.totalWords} 个
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  {results.hitWords.map((w) => {
+                    const exact = w.form.toLowerCase() === query.trim().toLowerCase()
+                    return (
+                      <button
+                        key={w.id}
+                        onClick={() => pickWord(w)}
+                        className={`w-full text-left px-2 py-1 rounded-lg hover:bg-slate-100 flex justify-between gap-2 ${
+                          exact ? 'bg-blue-50/70' : ''
+                        }`}
+                      >
+                        <span className="font-medium text-slate-700">
+                          {exact && <span className="text-blue-500 mr-0.5" aria-hidden="true">★</span>}
+                          {w.form}
+                        </span>
+                        <span className="text-slate-400 truncate">{w.gloss}</span>
+                      </button>
+                    )
+                  })}
                   {results.hitMorphs.length > 0 && <div className="text-[11px] text-slate-400 px-2 pt-1.5 pb-0.5">词根 / 词缀</div>}
                   {results.hitMorphs.map((m) => (
                     <button

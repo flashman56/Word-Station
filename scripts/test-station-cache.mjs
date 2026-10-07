@@ -271,14 +271,26 @@ test('stationsCache：护栏不是「恒不触发」—— 明确证明 256KB �
 
 // ---------------------------------------------------------------- ④ stationWordsCache 读写
 
-test('stationRefs：写入后能原样读回；按 stationId 分条目', () => {
+test('stationRefs：写入后 wordKey 保真；按 stationId 分条目（★ 落盘是裁剪版）', () => {
   reset()
   const r1 = [ref('s1', 1), ref('s1', 2)]
   const r2 = [ref('s2', 9)]
   assert.equal(writeStationRefs('s1', r1, SCOPE_A), true)
   assert.equal(writeStationRefs('s2', r2, SCOPE_A), true)
-  assert.deepEqual(readStationRefs('s1', SCOPE_A).refs, r1)
-  assert.deepEqual(readStationRefs('s2', SCOPE_A).refs, r2, 'map 语义：两个小站各留一份')
+
+  // ★ 这里曾是「原样读回」（deepEqual 到 8 字段），T06 加固之后**必须改** ——
+  //   落盘形状已裁到只剩 wordKey，`deepEqual(refs, r1)` 会必然失败。
+  //   ⇒ 拆成两件事分别断言：
+  //     · **词序与 wordKey 值**必须保真（这是数据正确性）
+  //     · **键集合**恰好是 ['wordKey']（这是存储形状）
+  const out1 = readStationRefs('s1', SCOPE_A).refs
+  const out2 = readStationRefs('s2', SCOPE_A).refs
+  assert.deepEqual(out1.map((r) => r.wordKey), r1.map((r) => r.wordKey), '★ s1 词序与 wordKey 保真')
+  assert.deepEqual(out2.map((r) => r.wordKey), r2.map((r) => r.wordKey), '★ s2 词序与 wordKey 保真')
+  out1.forEach((r, i) => {
+    assert.deepEqual(Object.keys(r), ['wordKey'], '★ 第 ' + (i + 1) + ' 行键集合恰好是 ["wordKey"]，实际 ' + JSON.stringify(Object.keys(r)))
+  })
+  assert.deepEqual(out2.map((r) => r.wordKey), r2.map((r) => r.wordKey), 'map 语义：两个小站各留一份')
 })
 
 test('stationRefs：无条目 / 未知 stationId → 空数组且不抛', () => {
@@ -357,9 +369,13 @@ test('★ stationRefs：超过 256KB → 拒写且其余站条目完好', () => 
   writeStationRefs('keep', [ref('keep', 1)], SCOPE_A)
   const before = localStorage.getItem(keysFor(SCOPE_A).stationWordsCache)
 
+  // ★ 条数从 4000 提到 20000 ★
+  //   T06 裁剪后单条约 17~36 B（原 150~300 B），4000 条只有约 68~144 KB
+  //   ⇒ **不再超限**，这条断言会假绿（它测的是护栏，却没触发护栏）。
+  //   20000 条 ≈ 340~720 KB，稳定超 256KB。
   const fat = []
-  for (let i = 0; i < 4000; i += 1) fat.push(ref('fat', i))
-  assert.equal(writeStationRefs('fat', fat, SCOPE_A), false, '超限必须拒写')
+  for (let i = 0; i < 20000; i += 1) fat.push(ref('fat', i))
+  assert.equal(writeStationRefs('fat', fat, SCOPE_A), false, `超限必须拒写（20000 条 ≈ ${(20000 * 36) / 1024 | 0}KB ~ ${(20000 * 17) / 1024 | 0}KB，长词口径）`)
   assert.equal(localStorage.getItem(keysFor(SCOPE_A).stationWordsCache), before, '★ 旧值必须完好（整键读改写，拒写时不动）')
   assert.equal(readStationRefs('keep', SCOPE_A).refs.length, 1, '已缓存的小站不能因为另一个站超限而丢')
   assert.deepEqual(readStationRefs('fat', SCOPE_A).refs, [], '被拒的站不应留下半份数据')

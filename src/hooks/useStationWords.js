@@ -28,7 +28,7 @@ import * as offlineApi from '../lib/cloud/offline.js'
 import { loadWords } from '../lib/dict.js'
 import { isUserKey, parseWordKey } from '../lib/wordKey.js'
 import { toUserWordView } from '../lib/wordView.js'
-import { readStationRefs, scopeOf, writeStationRefs } from '../lib/migrate.js'
+import { projectRef, readStationRefs, scopeOf, writeStationRefs } from '../lib/migrate.js'
 
 /**
  * @param {string|null} stationId
@@ -95,7 +95,11 @@ export function useStationWords(stationId, ownerId, opts = {}) {
     //   内存态 setRefs(list) 持**全字段**；落盘的只是「断网能看见词条 +
     //   站内复习」所需的最小投影。将来 K5 接笔记 UI、或要按 id/addedAt 排序，
     //   数据都在内存态与云端，缓存里没有不影响。
-    writeStationRefs(stationId, list.map(pickCacheRef), myScope)
+    // ★ 显式投影只是**文档化**，不是防线 ——
+    //   真正的防线在 writeStationRefs 内部（migrate.js 的 projectRef）。
+    //   这里再写一次是为了让读代码的人一眼看到「落盘的是裁剪版」；
+    //   即使这行被删掉，writeStationRefs 仍会裁（QA 的脚本就是这么验证的）。
+    writeStationRefs(stationId, list.map(projectRef), myScope)
 
     const pubKeys = list.filter((r) => !isUserKey(r.wordKey)).map((r) => r.wordKey)
     const userKeys = list.filter((r) => isUserKey(r.wordKey)).map((r) => r.wordKey)
@@ -288,7 +292,7 @@ const EMPTY_PRIVATE_WORDS = []
  * @returns {{wordKey: string}} 落盘用的最小投影
  */
 export function pickCacheRef(r) {
-  return { wordKey: r && r.wordKey }
+  return projectRef(r)
 }
 
 /**
