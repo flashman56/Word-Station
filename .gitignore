@@ -1,50 +1,20 @@
-# node_modules
 node_modules
 dist
 .env
 .env.local
 *.local
-
-# 生成脚本的缓存 / 日志（可再生中间产物，不应入库）
-# 用通配而不是逐个列举：此前只挡了 .gen-cache.json，漏掉了 .gen-phon-cache.json
-# 与 .gen-mono-seed-cache.json 两个变体，于是各 10MB 的可再生缓存被提交进了库。
-# 教训：这一类「同一目录、同前缀、按脚本名分文件」的产物，应用一条通配规则兜住。
-scripts/.gen-*.json
-scripts/.gen-*.txt
-scripts/.gen-*.log
-# 上面两条通配已覆盖下列具体名字，保留它们是为了让规则本身是自解释的
 scripts/.gen-cache.json
 scripts/.gen-log.txt
-
 # 构建期产物（由 npm run split:data 生成）
 public/data/
-
 # 生成缓存 / 配额计数（vite dev 中间件调试用）
 scripts/.dev-gen-cache.json
 scripts/.dev-gen-quota.json
-
 # dict_cache 导入文件（由 npm run export:dict 生成，体积大）
 supabase/dict_cache.csv
 supabase/dict_cache.sql
-
 # ECDICT 词典数据源（本地缓存，体积大，不应入库）
 scripts/.ecdict/
 
 # Wrangler 本地开发缓存（不应入库）
 .wrangler/
-
-# e2e / 探针的 esbuild 临时产物
-scripts/.qa-bundle.mjs
-scripts/.a12-bundle.mjs
-scripts/.race-bundle.mjs
-# QA 复核脚本（qa2-*）打包出来的临时 bundle
-scripts/.qa2-*.mjs
-scripts/.qa2-*.bundle.mjs
-
-# vite 构建/开发时生成的临时产物（可达上百 MB）
-vite.config.js.timestamp-*.mjs
-
-# QA 探针临时文件（脚本自身会清空复用，不入库）
-scripts/dev-zz*
-scripts/dev-station-mirror.mjs
-supabase/.temp/

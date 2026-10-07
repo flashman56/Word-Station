@@ -60,22 +60,6 @@ export const AUTO_KNOWN_RANK = 2500
  */
 export const STATS_SCOPE = 64825
 
-/**
- * 词汇量预测纳入私有词的上限（B-8 护栏）。
- *
- * 为什么需要：estimateVocabulary 按 freqRank 分档，而私有词的 freqRank 多为
- * `null`，会被 bandIndexOf 归到**最后一档**（60000~∞），既进 libraryN 又进
- * studiedN。5 个私有词是噪声（末档约 2 万词，且尾档通常被 cutoff=0.25 截断不计）；
- * 但私有词上千时会实打实抬高尾档 knownP → 吹大估值。
- *
- * 这是**护栏**，不是口径变更：`statusSource !== 'migration'` 判别式、
- * minSample / minBands / cutoff / PAVA 全部不动（vocab.js 零改动）。
- *
- * ★ 阈值不暴露给用户 ★：UI 只说「私有词较多，词汇量估算暂不含私有词」，
- *   不说「因为超过 500 个」—— 那是实现细节，用户改不了、也不需要知道。
- */
-export const MAX_VOCAB_PRIVATE_WORDS = 500
-
 let injectedScope = null
 
 /**

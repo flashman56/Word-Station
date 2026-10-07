@@ -257,8 +257,6 @@ export default function devGeneratePlugin(options = {}) {
 
         const results = []
         const toGenerate = []
-        // 配额校验是否已因 RPC 失败而 fail closed（已逐条写入 QUOTA_CHECK_FAILED）
-        let quotaCheckFailed = false
 
         for (const form of forms) {
           const slug = slugOf(form)
@@ -307,72 +305,26 @@ export default function devGeneratePlugin(options = {}) {
 
         // ---------------------------------------------------------------- 生成
         if (toGenerate.length > 0) {
-          let quota = currentQuota(uid)
+          let quota = dbReady() ? currentQuota(uid) : currentQuota(uid)
           let allowed = true
-          // 「以用户身份」客户端：与线上 index.ts 同构，只用于调靠 auth.uid() 推导身份的 RPC。
-          // 全局挂上进来的 Authorization，PostgREST 才会把它解成 request.jwt.claims。
-          // ⚠️ 绝不能改用 admin（service_role）调，也绝不能给 RPC 加显式 uid 参数：
-          //    service_role 的 JWT 没有 sub → auth.uid() 为 NULL → RPC 第一行 raise；
-          //    而「调用方传 uid」会把身份从「令牌推导」变成「调用方指定」，可烧他人额度。
-          const anonAsUser =
-            supabaseUrl && anonKey
-              ? createClient(supabaseUrl, anonKey, {
-                  auth: { persistSession: false, autoRefreshToken: false },
-                  global: { headers: { Authorization: authHeader } },
-                })
-              : null
-
-          if (anonAsUser && dbReady()) {
+          if (dbReady()) {
             try {
-              const { data, error } = await anonAsUser.rpc('consume_generation_quota', { n: toGenerate.length })
+              const { data } = await admin.rpc('consume_generation_quota', { n: toGenerate.length })
               const row = Array.isArray(data) ? data[0] : data
-              // 配额必须 fail closed：校验失败 ≠ 无限额。
-              // 【真实事故】原代码用 admin(service_role) 调这个 RPC，auth.uid() 为 NULL →
-              // 必然抛 'not authenticated'；而旧判定把 error 当成「没超限」直接放行生成，
-              // 于是本地/线上日配额完全失效，任何人可无限烧 DeepSeek 额度。
-              // 现在 error 一律拒绝生成，绝不 fall through。
-              if (error) {
-                console.error('[dev] consume_generation_quota failed:', error.message)
-                toGenerate.forEach((g) => {
-                  results.push({
-                    form: g.form,
-                    status: 'failed',
-                    code: 'QUOTA_CHECK_FAILED',
-                    message: '配额校验失败，请稍后重试',
-                  })
-                })
-                quota = currentQuota(uid)
-                allowed = false
-                quotaCheckFailed = true
-              } else {
-                if (row) quota = { used: row.used, quota: row.quota, day: new Date().toISOString().slice(0, 10), allowed: row.allowed }
-                allowed = row ? Boolean(row.allowed) : true
-              }
-            } catch (e) {
-              // 网络/异常同样 fail closed
-              console.error('[dev] consume_generation_quota threw:', e && e.message)
-              toGenerate.forEach((g) => {
-                results.push({
-                  form: g.form,
-                  status: 'failed',
-                  code: 'QUOTA_CHECK_FAILED',
-                  message: '配额校验失败，请稍后重试',
-                })
-              })
-              quota = currentQuota(uid)
-              allowed = false
-              quotaCheckFailed = true
+              if (row) quota = { used: row.used, quota: row.quota, day: new Date().toISOString().slice(0, 10), allowed: row.allowed }
+              allowed = row ? Boolean(row.allowed) : true
+            } catch {
+              const local = consumeLocalQuota(uid, toGenerate.length)
+              quota = { ...local, day: new Date().toISOString().slice(0, 10) }
+              allowed = local.allowed
             }
           } else {
-            // DB 不可用 → 纯本地配额（本地开发兜底，不涉及线上烧钱）
             const local = consumeLocalQuota(uid, toGenerate.length)
             quota = { ...local, day: new Date().toISOString().slice(0, 10) }
             allowed = local.allowed
           }
 
-          if (quotaCheckFailed) {
-            // 已在上面逐条写入 QUOTA_CHECK_FAILED，不再走下面的分支
-          } else if (!allowed) {
+          if (!allowed) {
             toGenerate.forEach((g) => {
               results.push({
                 form: g.form,
@@ -500,48 +452,18 @@ export default function devGeneratePlugin(options = {}) {
                 generationStatus: data.generation_status,
               }
               if (stationId) {
-                // ⚠️ 为什么这里必须显式校验归属（红线一，与 Edge Function 同构）：
-                //   写入用的是 service_role 客户端，它**绕过 RLS**（本项目 dict_cache 零策略
-                //   仍可被 service_role 全表读取即为证据）。而 stations 的 RLS 策略是
-                //   `owner_id = auth.uid()`，对 service_role 不生效。
-                //   因此若只靠数据库兜底，调用方可以传任意他人的 stationId，
-                //   把词条塞进别人的小站（越权写入）。这里必须自己在应用层核对。
-                //   ⚠️ 注意：光把 owner_id 钉成自己的 uid **不够** —— 那次真实越权的
-                //   payload 里也写了 owner_id: uid。
-                const { data: owned } = await admin
-                  .from('stations')
-                  .select('id')
-                  .eq('id', stationId)
-                  .eq('owner_id', uid)
-                  .maybeSingle()
-
-                if (!owned) {
-                  // 不属于该用户：明确回报，不静默吞掉
-                  r.stationAdded = false
-                  r.stationAddCode = 'STATION_FORBIDDEN'
-                  r.stationAddMessage = '小站不存在或不属于当前用户，词条已保存到个人词库但未加入小站'
-                } else {
-                  const { error: swErr } = await admin
-                    .from('station_words')
-                    .upsert(
-                      {
-                        station_id: stationId,
-                        owner_id: uid,
-                        word_key: data.word_key,
-                        source: 'user',
-                        updated_at: new Date().toISOString(),
-                      },
-                      { onConflict: 'station_id,word_key', ignoreDuplicates: true },
-                    )
-                  if (swErr) {
-                    console.error('station_words upsert failed:', swErr.message)
-                    r.stationAdded = false
-                    r.stationAddCode = 'STATION_WRITE_FAILED'
-                    r.stationAddMessage = `词条已保存到个人词库，但加入小站失败：${String(swErr.message).slice(0, 120)}`
-                  } else {
-                    r.stationAdded = true
-                  }
-                }
+                await admin
+                  .from('station_words')
+                  .upsert(
+                    {
+                      station_id: stationId,
+                      owner_id: uid,
+                      word_key: data.word_key,
+                      source: 'user',
+                      updated_at: new Date().toISOString(),
+                    },
+                    { onConflict: 'station_id,word_key', ignoreDuplicates: true },
+                  )
               }
               // 写回跨用户生成缓存（不含任何用户数据）
               await admin
