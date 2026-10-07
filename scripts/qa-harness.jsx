@@ -10,14 +10,16 @@
  * 维护约定：
  *   - 断言里的数字如果被产品行为变更推翻，先确认新行为是对的，再更新断言，并把原因写进注释。
  *   - 左栏「可见单词」与列表「全选当前结果（N）」必须同口径（都去重），别再退回按群计次。
- *   - 本文件只针对 v2 学习记录模型（唯一存储 key：wrc.learn.v2）做断言；v1 的 wrc.status.v1
- *     只读、永不写入、永不删除，迁移时一次性映射成 v2 记录，测试不再读它取状态。
+ *   - 本文件只针对 v2 学习记录模型（唯一存储是 lib/migrate.js 的分区 learn 键）做断言；
+ *     冻结的 v1 手工标注源只读、永不写入、永不删除，迁移时一次性映射成 v2 记录。
+ *   - 存储键**不在测试里硬编码**：直接 import 生产用的 keysFor()，保证测的就是同一份契约。
  */
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from '../src/App.jsx'
 import { words } from '../src/data/index.js'
 import { buildReviewQueue } from '../src/lib/learning.js'
+import { FROZEN_KEYS, keysFor } from '../src/lib/migrate.js'
 
 const { document, window } = globalThis
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
@@ -96,9 +98,13 @@ function selectedCount() {
   return el ? +el.textContent.match(/\d+/)[0] : 0
 }
 
-/** v2 唯一存储：wrc.learn.v2 的 records 映射（读状态只走它） */
+/**
+ * v2 唯一存储：分区 learn 键的 records 映射（读状态只走它）。
+ * 游客态 → scope 'guest'；登录态 e2e 不覆盖（那部分由 test:partition 覆盖）。
+ */
+const LEARN_KEY = keysFor('guest').learn
 const learnMap = () => {
-  const raw = window.localStorage.getItem('wrc.learn.v2')
+  const raw = window.localStorage.getItem(LEARN_KEY)
   if (!raw) return {}
   try {
     return JSON.parse(raw).records || {}
@@ -106,7 +112,7 @@ const learnMap = () => {
     return {}
   }
 }
-const rawLearn = () => window.localStorage.getItem('wrc.learn.v2')
+const rawLearn = () => window.localStorage.getItem(LEARN_KEY)
 
 /** 找到复选框所在的行 div */
 const rowOf = (box) => box.closest('div.cursor-pointer') || box.parentElement
@@ -146,12 +152,12 @@ function mount() {
 
 export async function run() {
   // ---------------------------------------------------- 迁移映射专项（v2）
-  // 在首次 render 之前写入 wrc.status.v1（只读旧 key），验证它被正确映射为 v2 记录，
-  // 且旧 key 不被删除、侧栏出现迁移提示。
-  log('\n=== 迁移映射：wrc.status.v1 → wrc.learn.v2（v2 幂等迁移）===')
+  // 在首次 render 之前写入冻结的手工标注源（只读旧键），验证它被正确映射为 v2 记录，
+  // 且旧键不被删除、侧栏出现迁移提示。
+  log('\n=== 迁移映射：v1 手工标注源 → v2 分区记录（幂等迁移）===')
   window.localStorage.clear()
   window.localStorage.setItem(
-    'wrc.status.v1',
+    FROZEN_KEYS.statusV1,
     JSON.stringify({ 'w.inspect': 'review', 'w.transport': 'known' }),
   )
   mount()
@@ -160,15 +166,15 @@ export async function run() {
   const migMap = learnMap()
   ok(
     migMap['w.inspect'] && migMap['w.inspect'].status === 'review',
-    `wrc.status.v1['w.inspect']='review' 映射为 learn 记录 status='review'（实际 ${migMap['w.inspect'] && migMap['w.inspect'].status}）`,
+    `v1['w.inspect']='review' 映射为 learn 记录 status='review'（实际 ${migMap['w.inspect'] && migMap['w.inspect'].status}）`,
   )
   ok(
     migMap['w.transport'] && migMap['w.transport'].status === 'known',
-    `wrc.status.v1['w.transport']='known' 映射为 learn 记录 status='known'（实际 ${migMap['w.transport'] && migMap['w.transport'].status}）`,
+    `v1['w.transport']='known' 映射为 learn 记录 status='known'（实际 ${migMap['w.transport'] && migMap['w.transport'].status}）`,
   )
   ok(
-    window.localStorage.getItem('wrc.status.v1') != null,
-    '旧 key wrc.status.v1 仍保留在 localStorage（未被删）',
+    window.localStorage.getItem(FROZEN_KEYS.statusV1) != null,
+    '冻结的 v1 源键仍保留在 localStorage（未被删）',
   )
   ok(document.body.textContent.includes('已从旧版保留'), '侧栏出现迁移提示文案「已从旧版保留」')
 
@@ -253,9 +259,9 @@ export async function run() {
   ok(flash && flash.textContent.trim() === '已更新 2 个', `条内 flash 反馈 = "${flash ? flash.textContent.trim() : null}"`)
 
   const lm = learnMap()
-  log(`  localStorage wrc.learn.v2 记录数 = ${Object.keys(lm).length}`)
-  ok(lm[idOf(word0)] && lm[idOf(word0)].status === 'known', `wrc.learn.v2[${idOf(word0)}].status === 'known'`)
-  ok(lm[idOf(word1)] && lm[idOf(word1)].status === 'known', `wrc.learn.v2[${idOf(word1)}].status === 'known'`)
+  log(`  localStorage 分区 learn 记录数 = ${Object.keys(lm).length}`)
+  ok(lm[idOf(word0)] && lm[idOf(word0)].status === 'known', `分区 learn[${idOf(word0)}].status === 'known'`)
+  ok(lm[idOf(word1)] && lm[idOf(word1)].status === 'known', `分区 learn[${idOf(word1)}].status === 'known'`)
   const knownCount = Object.values(lm).filter((r) => r.status === 'known').length
   ok(knownCount === before.已掌握 + 2, `已知记录数从基线 ${before.已掌握} 增至 ${knownCount}（+2）`)
 
@@ -312,11 +318,11 @@ export async function run() {
   log(`  清除后统计：${JSON.stringify(ac)}`)
   ok(
     learnMap()[idOf(word0)] && learnMap()[idOf(word0)].status === 'unknown',
-    `wrc.learn.v2[${idOf(word0)}] 状态回 unknown（key 仍保留，非真 delete）`,
+    `分区 learn[${idOf(word0)}] 状态回 unknown（key 仍保留，非真 delete）`,
   )
   ok(
     learnMap()[idOf(word1)] && learnMap()[idOf(word1)].status === 'unknown',
-    `wrc.learn.v2[${idOf(word1)}] 状态回 unknown（key 仍保留，非真 delete）`,
+    `分区 learn[${idOf(word1)}] 状态回 unknown（key 仍保留，非真 delete）`,
   )
   ok(
     ac.未知 === before.未知 && ac.已掌握 === before.已掌握,
@@ -601,7 +607,7 @@ export async function run() {
       statusSource: 'manual',
     }
   })
-  window.localStorage.setItem('wrc.learn.v2', JSON.stringify({ version: 2, records: reviewSeeds }))
+  window.localStorage.setItem(LEARN_KEY, JSON.stringify({ version: 2, records: reviewSeeds }))
   root.unmount()
   mount()
   await flush(200)

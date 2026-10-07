@@ -29,7 +29,7 @@ import {
   countByStatus,
   validateRecords,
 } from '../src/lib/learning.js'
-import { migrateV1toV2, runMigration, KEYS } from '../src/lib/migrate.js'
+import { migrateV1toV2, runMigration, KEYS, FROZEN_KEYS, keysFor, readPrefs } from '../src/lib/migrate.js'
 import { STATS_SCOPE, AUTO_KNOWN_RANK, effectiveStatus, autoKnown } from '../src/lib/derive.js'
 import { words as REAL_WORDS } from '../src/data/index.js'
 
@@ -698,56 +698,63 @@ check('迁移映射：结果必须通过 validateRecords', () => {
 
 check('runMigration：写备份 → 写 v2 → 写标记，且 v1 原样不动', () => {
   globalThis.localStorage = fakeStorage()
-  localStorage.setItem(KEYS.statusV1, JSON.stringify({ 'w.known': 'known' }))
-  const res = runMigration({ words: M_WORDS, inheritFreqKnown: true, now: T0 })
+  // 分区键契约：runMigration 写 keysFor(scope) 的四个键，不写无后缀旧键
+  const K = keysFor('guest')
+  localStorage.setItem(FROZEN_KEYS.statusV1, JSON.stringify({ 'w.known': 'known' }))
+  const res = runMigration({ scope: 'guest', words: M_WORDS, inheritFreqKnown: true, now: T0 })
   eq(res.ok, true)
-  ok(localStorage.getItem(KEYS.learn) != null, '应写入 wrc.learn.v2')
-  ok(localStorage.getItem(KEYS.settings) != null, '应写入 wrc.settings.v2')
-  ok(localStorage.getItem(KEYS.migration) != null, '应写入迁移标记')
-  ok(localStorage.getItem(KEYS.statusV1Backup) != null, '应写入状态备份')
-  eq(localStorage.getItem(KEYS.statusV1), JSON.stringify({ 'w.known': 'known' }), 'v1 不得被改写')
-  const learn = JSON.parse(localStorage.getItem(KEYS.learn))
+  ok(localStorage.getItem(K.learn) != null, '应写入分区 learn 键')
+  ok(localStorage.getItem(KEYS.settings) != null, '应写入设备级 settings 键')
+  ok(localStorage.getItem(K.prefs) != null, '应写入分区 prefs 键（承载 inheritFreqKnown）')
+  ok(localStorage.getItem(K.migration) != null, '应写入分区迁移标记')
+  ok(localStorage.getItem(FROZEN_KEYS.statusV1Backup) != null, '应写入状态备份')
+  eq(localStorage.getItem(FROZEN_KEYS.statusV1), JSON.stringify({ 'w.known': 'known' }), 'v1 不得被改写')
+  const learn = JSON.parse(localStorage.getItem(K.learn))
   eq(learn.version, 2)
   eq(learn.records['w.known'].status, 'known')
 })
 
 check('runMigration：幂等，第二次调用直接跳过且不重写备份', () => {
   globalThis.localStorage = fakeStorage()
-  localStorage.setItem(KEYS.statusV1, JSON.stringify({ 'w.known': 'known' }))
-  runMigration({ words: M_WORDS, inheritFreqKnown: true, now: T0 })
-  const backupAfterFirst = localStorage.getItem(KEYS.statusV1Backup)
-  localStorage.setItem(KEYS.statusV1Backup, '{"tampered":true}')
-  const second = runMigration({ words: M_WORDS, inheritFreqKnown: true, now: T1 })
+  localStorage.setItem(FROZEN_KEYS.statusV1, JSON.stringify({ 'w.known': 'known' }))
+  runMigration({ scope: 'guest', words: M_WORDS, inheritFreqKnown: true, now: T0 })
+  const backupAfterFirst = localStorage.getItem(FROZEN_KEYS.statusV1Backup)
+  localStorage.setItem(FROZEN_KEYS.statusV1Backup, '{"tampered":true}')
+  const second = runMigration({ scope: 'guest', words: M_WORDS, inheritFreqKnown: true, now: T1 })
   eq(second.ok, true)
   eq(second.skipped, true)
-  eq(localStorage.getItem(KEYS.statusV1Backup), '{"tampered":true}', '备份只写一次')
+  eq(localStorage.getItem(FROZEN_KEYS.statusV1Backup), '{"tampered":true}', '备份只写一次')
   ok(backupAfterFirst != null)
 })
 
 check('runMigration：写入失败时不留下半份 v2', () => {
   globalThis.localStorage = fakeStorage()
+  const K = keysFor('guest')
   const realSet = localStorage.setItem
   localStorage.setItem = (k, v) => {
-    if (k === KEYS.learn) throw new Error('磁盘满')
+    if (k === K.learn) throw new Error('磁盘满')
     realSet.call(localStorage, k, v)
   }
-  const res = runMigration({ words: M_WORDS, inheritFreqKnown: true, now: T0 })
+  const res = runMigration({ scope: 'guest', words: M_WORDS, inheritFreqKnown: true, now: T0 })
   localStorage.setItem = realSet
   eq(res.ok, false)
   ok(res.error && res.error.length > 0)
-  eq(localStorage.getItem(KEYS.learn), null)
+  eq(localStorage.getItem(K.learn), null)
   eq(localStorage.getItem(KEYS.settings), null)
-  eq(localStorage.getItem(KEYS.migration), null)
+  eq(localStorage.getItem(K.migration), null)
+  eq(localStorage.getItem(K.prefs), null)
 })
 
 check('runMigration：旧设置里的 status:"new" 落成 "unknown"', () => {
   globalThis.localStorage = fakeStorage()
-  localStorage.setItem(KEYS.settingsV1, JSON.stringify({ status: 'new', minCefr: 'A1' }))
-  runMigration({ words: M_WORDS, inheritFreqKnown: true, now: T0 })
+  localStorage.setItem(FROZEN_KEYS.settingsV1, JSON.stringify({ status: 'new', minCefr: 'A1' }))
+  runMigration({ scope: 'guest', words: M_WORDS, inheritFreqKnown: true, now: T0 })
   const s = JSON.parse(localStorage.getItem(KEYS.settings))
   eq(s.status, 'unknown')
   eq(s.minCefr, 'A1', '旧设置的其他项要带过来')
-  eq(s.inheritFreqKnown, true)
+  // inheritFreqKnown 已迁到分区 prefs 键，不再混进设备级 settings（否则切账号会串策略）
+  eq(s.inheritFreqKnown, undefined, 'inheritFreqKnown 不得留在 settings 里')
+  eq(readPrefs('guest').inheritFreqKnown, true, '开关值迁到分区 prefs 键')
 })
 
 // ---------------------------------------------------------------- derive 三态口径

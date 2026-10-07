@@ -22,7 +22,10 @@
     "test:atlas": "node scripts/test-atlas.mjs",
     "test:parse-forms": "node scripts/test-parse-forms.mjs",
     "test:merge": "node scripts/test-merge.mjs",
-    "test:cloud": "npm run test:parse-forms && npm run test:merge",
+    "test:partition": "node scripts/test-partition.mjs",
+    "test:drafts": "node scripts/test-drafts.mjs",
+    "test:keys": "node scripts/check-storage-keys.mjs",
+    "test:cloud": "npm run test:parse-forms && npm run test:merge && npm run test:partition && npm run test:drafts && npm run test:keys",
     "relations:report": "node scripts/relation-report.mjs",
     "test:all": "npm run validate && npm run validate:etym && npm run test:learning && npm run test:graph && npm run test:atlas && npm run test:e2e && npm run test:cloud && npm run test:vocab && npm run relations:report"
   },
