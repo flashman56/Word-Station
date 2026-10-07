@@ -47,6 +47,31 @@ const idOf = (form) => (words.find((w) => w.form === form) || {}).id
 // ---------------------------------------------------------------- DOM 工具
 const q = (sel) => [...document.querySelectorAll(sel)]
 const byText = (sel, text) => q(sel).find((e) => (e.textContent || '').includes(text))
+
+/**
+ * 按文案找元素，找不到就**立刻记 FAIL 并中止**。
+ *
+ * ★★ 为什么必须有它（QA 实测踩出来的）★★
+ *   这一版 harness 曾在 byText('button','全选当前结果') 上返回 undefined，
+ *   下一行 allBtn.textContent.match(...) 抛 TypeError → 整场 run 中止 →
+ *   **附加 C–J 约 60 条断言一条都没跑**（其中包含 C-02 要验的
+ *   MorphDetail / FocusView），而前面已经打出来 30 条 PASS，看着像跑过了。
+ *
+ *   危害不在于「少跑 60 条」，而在于**它看起来是绿的**：文案一改，
+ *   整段覆盖静默消失，而没人会知道。
+ *
+ *   所以：凡是「后续要读它的属性」的查找，一律用 mustFind 而不是 byText。
+ */
+class E2EContractBreak extends Error {}
+function mustFind(sel, text, what) {
+  const el = byText(sel, text)
+  if (!el) {
+    const msg = `契约断裂：找不到${sel}「${text}」${what ? `（${what}）` : ''}`
+    ok(false, msg)
+    throw new E2EContractBreak(msg)
+  }
+  return el
+}
 /** 精确匹配文字（避免「记得」误匹配到「不记得」这类子串陷阱） */
 const byExactText = (sel, text) => q(sel).find((e) => (e.textContent || '').trim() === text)
 
@@ -187,7 +212,10 @@ export async function run() {
   log('\n=== 步骤 1：切到「列表」视图 ===')
   click(byText('button', '列表'))
   await flush(150)
-  ok(!!byText('button', '全选当前结果'), '列表视图已渲染（找到「全选当前结果」按钮）')
+  // ★ A-07 之后文案变成「全选当前结果（N）」或「全选前 N 个（当前结果 M 个）」
+  //   （BULK_SELECT_CAP 截断时走后者）。所以按前缀匹配，不能按整串。
+  const selectAllProbe = byText('button', '全选')
+  ok(!!selectAllProbe, '列表视图已渲染（找到「全选…」按钮）')
   const n = boxes().length
   log(`  行首复选框数量 = ${n}`)
   ok(n > 5, `复选框渲染出来了（${n} 个）`)
@@ -255,8 +283,14 @@ export async function run() {
   ok(after.已掌握 === before.已掌握 + 2, `左栏「已掌握」${before.已掌握} → ${after.已掌握}（+2）`)
   ok(after.未知 === before.未知 - 2, `左栏「未知」${before.未知} → ${after.未知}（-2）`)
 
-  const flash = q('span').find((s) => (s.textContent || '').includes('已更新'))
-  ok(flash && flash.textContent.trim() === '已更新 2 个', `条内 flash 反馈 = "${flash ? flash.textContent.trim() : null}"`)
+  // ★ A-14：flash 文案已按动作区分（原来三处共用「已更新 N 个」，
+  //   加了「加入小站」后它就成了歧义 —— 用户会以为小站里有了）。
+  //   「我会了」的文案现在是「已标记 N 个已掌握」。
+  const flash = q('span').find((s) => (s.textContent || '').includes('已标记'))
+  ok(
+    flash && flash.textContent.trim() === '已标记 2 个已掌握',
+    `条内 flash 反馈 = "${flash ? flash.textContent.trim() : null}"（「我会了」专用文案，不是含糊的「已更新」）`,
+  )
 
   const lm = learnMap()
   log(`  localStorage 分区 learn 记录数 = ${Object.keys(lm).length}`)
@@ -371,23 +405,60 @@ export async function run() {
 
   // ---------------------------------------------------- 附加：全选当前结果 去重
   log('\n=== 附加 B：「全选当前结果」跨词群去重，且全站统计口径一致 ===')
-  const allBtn = byText('button', '全选当前结果')
-  const declared = +allBtn.textContent.match(/\d+/)[0]
+  // ★★★ A-07 改了三件事，这条断言必须一起改，且要改得**更严** ★★★
+  //  ① 按钮文案：未截断时是「全选当前结果（N）」，超过 BULK_SELECT_CAP(2000)
+  //     时是「全选前 N 个（当前结果 M 个）」—— 两种都要能解析；
+  //  ② N 的含义变了：未截断时 N == 全部命中数；截断时 N == min(命中数, 2000)，
+  //     **不再等于**命中数。所以不能再拿 N 直接和「可见单词」比；
+  //  ③ 命中数要另取（截断态下 M 就是它）。
+  const allBtn = mustFind('button', '全选', '「全选当前结果」按钮')
+  const btnText = (allBtn.textContent || '').trim()
+  const nums = btnText.match(/\d+/g) || []
+  const declared = nums.length ? +nums[0] : -1
+  // 截断态的第二个数字 = 真实命中数；未截断态不存在第二个数字，用 declared 兜底
+  const realHits = nums.length >= 2 ? +nums[1] : declared
+  const CAP = 2000
   const visibleWords = stats().可见单词
   // 顶部「词群 N · 单词 N」条，应与左栏同口径（都去重）
   const topBar = q('div').find((d) => /^词群 \d+ · 单词 \d+$/.test((d.textContent || '').trim()))
   const topBarWords = topBar ? +topBar.textContent.match(/单词 (\d+)/)[1] : -1
-  log(`  按钮声明 ${declared} 个；左栏「可见单词」= ${visibleWords}；顶部条「单词」= ${topBarWords}`)
-  ok(
-    visibleWords === declared,
-    `左栏「可见单词」${visibleWords} == 按钮声明 ${declared}（统计口径统一为去重后的单词数）`,
+  log(
+    `  按钮文案 = "${btnText}"；按钮声明 ${declared} 个；真实命中 ${realHits}；` +
+      `左栏「可见单词」= ${visibleWords}；顶部条「单词」= ${topBarWords}`,
   )
-  ok(topBarWords === declared, `顶部条「单词」${topBarWords} == 按钮声明 ${declared}`)
+  // ★ 严格版断言 1：按钮声明数 === min(真实命中, 2000)，且 ≤ 2000 ★
+  ok(
+    declared === Math.min(realHits, CAP),
+    `按钮声明 ${declared} === min(真实命中 ${realHits}, ${CAP})`,
+  )
+  ok(declared <= CAP, `按钮声明 ${declared} ≤ 上限 ${CAP}（A-07 的护栏生效）`)
+  // ★ 严格版断言 2：真实命中数与左栏 / 顶部条同口径（都去重）★
+  ok(realHits === visibleWords, `真实命中 ${realHits} == 左栏「可见单词」${visibleWords}（去重口径统一）`)
+  ok(topBarWords === visibleWords, `顶部条「单词」${topBarWords} == 左栏「可见单词」${visibleWords}`)
+  // ★ 严格版断言 3：点下去之后实际选中的数 === 按钮声明的数 ★
+  //   ★★ 这是「文案与实写一致」的唯一端到端证据 ★★
+  //   只比数字不够 —— 数字可能对而实际写的是另一个集合。
   click(allBtn)
+  await flush(160)
+  const afterSelectAll = selectedCount()
+  ok(
+    afterSelectAll === declared,
+    `★ 点「全选」后实际选中 ${afterSelectAll} === 按钮声明 ${declared}（文案数字与实写必须一致）`,
+  )
+  ok(
+    afterSelectAll <= CAP,
+    `★ 实际选中 ${afterSelectAll} ≤ 上限 ${CAP}（否则又会打爆本机存储）`,
+  )
   await flush(150)
   const ac2 = selectedCount()
-  ok(ac2 === declared, `已选 ${ac2} == 按钮声明 ${declared}（去重生效）`)
-  ok(ac2 === visibleWords, `已选 ${ac2} == 左栏「可见单词」${visibleWords}（当前条件下去重数 = 可选数）`)
+  // ★ A-07 之后「已选数」的上限是 BULK_SELECT_CAP，不再等于全部命中数。
+  //   旧断言「已选 == 可见单词」在 6.4 万词下必然失败 —— 而它的本意是
+  //   「去重生效（跨词群同词只选一次）」，那个本意由「已选 === 按钮声明」保证。
+  ok(ac2 === declared, `已选 ${ac2} == 按钮声明 ${declared}（去重生效：跨词群同词只算一次）`)
+  ok(
+    ac2 === Math.min(visibleWords, CAP),
+    `已选 ${ac2} == min(可见单词 ${visibleWords}, ${CAP})（上限 ${CAP} 生效，不是全选 6 万条）`,
+  )
 
   // ---------------------------------------------------- 附加：review 路径 + 再清除
   log('\n=== 附加 C：批量「加入待复习」→ 再「清除学习记录」（v2 保留 key）===')

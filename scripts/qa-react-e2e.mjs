@@ -87,7 +87,22 @@ try {
   const r = await mod.run()
   code = r.fail === 0 ? 0 : 1
 } catch (e) {
-  console.error('\n!!! 运行异常：\n', e && e.stack ? e.stack : e)
+  // ★ 契约断裂要与「代码 bug」区分开 ★
+  //   契约断裂 = 断言依赖的文案/元素变了、后续代码读不到元素。它意味着
+  //   **后半段用例根本没跑**，所以必须在输出里说清「后续用例未执行」——
+  //   否则读者只会看到一堆 PASS 就以为覆盖完整（QA 实测：60 条断言静默消失）。
+  const isContract = e && e.name === 'E2EContractBreak'
+  console.error(
+    isContract
+      ? '\n!!! 契约断裂（不是代码 bug）：断言依赖的文案/元素已变化，本场在此中止 ——' +
+          ' 后续用例**未执行**，请按新契约更新 qa-harness.jsx：\n    ' +
+          (e && e.message)
+      : '\n!!! 运行异常：\n' + (e && e.stack ? e.stack : e),
+  )
+  if (isContract) {
+    console.error('    提示：这通常不是产品缺陷，而是测试与实现的口径漂移；')
+    console.error('          请修 harness 而不是放宽断言，也不要因此跳过这段覆盖。')
+  }
   code = 1
 } finally {
   console.error = origError
