@@ -1,9 +1,16 @@
 /**
  * 学习记录的唯一对外入口：状态 + 持久化 + 派生（统计 / 队列）
  * ------------------------------------------------------------------
- * - 存储：localStorage `wrc.learn.v2`（key 约定见 lib/migrate.js）
- * - 首次挂载跑一次迁移（幂等），之后所有写操作同步落盘
+ * - 存储：localStorage（**键约定全部见 lib/migrate.js**，本文件不出现任何键名）
+ * - 首次挂载跑一次迁移（幂等），之后所有写操作在写入函数内部同步落盘
  * - 所有状态变更都走 lib/learning.js 的纯函数，这里只负责「取 → 算 → 存」
+ *
+ * ★ 两条与分区隔离直接相关的铁律 ★
+ *   1. **没有「records 变化即写盘」的副作用**。落盘一律在六个写入点显式
+ *      `persist(next, scopeRef.current)`。副作用式写盘在切号时会出最隐蔽的 bug：
+ *      scope 变了一帧、setRecords 还没提交 → 旧 records 被写进**新**分区键。
+ *      去掉副作用等于整类 bug 消失。
+ *   2. 任何 `writeXxx` 的 scope 参数恒等于 `scopeRef.current`（records 归属分区）。
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
@@ -21,7 +28,17 @@ import {
   setReview as setReviewPure,
   validateRecords,
 } from '../lib/learning.js'
-import { KEYS, clearMigration, readLearn, readSettingsV2, runMigration, writeLearn } from '../lib/migrate.js'
+import {
+  clearMigration,
+  ensurePartition,
+  readLearn,
+  readMigrationFlag,
+  readPrefs,
+  runMigration,
+  scopeOf,
+  writeLearn,
+  writePrefs,
+} from '../lib/migrate.js'
 
 /**
  * 难度分档常量（区间语义）：
@@ -101,23 +118,37 @@ export function bandFilter(words, band) {
 }
 
 /**
+ * 空数组哨兵。
+ *
+ * ⚠ 默认参数里写字面量 `[]` 会**每次渲染都产生新数组身份**，从而让
+ *   `statWords` 的 useMemo 依赖失效 → countByStatus 每次渲染都重算 6 万词
+ *   （实测会拖慢总览地图的首屏渲染到断言超时）。必须是模块级常量。
+ */
+const NO_PRIVATE_WORDS = []
+
+/**
  * @param {Array} words 全量单词
  * @param {object} [opts]
+ * @param {string} [opts.scope] 当前分区（scopeOf(ownerId) 的结果；默认 'guest'）
+ * @param {Array}  [opts.privateWords] 私有词视图对象（默认 []）—— 只进统计与复习队列，不进新学队列
  * @param {number} [opts.roundSize] 每轮词数
  * @param {'all'|{id,lo,hi}} [opts.band] 难度分档（只收窄学习抽词池）
  * @param {boolean} [opts.groupByFamily] 需求1：新学队列按词族成组出题（默认开）
  * @param {Array} [opts.morphemes] 词素数组（用于识别词根 → 词族键）
  * @param {(keys: string[]) => void} [opts.onDirty] 写操作回调（云端同步据此标记 dirty，纯函数层不受影响）
+ * @param {boolean} [opts.stampUpdatedAt] 是否给写出的记录打 updatedAt（默认 true）
  */
 export function useLearn(
   words,
   {
+    scope = 'guest',
+    privateWords = NO_PRIVATE_WORDS,
     roundSize = DEFAULT_ROUND_SIZE,
     band = 'all',
     groupByFamily = true,
     morphemes = null,
     onDirty = null,
-    stampUpdatedAt = false,
+    stampUpdatedAt = true,
   } = {},
 ) {
   const list = words || []
@@ -130,32 +161,43 @@ export function useLearn(
 
   /**
    * 是否给写出的记录打 updatedAt（云端冲突合并的依据）。
-   * 只在启用云同步时打：纯本地模式下不打，避免老用户的 localStorage 体积无谓膨胀。
+   * ★ 默认 true（常开），游客态也打。理由：merge.js 把「无 updatedAt」视为 0
+   *   → 登录合并时云端默认值永远赢，游客背的词会被云端 unknown 覆盖（GAP-4）。
+   *   成本可控：只有游客态**新写入**的记录带 updatedAt，
+   *   3 万条历史继承记录是存量、不会被回填。
    */
   const stampRef = useRef(Boolean(stampUpdatedAt))
   useEffect(() => {
     stampRef.current = Boolean(stampUpdatedAt)
   }, [stampUpdatedAt])
 
+  // records 归属分区。声明在所有写入点之前，任何 persist 都取它。
+  const scopeRef = useRef(scopeOf(scope))
+
+  /** 显式落盘（隐私模式写入失败忽略，内存态仍可用） */
+  const persist = useCallback((next, sc) => {
+    const target = sc || scopeRef.current
+    try {
+      writeLearn(next, target)
+    } catch {
+      /* ignore */
+    }
+  }, [])
+
   // 首次渲染就跑迁移（幂等），保证第一帧统计就是迁移后的口径
   const [records, setRecords] = useState(() => {
+    const sc = scopeOf(scope)
     if (typeof localStorage !== 'undefined') {
-      runMigration({ words: list, inheritFreqKnown: readSettingsV2().inheritFreqKnown !== false })
+      ensurePartition(sc)
+      runMigration({ scope: sc, words: list, inheritFreqKnown: readPrefs(sc).inheritFreqKnown !== false })
     }
-    return readLearn()
+    return readLearn(sc)
   })
 
-  const [migration, setMigration] = useState(() => {
-    try {
-      const raw = localStorage.getItem(KEYS.migration)
-      return raw ? JSON.parse(raw) : null
-    } catch {
-      return null
-    }
-  })
+  const [migration, setMigration] = useState(() => readMigrationFlag(scopeOf(scope)))
 
   const [inheritFreqKnown, setInheritFreqKnown] = useState(
-    () => readSettingsV2().inheritFreqKnown !== false,
+    () => readPrefs(scopeOf(scope)).inheritFreqKnown !== false,
   )
 
   // ref 与 state 同步：写操作需要"立刻算出结果返回给调用方"，不能等下一次 render
@@ -164,27 +206,46 @@ export function useLearn(
     recordsRef.current = records
   }, [records])
 
-  // 所有写操作同步落 localStorage（隐私模式写入失败忽略，内存态仍可用）
-  useEffect(() => {
-    try {
-      writeLearn(records)
-    } catch {
-      /* ignore */
-    }
-  }, [records])
+  // ---------------------------------------------------------------- 切分区
+  //
+  // scope 变化（登录 / 登出 / 换号）时：换分区 → 领养旧键（仅首个）→ 跑该分区的
+  // 迁移 → 读该分区的记录。**不在这里落盘**（setRecords 之后由下一次显式写入负责），
+  // 避免「切号瞬间把上一个分区的 records 写进新分区」。
 
-  const commit = useCallback((wordId, nextRecord) => {
-    // updatedAt 是云端冲突合并（按 updated_at 记录级 LWW）的依据，本地写必须打时间戳。
-    // learning.js 是纯函数、不关心存储，所以时间戳在这里补，纯函数层零改动。
-    const stamped = stampRef.current
-      ? { ...nextRecord, updatedAt: new Date().toISOString() }
-      : nextRecord
-    const next = { ...recordsRef.current, [wordId]: stamped }
-    recordsRef.current = next
-    setRecords(next)
-    // 云端同步：标记该 word_key 为 dirty（离线可用，写路径本身不变）
-    if (onDirtyRef.current) onDirtyRef.current([wordId])
-  }, [])
+  const prevScopeRef = useRef(scopeRef.current)
+  useEffect(() => {
+    const sc = scopeOf(scope)
+    if (prevScopeRef.current === sc) return
+    prevScopeRef.current = sc
+    scopeRef.current = sc
+
+    ensurePartition(sc)
+    runMigration({ scope: sc, words: list, inheritFreqKnown: readPrefs(sc).inheritFreqKnown !== false })
+    setMigration(readMigrationFlag(sc))
+    setInheritFreqKnown(readPrefs(sc).inheritFreqKnown !== false)
+    // ★ 直接改 ref 而不是等下一帧 setState：这一帧内到达的写操作
+    //   （例如同步派发的 onDirty 回调）必须落到新分区。
+    const fresh = readLearn(sc)
+    recordsRef.current = fresh
+    setRecords(fresh)
+  }, [scope, list])
+
+  const commit = useCallback(
+    (wordId, nextRecord) => {
+      // updatedAt 是云端冲突合并（按 updated_at 记录级 LWW）的依据，本地写必须打时间戳。
+      // learning.js 是纯函数、不关心存储，所以时间戳在这里补，纯函数层零改动。
+      const stamped = stampRef.current
+        ? { ...nextRecord, updatedAt: new Date().toISOString() }
+        : nextRecord
+      const next = { ...recordsRef.current, [wordId]: stamped }
+      recordsRef.current = next
+      setRecords(next)
+      persist(next, scopeRef.current)
+      // 云端同步：标记该 word_key 为 dirty（离线可用，写路径本身不变）
+      if (onDirtyRef.current) onDirtyRef.current([wordId])
+    },
+    [persist],
+  )
 
   /**
    * 答题。result: 'correct' | 'incorrect'（'wrong' 亦可）
@@ -240,39 +301,49 @@ export function useLearn(
    * 批量操作：只 commit 一次，避免上万条逐个 setState 卡死。
    * kind: 'known'（我会了）| 'review'（加入待复习）| 'reset'（清除学习记录）
    */
-  const applyMany = useCallback((ids, kind) => {
-    if (!ids || !ids.length) return
-    const now = new Date().toISOString()
-    const next = { ...recordsRef.current }
-    ids.forEach((id) => {
-      const cur = getRecord(next, id)
-      let rec
-      if (kind === 'known') rec = markKnownPure(cur, now)
-      else if (kind === 'review') rec = setReviewPure(cur, now)
-      else rec = resetRecord(now)
-      // 同上：启用云同步时补 updatedAt，供冲突合并使用
-      next[id] = stampRef.current ? { ...rec, updatedAt: now } : rec
-    })
-    recordsRef.current = next
-    setRecords(next)
-    if (onDirtyRef.current) onDirtyRef.current(ids)
-  }, [])
+  const applyMany = useCallback(
+    (ids, kind) => {
+      if (!ids || !ids.length) return
+      const now = new Date().toISOString()
+      const next = { ...recordsRef.current }
+      ids.forEach((id) => {
+        const cur = getRecord(next, id)
+        let rec
+        if (kind === 'known') rec = markKnownPure(cur, now)
+        else if (kind === 'review') rec = setReviewPure(cur, now)
+        else rec = resetRecord(now)
+        // 同上：默认补 updatedAt，供冲突合并使用
+        next[id] = stampRef.current ? { ...rec, updatedAt: now } : rec
+      })
+      recordsRef.current = next
+      setRecords(next)
+      persist(next, scopeRef.current)
+      if (onDirtyRef.current) onDirtyRef.current(ids)
+    },
+    [persist],
+  )
 
   /**
-   * 整体替换记录（云端下行合并后用）。
+   * 整体替换记录（云端下行合并 / 切分区时用）。
    * 只做「内存 + 落盘」，不触碰 learning.js 的纯函数规则。
    * @param {Record<string, object>} next
+   * @param {string} [sc] 目标分区；缺省当前分区
    */
-  const replaceAll = useCallback((next) => {
-    const clean = next && typeof next === 'object' ? next : {}
-    recordsRef.current = clean
-    setRecords(clean)
-  }, [])
+  const replaceAll = useCallback(
+    (next, sc) => {
+      const clean = next && typeof next === 'object' ? next : {}
+      recordsRef.current = clean
+      setRecords(clean)
+      persist(clean, sc)
+    },
+    [persist],
+  )
 
   const clearAll = useCallback(() => {
     recordsRef.current = {}
     setRecords({})
-  }, [])
+    persist({}, scopeRef.current)
+  }, [persist])
 
   /** 导出 v2 结构，供用户另存 */
   const exportJson = useCallback(
@@ -299,30 +370,47 @@ export function useLearn(
     if (!check.ok) return { ok: false, count: 0, errors: check.errors }
     recordsRef.current = incoming
     setRecords(incoming)
+    persist(incoming, scopeRef.current)
     return { ok: true, count: Object.keys(incoming).length }
-  }, [])
+  }, [persist])
 
   /**
-   * 重跑迁移（设置里切换「高频继承」后用）。会覆盖当前 v2 记录，调用方需二次确认。
-   * 备份 key 永不被清，旧数据随时可找回。
+   * 重跑迁移（设置里切换「高频继承」后用）。会覆盖当前分区的 v2 记录，调用方需二次确认。
+   * 备份键永不被清，旧数据随时可找回。开关值同时写入分区 prefs 键。
    */
   const rerunMigration = useCallback(
     (nextInherit = true) => {
-      clearMigration()
+      const sc = scopeRef.current
+      clearMigration(sc)
       setInheritFreqKnown(nextInherit)
-      const res = runMigration({ words: list, inheritFreqKnown: nextInherit })
+      writePrefs({ inheritFreqKnown: Boolean(nextInherit) }, sc)
+      const res = runMigration({ scope: sc, words: list, inheritFreqKnown: nextInherit })
       if (res.ok) {
         const now = new Date().toISOString()
         setMigration({ done: true, at: now, report: res.report || null })
-        recordsRef.current = readLearn()
-        setRecords(recordsRef.current)
+        const fresh = readLearn(sc)
+        recordsRef.current = fresh
+        setRecords(fresh)
       }
       return res
     },
-    [list],
+    [list, persist],
   )
 
-  const stats = useMemo(() => countByStatus(list, records), [list, records])
+  // ---------------------------------------------------------------- 派生
+  //
+  // statWords = 公共词库 ∪ 私有词：私有词的 word_key 口径与公共词完全一致，
+  //   所以统计（countByStatus）、复习队列（buildReviewQueue）、词汇量预测都该看它，
+  //   否则私有词在三个地方同时隐形。
+  // learnPool 仍只用公共词：私有词 freqRank 多为 null（排到最后一档再被 take 砍掉），
+  //   放进新学队列不但打乱难度序，还几乎必然抽不到（Q4）。
+  const privateList = privateWords || []
+  const statWords = useMemo(
+    () => (privateList.length ? [...list, ...privateList] : list),
+    [list, privateList],
+  )
+
+  const stats = useMemo(() => countByStatus(statWords, records), [statWords, records])
   // 难度分档只收窄学习抽词池；复习队列仍取全库（选档不影响已加入待复习的词）
   const learnPool = useMemo(() => bandFilter(list, band), [list, band])
   // 词素 id → type 映射：词族键优先取词根（r.*），与词云的「词根为干、单词为叶」口径一致
@@ -343,14 +431,16 @@ export function useLearn(
   )
   // 复习队列：只排已到期词（nextDueAt 为空 / 已过期；未到期不排，答错 +1 天）
   const reviewQueue = useMemo(
-    () => buildReviewQueue(list, records, roundSize, new Date().toISOString()),
-    [list, records, roundSize],
+    () => buildReviewQueue(statWords, records, roundSize, new Date().toISOString()),
+    [statWords, records, roundSize],
   )
   const recordOf = useCallback((wordId) => getRecord(records, wordId), [records])
 
   return {
     records,
     recordOf,
+    scope: scopeRef.current,
+    statWords,
     stats,
     learnQueue,
     reviewQueue,

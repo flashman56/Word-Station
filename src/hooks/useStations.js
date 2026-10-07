@@ -2,24 +2,26 @@
  * 小站列表 + 当前小站 + CRUD（乐观更新）
  * ------------------------------------------------------------------
  * 未登录或未配置 Supabase → 空列表 + isGuest，组件走「游客模式」提示。
+ *
+ * ★ 分区：「当前小站」按账号隔离（键约定见 lib/migrate.js，本文件不出现键名）。
+ *   换号后不残留上一个账号的 current —— 否则 A 选的小站 id 会带到 B 的界面。
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import * as stationsApi from '../lib/cloud/stations.js'
+import { ensurePartition, keysFor, scopeOf } from '../lib/migrate.js'
 
-const LS_CURRENT = 'wrc.station.current'
-
-function readCurrent() {
+function readCurrent(scope) {
   try {
-    return localStorage.getItem(LS_CURRENT) || null
+    return localStorage.getItem(keysFor(scope).stationCurrent) || null
   } catch {
     return null
   }
 }
 
-function writeCurrent(id) {
+function writeCurrent(id, scope) {
   try {
-    if (id) localStorage.setItem(LS_CURRENT, id)
-    else localStorage.removeItem(LS_CURRENT)
+    if (id) localStorage.setItem(keysFor(scope).stationCurrent, id)
+    else localStorage.removeItem(keysFor(scope).stationCurrent)
   } catch {
     /* ignore */
   }
@@ -38,17 +40,25 @@ function writeCurrent(id) {
  * }}
  */
 export function useStations(ownerId) {
+  const scope = scopeOf(ownerId)
   const [stations, setStations] = useState([])
-  const [currentId, setCurrentIdState] = useState(() => readCurrent())
+  const [currentId, setCurrentIdState] = useState(() => readCurrent(scope))
   const [loading, setLoading] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
   const ownerRef = useRef(ownerId)
   ownerRef.current = ownerId
 
+  // 换号时读回该账号自己的 current（不残留上一个账号的选择）
+  useEffect(() => {
+    ensurePartition(scope)
+    setCurrentIdState(readCurrent(scope))
+  }, [scope])
+
   const refresh = useCallback(async () => {
     if (!ownerId) {
       setStations([])
+      setCurrentIdState(readCurrent(scope))
       setLoading(false)
       return
     }
@@ -66,19 +76,22 @@ export function useStations(ownerId) {
       const list = data || []
       if (prev && list.some((s) => s.id === prev)) return prev
       const next = list.length ? list[0].id : null
-      writeCurrent(next)
+      writeCurrent(next, scope)
       return next
     })
-  }, [ownerId])
+  }, [ownerId, scope])
 
   useEffect(() => {
     refresh()
   }, [refresh])
 
-  const setCurrentId = useCallback((id) => {
-    setCurrentIdState(id)
-    writeCurrent(id)
-  }, [])
+  const setCurrentId = useCallback(
+    (id) => {
+      setCurrentIdState(id)
+      writeCurrent(id, scope)
+    },
+    [scope],
+  )
 
   const createStation = useCallback(
     async (name) => {
@@ -136,12 +149,12 @@ export function useStations(ownerId) {
       setCurrentIdState((prev) => {
         if (prev !== id) return prev
         const next = snapshot.filter((s) => s.id !== id)[0]?.id ?? null
-        writeCurrent(next)
+        writeCurrent(next, scope)
         return next
       })
       return true
     },
-    [stations],
+    [stations, scope],
   )
 
   const togglePin = useCallback(

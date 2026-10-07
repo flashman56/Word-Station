@@ -104,7 +104,11 @@ export default function App() {
   )
 }
 
-function TopBar({ auth, stations, sync, view, setView, stats, sessionMode }) {
+/**
+ * @param {object} [learn] useLearnCloud() 的返回值；词库未加载完时还没有它，
+ *   此时徽标退化为只看 sync（仍可用，只少一态）。
+ */
+function TopBar({ auth, stations, sync, view, setView, stats, sessionMode, learn = null }) {
   const tabs = [
     ['station', '小站'],
     ['learn', sessionMode !== 'none' ? '学习 · 进行中' : '学习'],
@@ -134,7 +138,7 @@ function TopBar({ auth, stations, sync, view, setView, stats, sessionMode }) {
               {`词群 ${stats.morphCount} · 单词 ${stats.uniqueWords ?? stats.wordCount}`}
             </div>
           )}
-          <SyncBadge sync={sync} ownerId={auth.userId} />
+          <SyncBadge sync={sync} ownerId={auth.userId} learn={learn} />
           <AuthPanel auth={auth} />
         </div>
       </div>
@@ -425,6 +429,7 @@ function AppShell({ words, auth, stations, sync }) {
           setView={setView}
           stats={visibleStats}
           sessionMode={sessionMode}
+          learn={learn}
         />
 
         {view === 'focus' && (
