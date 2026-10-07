@@ -282,7 +282,6 @@ function AppShell({ words, auth, stations, sync }) {
   )
 
   const wordHits = useMemo(() => (query ? searchResult.words.slice(0, 10) : []), [query, searchResult])
-
   const { visibleMorphs, stats } = useMemo(
     () =>
       applyFilters(morphemes, words, index.wordsByMorph, learn.records, {
@@ -439,7 +438,7 @@ function AppShell({ words, auth, stations, sync }) {
         migrationReport={learn.migrationReport}
         inheritFreqKnown={learn.inheritFreqKnown}
         onToggleInherit={handleToggleInherit}
-        hitCount={stats.morphCount}
+        hitCount={searchResult.morphs.length}
         wordHits={wordHits}
         onSelectWordHit={openWordFromSearch}
         onExport={handleExport}
