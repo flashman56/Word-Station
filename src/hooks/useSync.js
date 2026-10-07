@@ -31,7 +31,7 @@ export function registerPullHandler(fn) {
  * @param {object} [opts]
  * @param {string|null} [opts.ownerId]
  * @returns {{
- *   online: boolean, syncing: boolean, pending: number, lastSyncAt: string|null,
+ *   online: boolean, syncing: boolean, pending: number, stuck: number, lastSyncAt: string|null,
  *   syncNow: () => Promise<void>, drain: () => Promise<object>, refreshPending: () => void
  * }}
  */
@@ -41,6 +41,7 @@ export function useSync({ ownerId = null } = {}) {
     typeof navigator === 'undefined' ? true : navigator.onLine !== false,
   )
   const [pending, setPending] = useState(() => offlineApi.pendingCount(scope))
+  const [stuck, setStuck] = useState(() => offlineApi.stuckCount(scope))
   const [syncing, setSyncing] = useState(false)
   const [lastSyncAt, setLastSyncAt] = useState(() => readSync(scope).lastSyncAt || null)
   const ownerRef = useRef(ownerId)
@@ -57,10 +58,14 @@ export function useSync({ ownerId = null } = {}) {
       return
     }
     setPending(offlineApi.pendingCount(scope))
+    setStuck(offlineApi.stuckCount(scope))
     setLastSyncAt(readSync(scope).lastSyncAt || null)
   }, [scope])
 
-  const refreshPending = useCallback(() => setPending(offlineApi.pendingCount(scope)), [scope])
+  const refreshPending = useCallback(() => {
+    setPending(offlineApi.pendingCount(scope))
+    setStuck(offlineApi.stuckCount(scope))
+  }, [scope])
 
   // 订阅草稿队列变化（入队 / 补传都会通知），保证徽标计数实时
   useEffect(() => onPendingChange(refreshPending), [refreshPending])
@@ -72,6 +77,7 @@ export function useSync({ ownerId = null } = {}) {
     try {
       const res = await offlineApi.drain({ scope, uid })
       setPending(offlineApi.pendingCount(scope))
+      setStuck(offlineApi.stuckCount(scope))
       return res
     } finally {
       setSyncing(false)
@@ -131,7 +137,7 @@ export function useSync({ ownerId = null } = {}) {
     }
   }, [scope, drain])
 
-  return { online, syncing, pending, lastSyncAt, syncNow, drain, refreshPending }
+  return { online, syncing, pending, stuck, lastSyncAt, syncNow, drain, refreshPending }
 }
 
 export default useSync

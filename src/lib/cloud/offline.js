@@ -11,10 +11,19 @@
  *   A 的 ownerId 留在队首；B 登录后用 B 的 token 去推 → RLS 拒绝 → 草稿永不删
  *   且**卡住队首**，B 自己的草稿也永远传不上去。
  *
- *   新语义是三分：**认领 / 丢弃 / 真失败**。
- *   - 认领（claim）：草稿的 ownerId 不等于当前 uid → 丢弃，不推送、不重试、不阻塞后续；
- *   - 永久失败（isPermanentError）：RLS / 鉴权 / 不存在 → 丢弃并记录；
- *   - 可重试失败（网络 / 5xx / 超时）→ 保留，**继续下一条**（不 break，见下）。
+ *   新语义是四分：**认领 / park / 丢弃 / 真失败**。
+ *   - 认领（claim）：草稿的 ownerId 不等于当前 uid → **park 保留**（不推送、
+ *     不重试、不阻塞后续）。它们属于别的账号，替别人删数据是不可逆的损失；
+ *     等该账号回来认领通过时会自动解除 park 并补传。
+ *   - 永久失败（isPermanentError，且属本 scope）→ **park 保留** + 记日志；
+ *   - 结构损坏（缺 rows / stationId 等）→ 真丢弃（推上去必然失败）；
+ *   - 可重试失败（网络 / 5xx / 超时）→ 原样保留，**继续下一条**（不 break，见下）。
+ *
+ *   ★ park 与丢弃的区别（A-14）★
+ *     parked 条目**保留在队列里**，但**不计入 pendingCount** —— 否则徽标会永久
+ *     显示一个减不掉的数字。它们由 stuckCount 单独统计，UI 给出一键清除入口。
+ *     学习记录早已落在 learn 分区，与草稿队列是两个独立的键；清除草稿**绝不**
+ *     会碰到学习进度。
  *
  *   ★ 为什么可重试失败也不再 break ★
  *     U1 实测结论：RLS 拒绝在 Cloudflare Pages `/supabase` 网关转发后
@@ -118,18 +127,72 @@ export function enqueue(kind, payload, scope = 'guest') {
 }
 
 /**
- * 待同步总条数（**只统计当前 scope 的队列**）。
- * discarded 不计入 —— 否则徽标会永久显示一个减不掉的数字。
+ * 待同步条数（**只统计当前 scope 的队列**）。
+ *
+ * ★ A-14：只算「可重试」的草稿 ★
+ *   被标记为 parked 的（永久失败 / 跨账号）条目**不计入** —— 否则徽标会永久
+ *   显示一个减不掉的数字，用户既不知道怎么消掉、也没法回到绿色。
+ *   它们由 stuckCount 单独统计并单独展示。
+ *
+ * discarded 同样不计入（它已是历史日志，不是待办）。
+ *
  * @param {string} [scope]
  * @returns {number}
  */
 export function pendingCount(scope = 'guest') {
   const drafts = read(scope)
-  return DRAIN_ORDER.reduce((n, k) => n + (drafts[k]?.length || 0), 0)
+  return DRAIN_ORDER.reduce((n, k) => n + (drafts[k] || []).filter((it) => !isParked(it)).length, 0)
 }
 
 /**
- * 各 kind 的待同步条数。
+ * 「传不上去」的条数（A-14）：永久失败或跨账号、被 park 保留的草稿。
+ *
+ * 这些条目仍然躺在队列里（数据不丢），但不计入 pendingCount。UI 需给出一键
+ * 清除入口（clearStuck），否则它们只会静静堆积。
+ *
+ * @param {string} [scope]
+ * @returns {number}
+ */
+export function stuckCount(scope = 'guest') {
+  const drafts = read(scope)
+  return DRAIN_ORDER.reduce((n, k) => n + (drafts[k] || []).filter(isParked).length, 0)
+}
+
+/** 该草稿是否被 park（保留但不计入 pending） */
+function isParked(item) {
+  return Boolean(item && item.parked)
+}
+
+/**
+ * 一键清除「传不上去」的草稿（A-14）。
+ *
+ * ★★ 边界：只删草稿队列，绝不碰任何学习记录 ★★
+ *   学习记录早已落在 learn 分区（keysFor(scope).learn），与草稿队列是两个
+ *   独立的键、独立的生命周期。这里只对 drafts 做 filter + write，
+ *   代码路径上根本触达不到 learn 键 —— 删草稿 ≠ 删学习进度。
+ *   （有对应的回归断言：见 scripts/test-drafts.mjs「清除传不上去的草稿后，
+ *   对应词的学习记录仍存在于 learn 分区」。）
+ *
+ * @param {string} [scope]
+ * @returns {number} 实际清除的条数
+ */
+export function clearStuck(scope = 'guest') {
+  const drafts = read(scope)
+  let cleared = 0
+  DRAIN_ORDER.forEach((k) => {
+    const before = drafts[k].length
+    drafts[k] = drafts[k].filter((it) => !isParked(it))
+    cleared += before - drafts[k].length
+  })
+  if (cleared > 0) {
+    write(drafts, scope)
+    notifyPendingChanged()
+  }
+  return cleared
+}
+
+/**
+ * 各 kind 的待同步条数（同样只算可重试的）。
  * @param {string} [scope]
  * @returns {object}
  */
@@ -137,7 +200,7 @@ export function pendingByKind(scope = 'guest') {
   const drafts = read(scope)
   const out = {}
   DRAIN_ORDER.forEach((k) => {
-    out[k] = drafts[k]?.length || 0
+    out[k] = (drafts[k] || []).filter((it) => !isParked(it)).length
   })
   return out
 }
@@ -210,12 +273,23 @@ export function readDiscarded() {
 
 /**
  * 记一条丢弃（跨账号共用一条日志，不分区；uid 只留哈希前缀）。
+ *
+ * ★ A-14 适用边界（收紧）★
+ *   只有「**本 scope 的草稿** 且 **错误属已实测白名单**」才允许移入 discarded：
+ *     - 跨 scope 的草稿 → 一律 `parked` 保留，**不进 discarded**。
+ *       理由：它们属于别的账号，删除等于替别人扔数据；而 A 自己的登录态
+ *       可能马上回来、届时这些草稿本可正常上行，先删掉是不可逆的损失。
+ *     - 未识别的错误 → 同样 park 保留（`isPermanentError` 已返回 false，
+ *       根本到不了这里，但边界仍写明以防将来有人绕过判定直接调用）。
+ *   传入 parked=true 时**只打日志、不删队列条目**（drain 里据此保留数据）。
+ *
  * @param {string} kind
  * @param {object} item 原始草稿
  * @param {string} reason
+ * @param {boolean} [parked] true = 仅记录，条目保留在队列里
  * @returns {object} 写入的 entry
  */
-export function moveToDiscarded(kind, item, reason) {
+export function moveToDiscarded(kind, item, reason, parked = false) {
   const entry = {
     at: new Date().toISOString(),
     kind,
@@ -224,6 +298,9 @@ export function moveToDiscarded(kind, item, reason) {
     ownerIdHash: hashUid(itemOwnerId(kind, item)),
     queuedAt: item?.queuedAt ?? null,
     summary: summarize(kind, item),
+    // parked=true 表示「只记录、条目保留在队列」——日志里必须能区分这两种情况，
+    // 否则事后排查会以为数据已经被删了。
+    parked: Boolean(parked),
   }
   try {
     const cur = readDiscarded()
@@ -362,15 +439,16 @@ export function isPermanentError(error) {
  * @returns {Promise<{ok, pushed, failed, discarded, skippedOffline, skippedNoAuth}>}
  */
 export async function drain({ scope = 'guest', uid = null, force = false, onProgress = null, push = null } = {}) {
-  if (!uid) return { ok: true, pushed: 0, failed: 0, discarded: 0, skippedOffline: false, skippedNoAuth: true }
+  if (!uid) return { ok: true, pushed: 0, failed: 0, discarded: 0, parked: 0, skippedOffline: false, skippedNoAuth: true }
   if (!force && isOffline()) {
-    return { ok: true, pushed: 0, failed: 0, discarded: 0, skippedOffline: true, skippedNoAuth: false }
+    return { ok: true, pushed: 0, failed: 0, discarded: 0, parked: 0, skippedOffline: true, skippedNoAuth: false }
   }
   const pushImpl = typeof push === 'function' ? push : pushOne
 
   let pushed = 0
   let failed = 0
   let discarded = 0
+  let parked = 0
 
   for (const kind of DRAIN_ORDER) {
     const drafts = read(scope)
@@ -383,21 +461,54 @@ export async function drain({ scope = 'guest', uid = null, force = false, onProg
     while (i < queue.length) {
       const item = queue[i]
 
-      // ① 认领
+      // ① 认领。与错误形态无关的第一道防线：非本账号的条目在推送之前就被摘掉。
       const verdict = claim(kind, item, uid)
       if (!verdict.ok) {
-        moveToDiscarded(kind, item, verdict.reason)
-        queue.splice(i, 1)
-        discarded += 1
+        if (verdict.verdict === 'discard') {
+          // 跨账号（A-14）：**保留**并 park，不删除。
+          // 它们属于别的账号 —— A 自己的登录态可能马上回来、届时本可正常上行，
+          // 现在替别人删掉是不可逆的数据损失。它们不计入 pendingCount，
+          // 由 stuckCount 单独展示 + 一键清除。
+          queue[i] = { ...item, parked: true, parkedReason: verdict.reason }
+          moveToDiscarded(kind, item, verdict.reason, true)
+          parked += 1
+        } else {
+          // 结构损坏：推上去必然失败，留着只会反复报错 → 真丢弃
+          moveToDiscarded(kind, item, verdict.reason)
+          queue.splice(i, 1)
+          discarded += 1
+        }
         done += 1
-        continue // 不阻塞后续
+        i += 1
+        notifyPendingChanged()
+        continue // 无论哪条分支都不阻塞后续
+      }
+
+      // 认领通过说明「这个条目现在归当前账号管」：
+      //   - 之前因 owner-mismatch 被 park 的 → **解除 park**，正常推送。
+      //     这是必须的：A 登出时它的草稿被 park，B 登录后认领失败；等 A 回来
+      //     若还跳过它，A 的离线进度就永远传不上去了。
+      //   - 之前因 push-rejected 被 park 的 → 只有 force（手动重试 / 登出前
+      //     flush）才重推。否则每 30 秒的定时 drain 都会对一条已知推不上去的
+      //     条目重复发一次请求，纯属浪费。
+      let cur = item
+      if (isParked(item)) {
+        if (item.parkedReason === 'push-rejected' && !force) {
+          i += 1
+          continue
+        }
+        const { parked, parkedReason, ...rest } = item
+        void parked
+        void parkedReason
+        cur = rest
+        queue[i] = cur
       }
 
       // ② 上行
       let ok = false
       let lastError = null
       try {
-        const res = await pushImpl(kind, item)
+        const res = await pushImpl(kind, cur)
         ok = Boolean(res && res.ok)
         lastError = (res && res.error) || null
       } catch (e) {
@@ -414,16 +525,20 @@ export async function drain({ scope = 'guest', uid = null, force = false, onProg
         continue
       }
 
-      // ③ 永久失败 → 丢弃并记录，不阻塞后续
+      // ③ 永久失败（本 scope + 已实测白名单）→ **park 保留**，记日志，不阻塞后续。
+      //   不删除：删了就找不回来了，而用户可能只是暂时登出/换号。
+      //   不计入 pendingCount：否则徽标永远显示一个减不掉的数字（A-14）。
       if (isPermanentError(lastError)) {
-        moveToDiscarded(kind, item, 'push-rejected')
-        queue.splice(i, 1)
-        discarded += 1
+        queue[i] = { ...item, parked: true, parkedReason: 'push-rejected' }
+        moveToDiscarded(kind, item, 'push-rejected', true)
+        parked += 1
         done += 1
+        i += 1
+        notifyPendingChanged()
         continue
       }
 
-      // ④ 可重试失败 → **保留**，继续下一条（不 break，见文件头注释）
+      // ④ 可重试失败 → **原样保留**，继续下一条（不 break，见文件头注释）
       failed += 1
       i += 1
     }
@@ -435,7 +550,7 @@ export async function drain({ scope = 'guest', uid = null, force = false, onProg
   }
 
   notifyPendingChanged()
-  return { ok: failed === 0, pushed, failed, discarded, skippedOffline: false, skippedNoAuth: false }
+  return { ok: failed === 0, pushed, failed, discarded, parked, skippedOffline: false, skippedNoAuth: false }
 }
 
 /**
@@ -452,7 +567,15 @@ async function pushOne(kind, item) {
     return { ok: !error, error }
   }
   if (kind === 'generate') {
-    const { stationId, forms } = item
+    // ★ GAP-13：`ownerId` 必须保留 ★
+    //   generateApi.generate(forms, stationId, onProgress) 根本没有 ownerId 参数
+    //   ——owner 100% 由服务端从 JWT 推导。所以这里的 ownerId 只能用于**认领**
+    //   （claim 已在上游做完），绝不能因为「用不上」就把它从解构里丢掉：
+    //   一旦丢掉，跨账号的 generate 草稿就会在 B 的会话下真的把词生成到 B 账号下
+    //   （不留学习痕迹，B 只看到一批陌生词条且无法解释来源）。
+    //   这里显式解构出来并留空赋值，就是为了让「它没被用上」这件事在代码里可见。
+    const { ownerId: _ownerIdForClaimOnly, stationId, forms } = item
+    void _ownerIdForClaimOnly
     if (!Array.isArray(forms) || forms.length === 0) return { ok: false, error: { code: 'BAD_REQUEST', message: '草稿结构损坏' } }
     const { error } = await generateApi.generate(forms, stationId || null)
     return { ok: !error, error }
