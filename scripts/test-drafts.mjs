@@ -138,16 +138,20 @@ test('claim：item 不是对象 → skip / malformed', () => {
   assert.deepEqual(claim('learn', '字符串', UID_A), { ok: false, verdict: 'skip', reason: 'malformed' })
 })
 
-// ---------------------------------------------------------------- isPermanentError（U1 实测校准）
+// ---------------------------------------------------------------- isPermanentError（实测校准）
+//
+// HTTP 状态码以 QA 的**生产实测**为准：RLS 拒绝是 403（不是 401，那是鉴权），
+// PGRST301 是 401，PGRST205 是 404。白名单按 `code` 命中，所以状态码只影响
+// 这几条用例的标题与文档，不影响判定行为。
 
-test('isPermanentError：RLS 拒绝（U1 实测：HTTP 401 + code 42501）判为永久', () => {
+test('isPermanentError：RLS 拒绝（生产实测 HTTP 403 + code 42501）判为永久', () => {
   assert.equal(
     isPermanentError({ code: '42501', message: 'new row violates row-level security policy for table "learn_records"' }),
     true,
   )
 })
 
-test('isPermanentError：JWT / API key 失败（U1 实测）判为永久', () => {
+test('isPermanentError：JWT / API key 失败（生产实测 HTTP 401）判为永久', () => {
   assert.equal(isPermanentError({ code: 'PGRST301', message: 'Expected 3 parts in JWT; got 1' }), true)
   assert.equal(isPermanentError({ code: 'PGRST301', message: 'No suitable key or wrong key type' }), true)
   // 「Invalid API key」实测**没有 code**，只能靠 message 关键词
@@ -155,7 +159,7 @@ test('isPermanentError：JWT / API key 失败（U1 实测）判为永久', () =>
   assert.equal(isPermanentError({ code: '401', message: 'JWT expired' }), true)
 })
 
-test('isPermanentError：资源不存在（PGRST205 / 404 / NOT_FOUND）判为永久', () => {
+test('isPermanentError：资源不存在（生产实测 HTTP 404 / PGRST205）判为永久', () => {
   assert.equal(isPermanentError({ code: 'PGRST205', message: "Could not find the table 'x'" }), true)
   assert.equal(isPermanentError({ code: '404', message: 'not found' }), true)
   assert.equal(isPermanentError({ code: 'NOT_FOUND', message: '' }), true)
