@@ -382,21 +382,24 @@ export function claim(kind, item, uid) {
 /**
  * 永久失败判定：RLS / 鉴权 / 资源不存在 → 重试无意义。
  *
- * ★ U1 实测校准（2026-09，scripts/ 下的探针脚本跑出来的真实形状）★
+ * ★ U1 实测校准 ★
  *   Cloudflare Pages 的 `/supabase` 网关（functions/_middleware.js）**逐字转发**
  *   `upstream.status` / `statusText` / body，只剥离逐跳头 —— 所以错误体在网关
- *   前后**完全一致**，实测结果可直接用于校准：
+ *   前后**完全一致**，直连实测结果可直接用于校准。**HTTP 状态码一列以 QA 的
+ *   生产实测为准**（我第一版注释写的是 401，实际是 403；白名单靠 `code` 命中所以
+ *   行为一直正确，但注释会误导后来人，故按实测更正）：
  *
  *   | 场景                    | HTTP | error.code   | error.message                                  |
  *   |-------------------------|------|--------------|------------------------------------------------|
- *   | RLS `with check` 拒绝     | 401  | `'42501'`    | `new row violates row-level security policy…` |
+ *   | RLS `with check` 拒绝     | 403  | `'42501'`    | `new row violates row-level security policy…` |
  *   | JWT 无效 / 结构错误       | 401  | `'PGRST301'` | `Expected 3 parts in JWT; got 1` 等            |
  *   | API key 无效             | 401  | **无 code**  | `Invalid API key`                              |
  *   | 表不存在（PGRST）         | 404  | `'PGRST205'` | `Could not find the table …`                   |
  *   | 网络不可达               | —    | `''`         | `TypeError: fetch failed`                      |
  *
- *   注意 HTTP 401 配 code 42501 这个反直觉组合 —— 只按 `status` 判会漏，
- *   只按 `code` 判也会漏「Invalid API key」（它根本没有 code）。
+ *   注意 RLS 拒绝是 **403 + code 42501**：它既不是 401（那是鉴权），也不能只按
+ *   HTTP 判 —— 只按 `status` 会漏掉「无 code 的 Invalid API key」，只按 `code`
+ *   也会漏它。所以白名单同时覆盖 code 列表与 message 关键词。
  *
  * ★ 失败方向：默认安全侧 ★
  *   **未识别**的错误一律返回 false（= 可重试）→ 草稿保留 + 继续下一条。

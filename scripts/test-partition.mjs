@@ -36,7 +36,9 @@ const {
   GUEST_SCOPE,
   LEGACY_KEYS,
   FROZEN_KEYS,
+  affectsLocalScope,
   ensurePartition,
+  isStorageKey,
   keysFor,
   normalizeScope,
   readCloudMigration,
@@ -75,6 +77,9 @@ function reset() {
 }
 
 console.log('[test:partition]')
+
+/** 设备级设置键（用于断言 isStorageKey；不引入裸键名字面量） */
+const KEYS_FOR_TEST = keysFor('guest').settings
 
 // ---------------------------------------------------------------- scopeOf / normalizeScope
 
@@ -474,5 +479,55 @@ test('A 有 500 条 → 切到 B（云端 0 条）：B 分区恒为空，A 完�
   assert.equal(Object.keys(readLearn('uid-A')).length, 500)
 })
 
-console.log(`\n通过 ${passed} · 失败 ${failed}`)
+// ---------------------------------------------------------------- 键的语义判定（P1）
+
+test('isStorageKey：认得本应用的命名空间，其他一律不认', () => {
+  assert.equal(isStorageKey(keysFor('uid-A').learn), true)
+  assert.equal(isStorageKey(KEYS_FOR_TEST), true)
+  assert.equal(isStorageKey('some.other.key'), false)
+  assert.equal(isStorageKey(''), false)
+  assert.equal(isStorageKey(null), false)
+  assert.equal(isStorageKey(undefined), false)
+})
+
+test('STAR affectsLocalScope：分区 learn 键必须被认出来（P1 修复的真实回归点）', () => {
+  // 这里曾出过一个静默失效的 bug：拿 keysFor('guest').learn（带 ':guest' 后缀）
+  // 去比 storage 事件给的 '…:uid-A'，永远不相等 → 函数恒为 false →
+  // 多标签页切换账号时根本不重载。症状只是「偶尔不刷新」，极难归因。
+  assert.equal(affectsLocalScope(keysFor('uid-A').learn), true, 'uid-A 的 learn 键')
+  assert.equal(affectsLocalScope(keysFor('uid-B').learn), true, 'uid-B 的 learn 键')
+  assert.equal(affectsLocalScope(keysFor('guest').learn), true, 'guest 的 learn 键')
+})
+
+test('affectsLocalScope：账号相关的其余键要认，刻意不认的不能认', () => {
+  // 认：这些变化意味着「别的标签动了本地学习态」
+  ;[
+    ['prefs', keysFor('uid-A').prefs],
+    ['cloudMigration', keysFor('uid-A').cloudMigration],
+    ['migration 标记', keysFor('guest').migration],
+    ['设备级 settings', keysFor('guest').settings],
+    ['冻结 v1 源', FROZEN_KEYS.statusV1],
+    ['冻结 v1 备份', FROZEN_KEYS.statusV1Backup],
+    ['旧的无后缀 learn 键（同一逻辑键）', LEGACY_KEYS.learn],
+  ].forEach(([name, key]) => {
+    assert.equal(affectsLocalScope(key), true, name + ' 应当被认')
+  })
+  // 不认：草稿只影响计数；整表重载会打断输入
+  ;[
+    ['草稿', keysFor('uid-A').drafts],
+    ['游标', keysFor('uid-A').sync],
+    ['丢弃日志', keysFor('guest').draftsDiscarded],
+    ['partition 标记', keysFor('guest').partition],
+    ['当前小站', keysFor('uid-A').stationCurrent],
+    ['私有词缓存', keysFor('uid-A').userWordsCache],
+  ].forEach(([name, key]) => {
+    assert.equal(affectsLocalScope(key), false, name + ' 不应触发整表重载')
+  })
+  ;['', null, undefined, 'some.other.key'].forEach((k) => {
+    assert.equal(affectsLocalScope(k), false, '垃圾输入 ' + String(k) + ' 应返回 false')
+  })
+})
+
+console.log(`
+通过 ${passed} · 失败 ${failed}`)
 process.exit(failed === 0 ? 0 : 1)
