@@ -10,17 +10,23 @@
  *   - DEEPSEEK_API_KEY 只从 .env.local 读，绝不硬编码、绝不打日志；
  *   - 不把 key 放进命令行参数（会进 shell history 与 `ps` 的 argv），
  *     改为写一个只含该 key 的临时 env-file，用 `--env-file` 传给 CLI，用完即删；
- *   - 所有子进程输出都经过 redact() 过滤后才打印；
- *   - Access Token 取自两个来源，都拿不到才退出（不做任何“降级尝试”）。
+ *   - 所有子进程输出都经过 redact() 过滤后才打印。
  *
- * Access Token 的两个来源（按优先级）：
+ * 认证判据（重要）：
+ *   「能不能部署」以 **CLI 自身的认证状态**为准，而不是「我们能不能读到 token 文件」。
+ *   新版 CLI 可能把凭证存在系统凭据库等我们读不到的位置，此时文件读不到 ≠ 未登录。
+ *   所以流程是：先尝试显式 token（命中即用），读不到就退化为只读探测
+ *   `projects list --output json`（60s 超时、不触发交互、不写入），
+ *   两者都不成立才 BLOCKED。
+ *
+ * Access Token 的两个显式来源（按优先级）：
  *   ① 环境变量 SUPABASE_ACCESS_TOKEN
- *   ② Supabase CLI 的登录态文件（`npx supabase login` 写的就是它，CLI 自己也读它）
+ *   ② Supabase CLI 登录态文件（旧版 CLI 的产物）
  *      Windows: %USERPROFILE%\.supabase\access-token
  *      POSIX:   ~/.supabase/access-token
  *   仅打印来源、长度与 3 字符前缀，绝不打印 token 本身。
  *
- * 前置条件（二选一即可）：
+ * 前置条件（下列任一即可，通常什么都不用做）：
  *   npx supabase login
  *   # 或：supabase.com → Account → Access Tokens 生成 sbp_xxx，再 export
  *   export SUPABASE_ACCESS_TOKEN=sbp_xxx
@@ -77,51 +83,89 @@ function readEnvLocal(name) {
 const SECRETS = new Set()
 
 /**
- * 解析 Access Token，两个来源按优先级：
+ * 尝试解析 Access Token，两个来源按优先级：
  *   ① 环境变量 SUPABASE_ACCESS_TOKEN
- *   ② Supabase CLI 登录态文件（`npx supabase login` 的产物，CLI 自身也读它）
- * 返回 { token, source }；两个来源都没有可用 token 时直接 fail 退出。
+ *   ② Supabase CLI 登录态文件（旧版 CLI 的产物）
+ *
+ * 返回 { token, source } 或 null（两个来源都没有可用 token）。
+ * ⚠️ 返回 null **不等于**无法部署：新版 CLI 可能把凭证放在我们读不到的位置
+ * （系统凭据库等），此时由 probeCliAuth() 探测 CLI 自身的认证状态。
  * 任何分支都不会打印 token 本身。
  */
 function resolveAccessToken() {
   const fromEnv = (process.env.SUPABASE_ACCESS_TOKEN || '').trim()
   if (fromEnv) return { token: fromEnv, source: '环境变量 SUPABASE_ACCESS_TOKEN' }
 
-  if (!fs.existsSync(CLI_TOKEN_FILE)) {
-    fail(
-      '未找到 Supabase Access Token：环境变量 SUPABASE_ACCESS_TOKEN 未设置，CLI 登录态文件也不存在。',
-      [
-        '任选一种方式即可：',
-        '  ① npx supabase login                # 交互式登录，token 写入 CLI 登录态文件，脚本会自动读取',
-        '  ② supabase.com → Account → Access Tokens → Generate new token，复制 sbp_xxx，然后：',
-        '     export SUPABASE_ACCESS_TOKEN=sbp_xxx   # 显式导出优先级高于登录态文件',
-        `  （CLI 登录态文件路径：${CLI_TOKEN_FILE}）`,
-      ].join('\n  '),
-    )
-  }
+  if (!fs.existsSync(CLI_TOKEN_FILE)) return null
 
   // CLI 写文件时带结尾换行；不 trim 会得到一个「看起来像错 token」的认证失败。
   const raw = fs.readFileSync(CLI_TOKEN_FILE, 'utf8')
   const fromFile = raw.trim()
   if (!fromFile) {
-    fail(
-      `Supabase CLI 登录态文件存在但是空的：${CLI_TOKEN_FILE}`,
-      ['该文件被截断或写入中断了。请重新登录：', '  npx supabase login'].join('\n  '),
-    )
+    console.log(`⚠ CLI 登录态文件存在但是空的，已忽略：${CLI_TOKEN_FILE}`)
+    console.log('  （文件写入可能被截断。若下面的 CLI 认证探测失败，请重跑 npx supabase login）')
+    return null
   }
   if (!fromFile.startsWith('sbp_')) {
-    fail(
-      `Supabase CLI 登录态文件内容不合法（不以 sbp_ 开头）：${CLI_TOKEN_FILE}`,
-      [
-        `读到的长度 ${fromFile.length}，前缀 "${fromFile.slice(0, 3)}"。`,
-        '该文件很可能已损坏或被其他内容覆盖。请重新登录：',
-        '  npx supabase login',
-        '或显式导出环境变量绕开该文件：',
-        '  export SUPABASE_ACCESS_TOKEN=sbp_xxx',
-      ].join('\n  '),
-    )
+    // 不再直接退出：文件坏掉不代表没登录，交给 CLI 探测定夺。
+    console.log(`⚠ CLI 登录态文件内容不合法（不以 sbp_ 开头），已忽略：${CLI_TOKEN_FILE}`)
+    console.log(`  （读到的长度 ${fromFile.length}，前缀 "${fromFile.slice(0, 3)}"。该文件可能已损坏）`)
+    return null
   }
   return { token: fromFile, source: 'CLI 登录态文件' }
+}
+
+/** 探测超时：只读命令也要设上限，避免预检永远挂住。 */
+const PROBE_TIMEOUT_MS = 60_000
+
+/**
+ * 探测 CLI 自身的认证状态——这是「能不能部署」的唯一权威判据。
+ *
+ * 用 `projects list --output json`：只读、不触发交互授权、不写任何东西。
+ * 判定只看 exit code 与能否解析出项目数组，**不看 stderr**
+ * （未 link 项目时 CLI 会往 stderr 写 "Cannot find project ref"，与认证无关）。
+ *
+ * 返回 { ok: true, count, hasProject } 或 { ok: false, reason }。
+ */
+function probeCliAuth({ cmd, prefix }) {
+  const args = [...prefix, 'projects', 'list', '--output', 'json']
+  const res = spawnSync(cmd, args, {
+    cwd: ROOT,
+    stdio: ['ignore', 'pipe', 'pipe'],
+    encoding: 'utf8',
+    shell: process.platform === 'win32',
+    timeout: PROBE_TIMEOUT_MS,
+  })
+
+  if (res.error) {
+    const timedOut = res.error.code === 'ETIMEDOUT'
+    return { ok: false, reason: timedOut ? `探测超时（> ${PROBE_TIMEOUT_MS / 1000}s）` : `探测命令无法执行：${res.error.message}` }
+  }
+  const code = res.status === null ? 1 : res.status
+  if (code !== 0) {
+    const err = (res.stderr || '').trim().split('\n').filter(Boolean).slice(-3).join(' / ')
+    return { ok: false, reason: `CLI 未认证或探测失败（exit ${code}）${err ? `：${redact(err)}` : ''}` }
+  }
+
+  // stdout 理论上就是 JSON；为容错，截取最外层 [ ... ]
+  const out = res.stdout || ''
+  const from = out.indexOf('[')
+  const to = out.lastIndexOf(']')
+  if (from === -1 || to <= from) return { ok: false, reason: '探测输出不是可解析的 JSON 项目列表' }
+  let projects
+  try {
+    projects = JSON.parse(out.slice(from, to + 1))
+  } catch {
+    return { ok: false, reason: '探测输出的 JSON 解析失败' }
+  }
+  if (!Array.isArray(projects)) return { ok: false, reason: '探测输出不是 JSON 数组' }
+  if (projects.length === 0) return { ok: false, reason: 'CLI 认证成功但该账号下没有任何项目' }
+
+  return {
+    ok: true,
+    count: projects.length,
+    hasProject: projects.some((p) => p && (p.ref === projectId || p.id === projectId)),
+  }
 }
 
 /** 从 CLI `--version` 输出里解析主版本号，解析不出来返回 null。 */
@@ -233,11 +277,39 @@ if (!USE_API && escapesSupabase && !DRY_RUN) {
   )
 }
 
-// ② 预检：凭据 + CLI 版本
-step(2, TOTAL, '预检：凭据与 CLI 版本（值一律不打印）')
+// ② 预检：认证 + CLI 版本
+step(2, TOTAL, '预检：认证与 CLI 版本（值一律不打印）')
 
-const { token, source } = resolveAccessToken()
-console.log(`Access Token: OK（来自 ${source}，长度 ${token.length}，前缀 ${token.slice(0, 3)}…）`)
+const { cmd, prefix } = resolveCli()
+const ver = spawnSync(cmd, [...prefix, '--version'], { cwd: ROOT, encoding: 'utf8', shell: process.platform === 'win32' })
+const verText = (ver.stdout || ver.stderr || '').trim().split('\n')[0] || '未知'
+console.log(`CLI: ${cmd} ${prefix.join(' ')} → ${verText}`)
+
+// 认证：先试我们能直接读到的 token，读不到就问 CLI 自己。
+const resolved = resolveAccessToken()
+if (resolved) {
+  console.log(`Access Token: OK（来自 ${resolved.source}，长度 ${resolved.token.length}，前缀 ${resolved.token.slice(0, 3)}…）`)
+  console.log('（显式提供的 token 优先于 CLI 自身登录态）')
+} else {
+  console.log('Access Token: 环境变量与 CLI 登录态文件均未提供 → 改为探测 CLI 自身认证状态')
+  console.log(`  $ ${cmd} ${prefix.join(' ')} projects list --output json   # 只读探测`)
+  const probe = probeCliAuth({ cmd, prefix })
+  if (probe.ok) {
+    console.log(`CLI 认证：OK（由 CLI 自身登录态管理，可访问 ${probe.count} 个项目${probe.hasProject ? '，含本项目 ' + projectId : ''}）`)
+    console.log('  （新版 CLI 可能把凭证存在系统凭据库等位置，读不到文件不代表未登录）')
+  } else {
+    fail(
+      `无法确认 Supabase 认证状态：${probe.reason}`,
+      [
+        '本脚本读不到 token 文件、CLI 自身也认证失败，任选一种方式即可：',
+        '  ① npx supabase login                # 交互式登录，登录态由 CLI 自己管理',
+        '  ② supabase.com → Account → Access Tokens → Generate new token，复制 sbp_xxx，然后：',
+        '     export SUPABASE_ACCESS_TOKEN=sbp_xxx',
+        '  验证：npx --yes supabase@latest projects list',
+      ].join('\n  '),
+    )
+  }
+}
 
 let deepseekKey = ''
 if (!SKIP_SECRET) {
@@ -250,11 +322,6 @@ if (!SKIP_SECRET) {
 } else {
   console.log(`${SECRET_NAME}: --skip-secret，跳过读取与设置`)
 }
-
-const { cmd, prefix } = resolveCli()
-const ver = spawnSync(cmd, [...prefix, '--version'], { cwd: ROOT, encoding: 'utf8', shell: process.platform === 'win32' })
-const verText = (ver.stdout || ver.stderr || '').trim().split('\n')[0] || '未知'
-console.log(`CLI: ${cmd} ${prefix.join(' ')} → ${verText}`)
 
 // `--use-api` 需要 CLI ≥ 2.13.3；提前失败，避免部署到一半才报看不懂的 flag 错误。
 const parsedVer = parseCliVersion(verText)
