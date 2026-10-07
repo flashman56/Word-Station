@@ -362,7 +362,16 @@ export default function NetworkView({
       })
     }
     sourceNodes.forEach((node) => {
-      const related = relationsOf(relationIndex, node.id)
+      /* ★ 必须用 node.word.id，不是 node.id ★
+         node.id 是**带前缀**的图节点 id（graph.js 的
+         `id: \`word:${word.id}\``，为了让 word:/morph: 两类节点不撞 id），
+         而 relationsOf / relationIndex 的键是**词条 id**（w.calm）。
+         传 node.id ⇒ 永远查不到 ⇒ **语义关系连线一条都画不出来**。
+
+         这个 bug 的隐蔽性在于：它不报错、不白屏，只是「近义/反义连线凭空消失」，
+         而 e2e 里那条断言又恰好写成了 `q('svg line')`（实现用 <path>），
+         于是**断言与 bug 互相掩护**：断言本来就永远为假，所以没人发现连线其实也没画。 */
+      const related = relationsOf(relationIndex, node.word.id)
       if (showSynonyms) addLinks(node, related.synonyms, 'synonym')
       if (showAntonyms) addLinks(node, related.antonyms, 'antonym')
     })
@@ -770,8 +779,15 @@ export default function NetworkView({
                   const meta = RELATION_META[link.type]
                   const grade = Number.isInteger(link.grade) ? Math.max(1, Math.min(3, link.grade)) : 2
                   return (
+                    /* ★ data-testid 供 e2e 断言（QA 实测出的断言 bug 修复）★
+                       qa-harness 原来断言 `q('svg line').length > 0` 来验证
+                       「词关系网有连线」，而这里渲染的是 <path> —— 那个断言
+                       **结构上永远不可能为真**（项目刻意不画 <line>）。
+                       也不能改成数 `svg path`：海岸线/浪花/岛屿全是 path，
+                       直接数会假绿。⇒ 用专属 testid 与装饰性 path 区分。 */
                     <path
                       key={`${link.type}:${pairKey(link.source, link.target)}`}
+                      data-testid="relation-link"
                       d={`M ${sourceNode.x} ${sourceNode.y} L ${targetNode.x} ${targetNode.y}`}
                       fill="none"
                       stroke={meta.color}
