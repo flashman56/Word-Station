@@ -42,6 +42,10 @@ export default function Sidebar({
   onImport,
   onClear,
   vocab = null,
+  privateWordCount = 0,
+  privateWordsOpen = false,
+  onTogglePrivateWords,
+  privateWordsPanel = null,
 }) {
   const patch = (p) => setFilters((f) => ({ ...f, ...p }))
 
@@ -120,6 +124,36 @@ export default function Sidebar({
             </Chip>
           ))}
         </div>
+
+        {/* ★ T04：我的私有词入口 ★
+            放在「掌握状态」区下方 —— 私有词正是「按掌握状态管理我的词」的一部分，
+            放在这里符合用户心智（上面就是三态筛选）。
+            ★ 它是 B 组「移出小站」的硬前置：私有词被移出小站后仍留在 user_words，
+              若没有这个入口就彻底失去编辑 / 重新生成 / 删除入口，成为清不掉的幽灵词
+              （照样计入统计、照样出现在复习队列）。
+            0 个时显示「暂无」且不可点 —— 给一个点进去必然是空的入口没有意义。 */}
+        <div className="mt-2 pt-2 border-t border-slate-100">
+          <button
+            onClick={privateWordCount > 0 ? onTogglePrivateWords : undefined}
+            disabled={privateWordCount === 0}
+            title={
+              privateWordCount > 0
+                ? '查看 / 编辑 / 彻底删除我的私有词'
+                : '还没有私有词：在「小站」里粘贴不在公共库的生词即可自动生成'
+            }
+            className="w-full text-left text-xs text-slate-500 hover:text-blue-600 disabled:text-slate-400 disabled:hover:text-slate-400 py-0.5"
+          >
+            我的私有词{' '}
+            {privateWordCount > 0 ? `${privateWordCount} 个` : '（暂无）'}
+            {privateWordCount > 0 && (
+              <span className="ml-1 text-slate-400">{privateWordsOpen ? '▾ 收起' : '· 查看'}</span>
+            )}
+          </button>
+        </div>
+
+        {/* 面板内联展开在「掌握状态」区下方，不开新页签、不进「列表」页 ——
+            理由：allIds 的语义与 A-07 的批量上限口径会被搅在一起 */}
+        {privateWordsOpen && privateWordsPanel}
       </Section>
 
       <Section title="最低难度">
