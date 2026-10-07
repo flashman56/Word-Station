@@ -43,6 +43,7 @@ const STATION_WORDS_HOOK = path.join(ROOT, 'src', 'hooks', 'useStationWords.js')
 const { keysFor, readStationRefs, scopeOf, writeStationRefs } = await import('../src/lib/migrate.js')
 const offlineApi = await import('../src/lib/cloud/offline.js')
 const { parseWordKey } = await import('../src/lib/wordKey.js')
+const { isUserKey } = await import('../src/lib/wordKey.js')
 
 let passed = 0
 let failed = 0
@@ -304,11 +305,27 @@ test('空草稿 → 空投影（不留空数组以外的东西）', () => {
 test('★ 词条缓存：断网 + F5 的首帧来源（refs 按 stationId 分条目）', () => {
   reset()
   writeStationRefs(ST1, [ref(ST1, 'w.a'), ref(ST1, 'w.b')], SCOPE_A)
-  writeStationRefs(ST2, [ref(ST2, 'w.c', 'user')], SCOPE_A)
+  // ★ fixture 修正：私有词的 wordKey 必须是 `u.` 前缀 ★
+  //   原写法 `ref(ST2, 'w.c', 'user')` 自相矛盾：source 说它是 user，wordKey
+  //   却是 `w.` 前缀。真实数据里两者必然一致（addToStation 的 source 就是按
+  //   `isUserKey(it.wordKey)` 派生的），所以原 fixture 是个**不可能存在的行**。
+  writeStationRefs(ST2, [ref(ST2, 'u.c', 'user')], SCOPE_A)
 
   assert.equal(readStationRefs(ST1, SCOPE_A).refs.length, 2, 'ST1 有 2 条')
   assert.equal(readStationRefs(ST2, SCOPE_A).refs.length, 1, 'ST2 有 1 条')
-  assert.equal(readStationRefs(ST2, SCOPE_A).refs[0].source, 'user', '私有词引用也缓存')
+  // ★ 这里曾断言 `refs[0].source === 'user'`（私有词引用也缓存）——
+  //   T06 裁剪后 `source` 已不在落盘形状里（它与 wordKey 前缀同源，见 migrate.js
+  //   的 projectRef 注释）。所以改成断言**能表达「这是私有词」的那个字段**：
+  //   wordKey 的 `u.` 前缀。分流侧用的也是 isUserKey(r.wordKey)，口径一致。
+  assert.equal(
+    readStationRefs(ST2, SCOPE_A).refs[0].wordKey,
+    'u.c',
+    '★ 私有词引用也缓存（靠 wordKey 的 u. 前缀表达，不靠 source 字段）',
+  )
+  assert.ok(
+    isUserKey(readStationRefs(ST2, SCOPE_A).refs[0].wordKey),
+    '★ isUserKey 能从缓存里的 wordKey 正确分流出私有词（实测「不存 source 也安全」）',
+  )
 })
 
 test('★ 词条缓存：分区隔离 —— B 读不到 A 的词条引用', () => {
@@ -398,16 +415,20 @@ test('★ 源码纪律：refresh 失败时不清空 refs（断网不该让列表
 //   否则将来有人改护栏值时会误判。
 
 /** 从 hook 源码里取出 pickCacheRef 的**真实实现**（箭头/普通函数都覆盖） */
-function loadPickCacheRef() {
-  const src = readFileSync(STATION_WORDS_HOOK, 'utf8')
-  const m = /export function pickCacheRef\([^)]*\) \{([\s\S]*?)\n\}/.exec(src)
-  assert.ok(m, 'hook 里找不到 pickCacheRef')
-  const whole = m[0].replace('export ', '')
-  // eslint-disable-next-line no-new-func
-  return new Function(whole + '; return pickCacheRef;')()
-}
-
-const pickCacheRef = loadPickCacheRef()
+/**
+ * 取 pickCacheRef 的**真实实现**。
+ *
+ * ★ T06 加固后它变成了 `projectRef` 的薄包装 ★
+ *   裁剪逻辑已下沉到 `migrate.js` 的 `projectRef`（真正的防线内置在
+ *   writeStationRefs 里），而 hook 里的 pickCacheRef 现在只是转发 ——
+ *   所以**不能**再从 hook 源码里抽它的函数体（那里面已经没有裁剪逻辑了）。
+ *   早先的版本用 new Function 抽函数体，注入加固后它「测一个空壳」，
+ *   7 条断言全红却指不到真正的原因。
+ *   ⇒ 直接 import 真实的 projectRef。
+ *
+ * 这也是「抽取函数体」这种测试手法的边界：实现一旦变成转发，就必须换 direct import。
+ */
+const { projectRef: pickCacheRef } = await import('../src/lib/migrate.js')
 
 /** 一条形状合法的引用行（8 个字段，模拟 stationWordFromRow 的输出） */
 function fullRef(n, opts) {
@@ -467,8 +488,8 @@ test('★ 内存态与落盘态是**两回事**：refresh 仍把全字段交给 
   // 落盘那处必须恰好是投影
   const writes = [...src.matchAll(/writeStationRefs\(([^;]*)\)/g)].map((m) => m[1].trim())
   assert.ok(
-    writes.some((w) => /list\.map\(pickCacheRef\)/.test(w)),
-    '★ 落盘必须是 list.map(pickCacheRef)（投影）；实际：' + JSON.stringify(writes),
+    writes.some((w) => /list\.map\(projectRef\)/.test(w)),
+    '★ 落盘必须显式走 list.map(projectRef)（文档化；真正的防线在 writeStationRefs 内部）',
   )
 })
 
