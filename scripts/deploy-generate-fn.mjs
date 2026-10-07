@@ -11,10 +11,21 @@
  *   - 不把 key 放进命令行参数（会进 shell history 与 `ps` 的 argv），
  *     改为写一个只含该 key 的临时 env-file，用 `--env-file` 传给 CLI，用完即删；
  *   - 所有子进程输出都经过 redact() 过滤后才打印；
- *   - 缺少 SUPABASE_ACCESS_TOKEN 或 key 时立刻退出，不做任何“降级尝试”。
+ *   - Access Token 取自两个来源，都拿不到才退出（不做任何“降级尝试”）。
  *
- * 前置条件（Access Token 在 supabase.com → Account → Access Tokens 生成）：
+ * Access Token 的两个来源（按优先级）：
+ *   ① 环境变量 SUPABASE_ACCESS_TOKEN
+ *   ② Supabase CLI 的登录态文件（`npx supabase login` 写的就是它，CLI 自己也读它）
+ *      Windows: %USERPROFILE%\.supabase\access-token
+ *      POSIX:   ~/.supabase/access-token
+ *   仅打印来源、长度与 3 字符前缀，绝不打印 token 本身。
+ *
+ * 前置条件（二选一即可）：
+ *   npx supabase login
+ *   # 或：supabase.com → Account → Access Tokens 生成 sbp_xxx，再 export
  *   export SUPABASE_ACCESS_TOKEN=sbp_xxx
+ *
+ * CLI 版本要求：`--use-api` 需要 Supabase CLI ≥ 2.13.3，脚本会在预检阶段前置校验。
  *
  * 用法：
  *   node scripts/deploy-generate-fn.mjs              # 设 secret + 部署
@@ -38,6 +49,11 @@ const CONFIG_TOML = path.join(ROOT, 'supabase', 'config.toml')
 const FUNCTION_NAME = 'generate-word'
 const SECRET_NAME = 'DEEPSEEK_API_KEY'
 
+/** Supabase CLI 登录态文件（`supabase login` 写入、CLI 自身也读取）。 */
+const CLI_TOKEN_FILE = path.join(os.homedir(), '.supabase', 'access-token')
+/** `--use-api` 所需的最低 CLI 版本。 */
+const MIN_CLI_VERSION = [2, 13, 3]
+
 const argv = process.argv.slice(2)
 const DRY_RUN = argv.includes('--dry-run')
 const SKIP_SECRET = argv.includes('--skip-secret')
@@ -59,6 +75,70 @@ function readEnvLocal(name) {
 
 /** 需要脱敏的敏感串集合（仅内存，不落盘、不输出）。 */
 const SECRETS = new Set()
+
+/**
+ * 解析 Access Token，两个来源按优先级：
+ *   ① 环境变量 SUPABASE_ACCESS_TOKEN
+ *   ② Supabase CLI 登录态文件（`npx supabase login` 的产物，CLI 自身也读它）
+ * 返回 { token, source }；两个来源都没有可用 token 时直接 fail 退出。
+ * 任何分支都不会打印 token 本身。
+ */
+function resolveAccessToken() {
+  const fromEnv = (process.env.SUPABASE_ACCESS_TOKEN || '').trim()
+  if (fromEnv) return { token: fromEnv, source: '环境变量 SUPABASE_ACCESS_TOKEN' }
+
+  if (!fs.existsSync(CLI_TOKEN_FILE)) {
+    fail(
+      '未找到 Supabase Access Token：环境变量 SUPABASE_ACCESS_TOKEN 未设置，CLI 登录态文件也不存在。',
+      [
+        '任选一种方式即可：',
+        '  ① npx supabase login                # 交互式登录，token 写入 CLI 登录态文件，脚本会自动读取',
+        '  ② supabase.com → Account → Access Tokens → Generate new token，复制 sbp_xxx，然后：',
+        '     export SUPABASE_ACCESS_TOKEN=sbp_xxx   # 显式导出优先级高于登录态文件',
+        `  （CLI 登录态文件路径：${CLI_TOKEN_FILE}）`,
+      ].join('\n  '),
+    )
+  }
+
+  // CLI 写文件时带结尾换行；不 trim 会得到一个「看起来像错 token」的认证失败。
+  const raw = fs.readFileSync(CLI_TOKEN_FILE, 'utf8')
+  const fromFile = raw.trim()
+  if (!fromFile) {
+    fail(
+      `Supabase CLI 登录态文件存在但是空的：${CLI_TOKEN_FILE}`,
+      ['该文件被截断或写入中断了。请重新登录：', '  npx supabase login'].join('\n  '),
+    )
+  }
+  if (!fromFile.startsWith('sbp_')) {
+    fail(
+      `Supabase CLI 登录态文件内容不合法（不以 sbp_ 开头）：${CLI_TOKEN_FILE}`,
+      [
+        `读到的长度 ${fromFile.length}，前缀 "${fromFile.slice(0, 3)}"。`,
+        '该文件很可能已损坏或被其他内容覆盖。请重新登录：',
+        '  npx supabase login',
+        '或显式导出环境变量绕开该文件：',
+        '  export SUPABASE_ACCESS_TOKEN=sbp_xxx',
+      ].join('\n  '),
+    )
+  }
+  return { token: fromFile, source: 'CLI 登录态文件' }
+}
+
+/** 从 CLI `--version` 输出里解析主版本号，解析不出来返回 null。 */
+function parseCliVersion(text) {
+  const m = String(text).match(/(\d+)\.(\d+)\.(\d+)/)
+  if (!m) return null
+  return [Number(m[1]), Number(m[2]), Number(m[3])]
+}
+
+/** 比较 a 是否 >= b（逐段数值比较）。 */
+function isAtLeast(a, b) {
+  for (let i = 0; i < 3; i += 1) {
+    if (a[i] > b[i]) return true
+    if (a[i] < b[i]) return false
+  }
+  return true
+}
 
 /** 过滤掉任何敏感串后再输出。 */
 function redact(text) {
@@ -153,17 +233,11 @@ if (!USE_API && escapesSupabase && !DRY_RUN) {
   )
 }
 
-// ② 预检：凭据
-step(2, TOTAL, '预检：凭据（值一律不打印）')
+// ② 预检：凭据 + CLI 版本
+step(2, TOTAL, '预检：凭据与 CLI 版本（值一律不打印）')
 
-const token = (process.env.SUPABASE_ACCESS_TOKEN || '').trim()
-if (!token) {
-  fail(
-    '环境变量 SUPABASE_ACCESS_TOKEN 未设置。',
-    '在 supabase.com → Account → Access Tokens 生成 sbp_ 开头的 token，然后 export SUPABASE_ACCESS_TOKEN=sbp_xxx',
-  )
-}
-console.log(`SUPABASE_ACCESS_TOKEN: 已设置（长度 ${token.length}，前缀 ${token.slice(0, 3)}…）`)
+const { token, source } = resolveAccessToken()
+console.log(`Access Token: OK（来自 ${source}，长度 ${token.length}，前缀 ${token.slice(0, 3)}…）`)
 
 let deepseekKey = ''
 if (!SKIP_SECRET) {
@@ -179,7 +253,29 @@ if (!SKIP_SECRET) {
 
 const { cmd, prefix } = resolveCli()
 const ver = spawnSync(cmd, [...prefix, '--version'], { cwd: ROOT, encoding: 'utf8', shell: process.platform === 'win32' })
-console.log(`CLI: ${cmd} ${prefix.join(' ')} → ${(ver.stdout || ver.stderr || '').trim().split('\n')[0] || '未知'}`)
+const verText = (ver.stdout || ver.stderr || '').trim().split('\n')[0] || '未知'
+console.log(`CLI: ${cmd} ${prefix.join(' ')} → ${verText}`)
+
+// `--use-api` 需要 CLI ≥ 2.13.3；提前失败，避免部署到一半才报看不懂的 flag 错误。
+const parsedVer = parseCliVersion(verText)
+if (parsedVer && !isAtLeast(parsedVer, MIN_CLI_VERSION)) {
+  const found = parsedVer.join('.')
+  const need = MIN_CLI_VERSION.join('.')
+  fail(
+    `Supabase CLI 版本过低：${found}，本项目部署需要 ≥ ${need}。`,
+    [
+      `${USE_API ? '你用了 --use-api，该参数自 ' : '本项目部署路径依赖 --use-api，该参数自 '}${need} 起才存在。`,
+      '升级命令：',
+      `  ${cmd === 'npx' ? 'npx --yes supabase@latest' : 'npm i -g supabase@latest && supabase --version'}`,
+      '（本脚本在 SUPABASE_CLI 未设置时已自动走 npx supabase@latest，若仍报此错说明网络/缓存导致解析到了旧版本）',
+    ].join('\n  '),
+  )
+}
+if (parsedVer) {
+  console.log(`CLI 版本: OK（${parsedVer.join('.')} ≥ ${MIN_CLI_VERSION.join('.')}）`)
+} else {
+  console.log(`CLI 版本: 无法从 "${verText}" 解析，跳过版本校验。`)
+}
 
 if (DRY_RUN) {
   console.log('\n=== DRY RUN 结束：未调用任何写操作命令 ===')

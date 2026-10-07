@@ -11,9 +11,13 @@
 ## 0. TL;DR
 
 ```bash
-# 一次性：拿 access token
+# 一次性：登录（二选一）
+npx supabase login
+#   登录态写入 CLI 自己的文件，脚本会自动读取，无需 export
+
+#   或者手动拿 token（优先级更高）：
 #   supabase.com → Account → Access Tokens → Generate new token → 复制 sbp_xxx
-export SUPABASE_ACCESS_TOKEN=sbp_xxxxxxxxxxxxxxxx
+#   export SUPABASE_ACCESS_TOKEN=sbp_xxxxxxxxxxxxxxxx
 
 # 预检（不写任何东西）
 node scripts/deploy-generate-fn.mjs --dry-run --use-api
@@ -23,20 +27,50 @@ node scripts/deploy-generate-fn.mjs --use-api
 ```
 
 **必须带 `--use-api`**，原因见 [§2](#2-必读为什么必须加---use-api)。
+**必须带 `--use-api` 还需要 Supabase CLI ≥ 2.13.3**，脚本会在预检阶段自动校验版本，不用你手动查。
 
 ---
 
 ## 1. 前置条件
 
+### 1.1 Access Token 的两个来源
+
+脚本按**以下优先级**解析 Access Token，两个来源都不需要你手写 export：
+
+| 优先级 | 来源 | 怎么来的 |
+| --- | --- | --- |
+| ①（高） | 环境变量 `SUPABASE_ACCESS_TOKEN` | 手动 `export`，或写进 shell profile |
+| ② | **Supabase CLI 登录态文件** | `npx supabase login` 自动写入，脚本自动读取 |
+
+CLI 登录态文件的位置（脚本用 `os.homedir()` 拼路径，跨平台）：
+
+| 系统 | 路径 |
+| --- | --- |
+| Windows | `%USERPROFILE%\.supabase\access-token` |
+| macOS / Linux | `~/.supabase/access-token` |
+
+> ✅ **`npx supabase login` 之后，直接跑脚本即可**，不需要再 `export`。
+> 显式 `export SUPABASE_ACCESS_TOKEN=...` 仍然有效，且优先级更高（用于切换账号 / CI）。
+>
+> 脚本只会打印**来源、长度与 3 字符前缀**（如 `来自 CLI 登录态文件，长度 40，前缀 sbp…`），
+> **绝不打印 token 本身**。文件内容会自动 trim——CLI 写入时带结尾换行，
+> 不 trim 会得到一个「看起来像 token 错了」的认证失败。
+
+如果登录态文件存在但内容为空、或不以 `sbp_` 开头（写入被截断/损坏），脚本会**立刻退出并说明原因**，
+而不是让你在部署到一半时收到一个看不懂的 401。
+
+### 1.2 其他前置条件
+
 | 项 | 值 / 来源 | 说明 |
 | --- | --- | --- |
-| `SUPABASE_ACCESS_TOKEN` | supabase.com → 头像 → **Account → Access Tokens** → Generate new token | `sbp_` 开头。是**个人访问令牌**，不是 service_role key，两者不可混用。 |
+| Supabase CLI | ≥ **2.13.3** | `--use-api` 参数自该版本起才存在。脚本预检时会自动校验并给出升级命令。 |
 | `DEEPSEEK_API_KEY` | 本仓库 `.env.local` | 脚本自动读取，**你不需要手动 export**，也绝不要写进 `VITE_*` 变量（会被打进前端产物）。 |
 | Docker | **不需要**（因为用 `--use-api`） | 只跑 `supabase functions serve` 本地调试才需要 Docker。 |
-| Node | ≥ 18 | 脚本用 `fetch` / ESM。 |
+| Node | ≥ 18 | 脚本用 ESM + `node:` 内置模块。 |
 
-> ⚠️ `SUPABASE_ACCESS_TOKEN` 授予的是你账号下**所有项目**的权限。泄漏后果比 service_role key 更严重，
+> ⚠️ Access Token 授予的是你账号下**所有项目**的权限。泄漏后果比 service_role key 更严重，
 > 不要提交进 git、不要贴进聊天窗口。用完可回 Access Tokens 页面撤销。
+> CLI 登录态文件（`~/.supabase/access-token`）同样是明文全账号凭据，不要拷贝或同步它。
 
 ---
 
@@ -63,6 +97,10 @@ Caused by: Module not found ".../source/src/data/morphemes.js"
 
 `--use-api` 是 Supabase 官方提供的实验性参数（CLI ≥ 2.13.3），跳过 Docker 直接上传，
 从而保留 `supabase/` 之外的本地依赖。本机实测 CLI 版本 `2.120.0`，支持该参数。
+
+脚本会在 `[2/4] 预检` 阶段解析 CLI 版本，**低于 2.13.3 就立刻退出**并打印升级命令
+（`npx supabase@latest` 或 `npm i -g supabase@latest`），
+这样你不会在部署跑到一半时才看到一个不认识的 flag 报错。
 
 ### 备选方案（更稳，但需要改代码）
 
@@ -95,8 +133,11 @@ npx supabase functions deploy generate-word --use-api --project-ref svnwsbkhpzej
 
 两条都由 `scripts/deploy-generate-fn.mjs` 串成一步。脚本特性：
 
-- 缺 `SUPABASE_ACCESS_TOKEN` 或缺 key → **立刻退出**，不做任何降级尝试
+- Access Token 双来源解析：环境变量优先，其次 CLI 登录态文件（详见 [§1.1](#11-access-token-的两个来源)）
+- 登录态文件为空 / 不以 `sbp_` 开头 → **立刻退出并说明原因**
 - 预检 `config.toml` 存在、`verify_jwt = true`、函数入口存在
+- 预检 Supabase CLI ≥ 2.13.3（`--use-api` 的硬性要求），过低 → **立刻退出并给出升级命令**
+- 缺 key → **立刻退出**，不做任何降级尝试
 - 预检依赖是否逃出 `supabase/`，逃出则**拒绝部署**（除非加 `--use-api`）
 - 所有子进程输出经脱敏过滤；打印每条命令的 exit code
 
@@ -383,6 +424,10 @@ npx supabase functions delete generate-word --project-ref svnwsbkhpzejygugtorl
 
 | 症状 | 先看 |
 | --- | --- |
+| `BLOCKED: 未找到 Supabase Access Token` | 两条路都没走：先 `npx supabase login`，或 `export SUPABASE_ACCESS_TOKEN=sbp_xxx`（§1.1） |
+| `BLOCKED: 登录态文件存在但是空的 / 不以 sbp_ 开头` | 文件写入被截断，重跑 `npx supabase login`（§1.1） |
+| `BLOCKED: Supabase CLI 版本过低` | `--use-api` 需 ≥ 2.13.3，按提示 `npx supabase@latest`（§2） |
+| `401` 且刚跑完登录 | 确认脚本打印的 token 长度/前缀是你预期的那个；两个来源都存在时 env 优先（§1.1） |
 | `404 NOT_FOUND` | Dashboard → Edge Functions（函数列表里根本没有它 = 部署失败） |
 | `500 BOOT_ERROR` | §2 的 `--use-api`；再查 Logs 里的 `Module not found` 路径 |
 | `401 UNAUTHORIZED`（带真 token） | `SUPABASE_ANON_KEY` / `SUPABASE_SERVICE_ROLE_KEY` 默认 secret 是否被误删 |
