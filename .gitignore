@@ -15,3 +15,6 @@ supabase/dict_cache.csv
 supabase/dict_cache.sql
 # ECDICT 词典数据源（本地缓存，体积大，不应入库）
 scripts/.ecdict/
+
+# Wrangler 本地开发缓存（不应入库）
+.wrangler/
