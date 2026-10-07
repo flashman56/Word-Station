@@ -7,9 +7,11 @@ import {
   defaultFamilyKeyOf,
 } from '../lib/learning.js'
 import { buildBands, normalizeBand, bandFilter } from '../hooks/useLearn.js'
+import { STATUS } from '../lib/derive.js'
 import LearnHome from './LearnHome.jsx'
 import StudySession from './StudySession.jsx'
 import UserWordEditor from './UserWordEditor.jsx'
+import StatusPill, { StatusLegend } from './StatusPill.jsx'
 
 /**
  * 小站内学习 / 复习
@@ -20,15 +22,32 @@ import UserWordEditor from './UserWordEditor.jsx'
  * 注意：本组件**不自带**学习记录状态 —— records / answer / markKnown 由上层
  * （App 的唯一 useLearnCloud 实例）传入，保证全局只有一份 localStorage 写者。
  *
+ * ★ 小站与学习页共用同一份记录（B-5）★
+ *   行内徽标与学习页看到的状态、以及这里的复习队列，都来自同一个 `records`，
+ *   所以「小站复习」和「学习复习」不是两套进度 —— 到期后两边都会出现该词。
+ *
  * props:
  *   words       小站词条（统一视图对象，wordKey 即记录 key）
  *   morphemes   词素表（词族成组用）
  *   records     全量学习记录（Record<wordKey, record>）
  *   answer      (wordKey, result) => void
  *   markKnown   (wordKey) => void
+ *   setReview   (wordKey) => void   —— 行内「加入待复习」
+ *   retreat     (wordKey) => void   —— 行内「退回复习」
+ *   ownerId     当前账号（B-6：UserWordEditor 需要真实 ownerId 才能保存）
  *   onRefresh   小站词条刷新回调
  */
-export default function StationLearn({ words, morphemes, records, answer, markKnown, onRefresh }) {
+export default function StationLearn({
+  words,
+  morphemes,
+  records,
+  answer,
+  markKnown,
+  setReview,
+  retreat,
+  ownerId = null,
+  onRefresh,
+}) {
   const [band, setBand] = useState('all')
   const [groupByFamily, setGroupByFamily] = useState(true)
   const [sessionMode, setSessionMode] = useState('none')
@@ -36,6 +55,10 @@ export default function StationLearn({ words, morphemes, records, answer, markKn
 
   const activeBand = useMemo(() => normalizeBand(band), [band])
   const list = words || []
+  const recs = records || {}
+
+  /** 该词的记录（wordKey 与 word.id 天然对齐，无需再算） */
+  const recordOf = useMemo(() => (w) => recs[w.id] || recs[w.wordKey], [recs])
 
   const maxRank = useMemo(
     () =>
@@ -64,7 +87,7 @@ export default function StationLearn({ words, morphemes, records, answer, markKn
     return counts
   }, [list, bands])
 
-  const stats = useMemo(() => countByStatus(list, records || {}), [list, records])
+  const stats = useMemo(() => countByStatus(list, recs), [list, recs])
   const learnPool = useMemo(() => bandFilter(list, activeBand), [list, activeBand])
   const morphTypes = useMemo(() => {
     const map = new Map()
@@ -78,20 +101,21 @@ export default function StationLearn({ words, morphemes, records, answer, markKn
     [morphTypes],
   )
   const learnQueue = useMemo(
-    () => buildLearnQueue(learnPool, records || {}, DEFAULT_ROUND_SIZE, { groupByFamily, familyKeyOf }),
-    [learnPool, records, groupByFamily, familyKeyOf],
+    () => buildLearnQueue(learnPool, recs, DEFAULT_ROUND_SIZE, { groupByFamily, familyKeyOf }),
+    [learnPool, recs, groupByFamily, familyKeyOf],
   )
   const reviewQueue = useMemo(
-    () => buildReviewQueue(list, records || {}, DEFAULT_ROUND_SIZE, new Date().toISOString()),
-    [list, records],
+    () => buildReviewQueue(list, recs, DEFAULT_ROUND_SIZE, new Date().toISOString()),
+    [list, recs],
   )
 
   if (editing) {
     return (
       <div className="p-4">
+        {/* B-6：ownerId 必须是真实账号 —— 传 null 会让编辑保存直接失败 */}
         <UserWordEditor
           word={editing}
-          ownerId={null}
+          ownerId={ownerId}
           onClose={() => setEditing(null)}
           onSaved={async () => {
             setEditing(null)
@@ -119,11 +143,16 @@ export default function StationLearn({ words, morphemes, records, answer, markKn
             onChangeBand={setBand}
             groupByFamily={groupByFamily}
             onToggleGroupByFamily={() => setGroupByFamily((v) => !v)}
+            showSharedNote
           />
 
           <div className="mt-4 border border-slate-200 rounded">
-            <div className="px-3 py-2 bg-slate-50 border-b border-slate-200 text-xs text-slate-500">
-              本小站词条 {list.length} 个（点私有词的词形可编辑）
+            <div className="px-3 py-2 bg-slate-50 border-b border-slate-200 text-xs text-slate-500 flex items-center gap-3">
+              <span>
+                本小站词条 {list.length} 个（点私有词的词形可编辑）
+              </span>
+              {/* B-7：行内有了状态色块后，「颜色代表什么」就成了新问题 —— 补三色图例 */}
+              <StatusLegend className="ml-auto" />
             </div>
             <div className="max-h-72 overflow-auto divide-y divide-slate-100">
               {list.length === 0 && (
@@ -131,29 +160,58 @@ export default function StationLearn({ words, morphemes, records, answer, markKn
                   这个小站还没有词，用上方「批量加词」把生词扔进来。
                 </div>
               )}
-              {list.map((w) => (
-                <div key={w.wordKey} className="flex items-center gap-2 px-3 py-1.5 text-sm">
-                  {w.source === 'user' ? (
-                    <button
-                      onClick={() => setEditing(w)}
-                      className="font-medium text-blue-700 hover:underline"
-                      title="编辑这条私有词"
-                    >
-                      {w.form}
-                    </button>
-                  ) : (
-                    <span className="font-medium text-slate-700">{w.form}</span>
-                  )}
-                  <span className="text-xs text-slate-400">{w.pos}</span>
-                  <span className="text-xs text-slate-600 truncate">{w.gloss}</span>
-                  {!w.phoneticBr && <span className="text-xs text-amber-600">音标待补</span>}
-                  {w.source === 'user' && (
-                    <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200">
-                      私有
+              {list.map((w) => {
+                const rec = recordOf(w)
+                const st = rec && rec.status ? rec.status : 'unknown'
+                const prog = rec ? `学习中 ${Math.min(rec.consecutiveCorrect || 0, 2)}/2` : ''
+                return (
+                  <div key={w.wordKey} className="flex items-center gap-2 px-3 py-1.5 text-sm">
+                    {w.source === 'user' ? (
+                      <button
+                        onClick={() => setEditing(w)}
+                        className="font-medium text-blue-700 hover:underline"
+                        title="编辑这条私有词"
+                      >
+                        {w.form}
+                      </button>
+                    ) : (
+                      <span className="font-medium text-slate-700">{w.form}</span>
+                    )}
+                    <span className="text-xs text-slate-400">{w.pos}</span>
+                    <span className="text-xs text-slate-600 truncate">{w.gloss}</span>
+                    {!w.phoneticBr && <span className="text-xs text-amber-600">音标待补</span>}
+                    {w.source === 'user' && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200">
+                        私有
+                      </span>
+                    )}
+
+                    {/* B-1/B-2：状态徽标 + 行内快捷标记 */}
+                    <span className="ml-auto flex items-center gap-1.5 shrink-0">
+                      {prog && st !== 'known' && (
+                        <span className="text-[11px] text-slate-400">{prog}</span>
+                      )}
+                      <StatusPill status={st} size="sm" />
+
+                      {st !== 'known' && (
+                        <GhostBtn onClick={() => markKnown && markKnown(w.wordKey)} title="我会了">
+                          我会了
+                        </GhostBtn>
+                      )}
+                      {st !== 'review' && (
+                        <GhostBtn onClick={() => setReview && setReview(w.wordKey)} title="加入待复习">
+                          待复习
+                        </GhostBtn>
+                      )}
+                      {st === 'known' && (
+                        <GhostBtn onClick={() => retreat && retreat(w.wordKey)} title="退回复习">
+                          退回复习
+                        </GhostBtn>
+                      )}
                     </span>
-                  )}
-                </div>
-              ))}
+                  </div>
+                )
+              })}
             </div>
           </div>
         </>
@@ -170,3 +228,23 @@ export default function StationLearn({ words, morphemes, records, answer, markKn
     </div>
   )
 }
+
+/**
+ * 行内快捷按钮（11px 幽灵按钮）。
+ *
+ * 规格沿用本文件既有的「私有」标签（px-1.5 py-0.5 rounded border text-[11px]），
+ * 不引入新的设计语言。
+ */
+function GhostBtn({ onClick, title, children }) {
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      className="px-1.5 py-0.5 rounded border border-slate-300 text-slate-500 hover:bg-slate-50 text-[11px]"
+    >
+      {children}
+    </button>
+  )
+}
+
+export { GhostBtn }

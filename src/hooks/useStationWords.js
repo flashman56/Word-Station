@@ -13,6 +13,7 @@ import * as stationWordsApi from '../lib/cloud/stationWords.js'
 import * as userWordsApi from '../lib/cloud/userWords.js'
 import { loadWords } from '../lib/dict.js'
 import { isUserKey } from '../lib/wordKey.js'
+import { toUserWordView } from '../lib/wordView.js'
 
 /**
  * @param {string|null} stationId
@@ -75,29 +76,10 @@ export function useStationWords(stationId, ownerId) {
       note: noteByKey.get(w.id) ?? null,
       phoneticStatus: w.phoneticBr ? 'ok' : 'pending',
     }))
-    const own = (userWords || []).map((w) => ({
-      // 统一成与公共词相同的字段口径，供 StudyCard / 列表复用
-      id: w.wordKey,
-      wordKey: w.wordKey,
-      form: w.form,
-      pos: w.pos,
-      gloss: w.gloss,
-      morphs: w.morphs || [],
-      chain: w.chain || [],
-      cefr: w.cefr,
-      freqRank: w.freqRank,
-      phoneticBr: w.phoneticBr,
-      phoneticStatus: w.phoneticStatus || 'pending',
-      example: w.example,
-      usage: w.usage,
-      morphless: (w.morphs || []).length === 0 || (w.morphs || [])[0] === 'x.unk',
-      kind: 'user',
-      source: 'user',
-      note: noteByKey.get(w.wordKey) ?? null,
-      userWordId: w.id,
-      editedByUser: w.editedByUser,
-      generationStatus: w.generationStatus,
-    }))
+    // 私有词统一走 lib/wordView.js 的 toUserWordView ——
+    // 与 useUserWords 共用同一个构造点，杜绝两处内联映射漂移
+    // （曾经的风险：一处加了字段另一处没加 →「小站里正常、学习页统计里凭空消失」）
+    const own = (userWords || []).map((w) => toUserWordView(w, noteByKey.get(w.wordKey) ?? null))
     // 按加入时间倒序（refs 的顺序）
     const byKey = new Map()
     pub.forEach((w) => byKey.set(w.wordKey, w))
