@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { parse } from '../lib/parseForms.js'
 import { isIndexReady, loadIndex, lookupForms } from '../lib/dict.js'
 import { publicKey } from '../lib/wordKey.js'
+import { scopeOf } from '../lib/migrate.js'
 import * as stationWordsApi from '../lib/cloud/stationWords.js'
 import * as generateApi from '../lib/cloud/generate.js'
 import * as offlineApi from '../lib/cloud/offline.js'
@@ -15,8 +16,13 @@ import * as offlineApi from '../lib/cloud/offline.js'
  *   existingKeys  站内已有 wordKey 集合（用于「重复」提示）
  *   online        是否在线（离线时命中词走草稿队列）
  *   onDone        (summary) => void 提交完成回调（触发小站词条刷新）
+ *
+ * ★ 草稿一律带 scope：草稿队列按账号分区，A 离线时加的词不会在 B 登录后
+ *   被推进 B 的账号（generate 更危险——服务端从 JWT 推导 owner，
+ *   旧账号遗留的生词草稿会在 B 会话下真的把词生成到 B 库里）。
  */
 export default function AddWordsPanel({ ownerId, stationId, existingKeys, online = true, onDone }) {
+  const scope = scopeOf(ownerId)
   const [raw, setRaw] = useState('')
   const [parsed, setParsed] = useState(() => parse(''))
   const [checked, setChecked] = useState(() => new Set())
@@ -117,14 +123,14 @@ export default function AddWordsPanel({ ownerId, stationId, existingKeys, online
           const { data, error } = await stationWordsApi.addMany(ownerId, stationId, items)
           if (error) {
             // 网络失败 → 落离线草稿，联网后补传（PRD 用户故事 8）
-            offlineApi.enqueue('stationWords', { ownerId, stationId, items })
+            offlineApi.enqueue('stationWords', { ownerId, stationId, items }, scope)
             summary.offline += items.length
           } else {
             summary.added += data.inserted
             summary.skipped += data.skipped
           }
         } else {
-          offlineApi.enqueue('stationWords', { ownerId, stationId, items })
+          offlineApi.enqueue('stationWords', { ownerId, stationId, items }, scope)
           summary.offline += items.length
         }
       }
@@ -132,11 +138,15 @@ export default function AddWordsPanel({ ownerId, stationId, existingKeys, online
       // ② 未命中 → 服务端生成（一次批量调用，前端只发一次请求）
       if (selectedMiss.length > 0) {
         if (!online) {
-          offlineApi.enqueue('generate', {
-            ownerId,
-            stationId,
-            forms: selectedMiss.map((r) => r.form),
-          })
+          offlineApi.enqueue(
+            'generate',
+            {
+              ownerId,
+              stationId,
+              forms: selectedMiss.map((r) => r.form),
+            },
+            scope,
+          )
           summary.offline += selectedMiss.length
           setProgress({ phase: 'offline', done: selected.length, total: selected.length, text: '已存为草稿，联网后自动补生成' })
         } else {
@@ -171,7 +181,7 @@ export default function AddWordsPanel({ ownerId, stationId, existingKeys, online
     } finally {
       setSubmitting(false)
     }
-  }, [ownerId, stationId, online, selected, selectedHits, selectedMiss, onDone])
+  }, [ownerId, stationId, online, scope, selected, selectedHits, selectedMiss, onDone])
 
   return (
     <div className="p-4">
