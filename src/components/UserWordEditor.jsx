@@ -67,7 +67,17 @@ export default function UserWordEditor({ word, ownerId, onClose, onSaved }) {
   }
 
   const remove = async () => {
-    if (!window.confirm(`删除私有词「${word.form}」？各小站里的引用也会一并移除。`)) return
+    // ★ confirm 说清「所有小站」—— 这不是「从当前小站移除」
+    if (
+      !window.confirm(
+        `彻底删除私有词「${word.form}」？\n` +
+          `· 这个词条会从「我的私有词」里消失\n` +
+          `· 它在**所有**小站里的引用也会一并移除\n` +
+          `· 你的学习记录保留（仍会出现在「学习」页的复习队列里）\n` +
+          `此操作不可撤销。`,
+      )
+    )
+      return
     setBusy(true)
     const { error: err } = await userWordsApi.remove(ownerId, id, word.wordKey)
     setBusy(false)
@@ -179,9 +189,18 @@ export default function UserWordEditor({ word, ownerId, onClose, onSaved }) {
         >
           重新生成
         </button>
+        {/*
+          ★ B-2 语义分离：这个「删除」= 彻底删 user_words 词条 + **所有**小站里的
+            引用行（userWordsApi.remove 的真实行为就是这两件事）。
+            与小站内的「移出小站」（只删 station_words 的一行引用）**后果相反**，
+            所以两处按钮绝不能同名 —— 同名会埋雷：用户以为只是从这个小站移除，
+            结果别的小站里那个词也没了。
+            title 把这个区别写明，因为红色按钮本身不解释后果。
+        */}
         <button
           onClick={remove}
           disabled={busy}
+          title="彻底删除这个词条，它在所有小站里的引用也会一并移除；学习记录不受影响。"
           className="px-3 py-1.5 rounded border border-red-300 text-red-600 text-sm hover:bg-red-50 disabled:opacity-40"
         >
           删除
