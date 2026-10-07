@@ -29,9 +29,10 @@ function fakeStorage() {
 
 globalThis.localStorage = fakeStorage()
 
-const { keysFor, scopeOf } = await import('../src/lib/migrate.js')
+const { keysFor, readLearn, scopeOf, writeLearn } = await import('../src/lib/migrate.js')
 const {
   claim,
+  clearStuck,
   drain,
   enqueue,
   hashUid,
@@ -41,6 +42,7 @@ const {
   pendingCount,
   readDiscarded,
   readDrafts,
+  stuckCount,
   DISCARDED_LIMIT,
 } = await import('../src/lib/cloud/offline.js')
 
@@ -286,47 +288,140 @@ await atest('drain：游客（uid 为空）整轮跳过，队列一动不动', a
   const res = await drain({ scope: scopeOf(UID_A), uid: null })
   assert.equal(res.skippedNoAuth, true)
   assert.equal(res.pushed, 0)
-  assert.equal(res.discarded, 0)
+  assert.equal(res.parked, 0)
   assert.equal(pendingCount(scopeOf(UID_A)), 1, '游客 drain 不得动队列')
 })
 
-await atest('drain：A 的 5 条草稿在 B 会话下 → 全部丢弃、队列清空、discarded 恰有 5 条', async () => {
+await atest('drain：A 的 5 条草稿在 B 会话下 → 全部 park 保留，pending 归零、stuck=5', async () => {
   reset()
+  const sb = scopeOf(UID_B)
   for (let i = 0; i < 5; i += 1) {
-    enqueue('learn', { ownerId: UID_A, rows: [{ wordKey: `w.a${i}`, record: { status: 'review' } }] }, scopeOf(UID_B))
+    enqueue('learn', { ownerId: UID_A, rows: [{ wordKey: `w.a${i}`, record: { status: 'review' } }] }, sb)
   }
-  const res = await drain({ scope: scopeOf(UID_B), uid: UID_B, force: true })
-  assert.equal(res.discarded, 5, 'A 的 5 条草稿应全部被认领丢弃')
+  const res = await drain({ scope: sb, uid: UID_B, force: true })
+  assert.equal(res.parked, 5, 'A 的 5 条草稿应被 park（保留不删）')
   assert.equal(res.pushed, 0, '一条都不该推送')
   assert.equal(res.failed, 0)
-  assert.equal(pendingCount(scopeOf(UID_B)), 0, 'B 的队列应清空')
+  // ★ A-14 核心：pending 归零（徽标能回绿），stuck 单独计数
+  assert.equal(pendingCount(sb), 0, 'parked 的不计入 pending —— 否则徽标永远减不掉')
+  assert.equal(stuckCount(sb), 5, 'stuck 单独统计这 5 条')
 
   const log = readDiscarded()
-  assert.equal(log.entries.length, 5, 'discarded 恰有 5 条')
+  assert.equal(log.entries.length, 5)
   log.entries.forEach((e) => {
     assert.equal(e.reason, 'owner-mismatch')
     assert.equal(e.kind, 'learn')
+    assert.equal(e.parked, true, '日志要标出「只记录、条目仍保留」')
     assert.ok(!JSON.stringify(log).includes(UID_A), '日志不含 uid 原文')
   })
 })
 
-await atest('drain：A 的草稿在队首也不阻塞 B 自己的草稿（认领丢弃不 break）', async () => {
+await atest('★ A-14：清掉「传不上去」的草稿后，对应学习记录必须仍在 learn 分区', async () => {
+  reset()
+  const sc = scopeOf(UID_A)
+  // 造一条永久失败草稿（RLS 42501）
+  enqueue('learn', { ownerId: UID_A, rows: [{ wordKey: 'w.quiz', record: { status: 'review' } }] }, sc)
+  // 同时造一条对应的学习记录（模拟「离线答题已落本地，只是没传上去」）
+  writeLearn({ 'w.quiz': { status: 'review', statusSource: 'learning' } }, sc)
+
+  const res = await drain({
+    scope: sc,
+    uid: UID_A,
+    force: true,
+    push: async () => ({ ok: false, error: { code: '42501', message: 'new row violates row-level security policy' } }),
+  })
+  assert.equal(res.parked, 1)
+  assert.equal(pendingCount(sc), 0)
+  assert.equal(stuckCount(sc), 1)
+  // 清除前：学习记录在
+  assert.ok(readLearn(sc)['w.quiz'], '前置条件：学习记录已落 learn 分区')
+
+  // ★ 一键清除
+  const cleared = clearStuck(sc)
+  assert.equal(cleared, 1)
+  assert.equal(stuckCount(sc), 0, '清除后 stuck 归零')
+  assert.equal(pendingCount(sc), 0)
+  // ★ 关键断言：学习记录分毫未动
+  assert.ok(readLearn(sc)['w.quiz'], '★ 清草稿绝不能删掉学习记录')
+  assert.equal(readLearn(sc)['w.quiz'].status, 'review')
+  assert.equal(readLearn(sc)['w.quiz'].statusSource, 'learning')
+})
+
+await atest('clearStuck：只删 parked 的，可重试的草稿必须留下', async () => {
+  reset()
+  const sc = scopeOf(UID_A)
+  // 3 条永久失败 → park
+  for (let i = 0; i < 3; i += 1) {
+    enqueue('learn', { ownerId: UID_A, rows: [{ wordKey: `w.p${i}`, record: { status: 'review' } }] }, sc)
+  }
+  // 2 条可重试 → 留在 pending
+  for (let i = 0; i < 2; i += 1) {
+    enqueue('stationWords', { ownerId: UID_A, stationId: 'st-1', items: [{ wordKey: `w.r${i}` }] }, sc)
+  }
+  await drain({
+    scope: sc,
+    uid: UID_A,
+    force: true,
+    push: async (kind) =>
+      kind === 'learn'
+        ? { ok: false, error: { code: '42501', message: 'row-level security' } }
+        : { ok: false, error: { code: '', message: 'TypeError: fetch failed' } },
+  })
+  assert.equal(stuckCount(sc), 3)
+  assert.equal(pendingCount(sc), 2)
+
+  const cleared = clearStuck(sc)
+  assert.equal(cleared, 3, '只清 3 条 parked')
+  assert.equal(stuckCount(sc), 0)
+  assert.equal(pendingCount(sc), 2, '★ 可重试的 2 条必须完好保留 —— 它们还能传')
+})
+
+await atest('A 回来后认领通过 → 自动解除 park 并补传（不否则 A 的离线进度永远传不上去）', async () => {
+  reset()
+  const sc = scopeOf(UID_A)
+  enqueue('learn', { ownerId: UID_A, rows: [{ wordKey: 'w.back', record: { status: 'review' } }] }, sc)
+
+  // 先以 B 的身份 drain → park
+  await drain({ scope: sc, uid: UID_B, force: true })
+  assert.equal(stuckCount(sc), 1, 'B 会话下被 park')
+  assert.equal(pendingCount(sc), 0)
+
+  // A 回来 → 认领通过 → 解除 park 并推上去
+  const res = await drain({
+    scope: sc,
+    uid: UID_A,
+    force: true,
+    push: async () => ({ ok: true, error: null }),
+  })
+  assert.equal(res.pushed, 1, 'A 的草稿必须能补传')
+  assert.equal(stuckCount(sc), 0)
+  assert.equal(pendingCount(sc), 0)
+})
+
+await atest('A 的草稿在队首也不阻塞 B 自己的草稿（认领 park 不 break）', async () => {
   reset()
   const sb = scopeOf(UID_B)
-  // 队首：A 的 3 条草稿（会被丢弃）
+  // 队首：A 的 3 条（park）
   for (let i = 0; i < 3; i += 1) {
     enqueue('learn', { ownerId: UID_A, rows: [{ wordKey: `w.a${i}`, record: { status: 'review' } }] }, sb)
   }
   // 队中：A 的一条 generate（更危险：服务端从 JWT 推导 owner）
   enqueue('generate', { ownerId: UID_A, stationId: 'st-1', forms: ['quixotic'] }, sb)
-  // 队尾：B 自己的 2 条（结构损坏 → 走 skip，也不会堵住前面的）
-  enqueue('stations', { row: { ownerId: UID_B } }, sb) // 缺 id → malformed
+  // 队尾：B 自己的 1 条（应真的推送）
+  enqueue('stations', { row: { id: 'st-9', ownerId: UID_B, name: '雅思' } }, sb)
 
-  const res = await drain({ scope: sb, uid: UID_B, force: true })
-  assert.equal(res.discarded, 5, '4 条 owner-mismatch + 1 条 malformed')
-  assert.equal(pendingCount(sb), 0, 'B 的队列全部清空 —— A 的草稿没有卡住队首')
-  const log = readDiscarded()
-  assert.equal(log.entries.filter((e) => e.kind === 'generate').length, 1, 'generate 草稿也被认领拦下')
+  const res = await drain({
+    scope: sb,
+    uid: UID_B,
+    force: true,
+    push: async () => ({ ok: true, error: null }),
+  })
+  assert.equal(res.parked, 4, '4 条 A 的跨账号草稿被 park')
+  assert.equal(res.pushed, 1, 'B 自己的那条照常推送 —— A 的草稿没有卡住队首')
+  assert.equal(res.failed, 0)
+  assert.equal(pendingCount(sb), 0)
+  assert.equal(stuckCount(sb), 4)
+  assert.equal(readDiscarded().entries.filter((e) => e.kind === 'generate').length, 1, 'generate 草稿也被认领拦下')
 })
 
 await atest('drain：只处理当前 scope 的队列，不动别的账号的草稿', async () => {
@@ -341,14 +436,14 @@ await atest('drain：队列本身为空时是安全的空跑', async () => {
   reset()
   const res = await drain({ scope: scopeOf(UID_A), uid: UID_A, force: true })
   assert.deepEqual(
-    { ok: res.ok, pushed: res.pushed, failed: res.failed, discarded: res.discarded },
-    { ok: true, pushed: 0, failed: 0, discarded: 0 },
+    { ok: res.ok, pushed: res.pushed, failed: res.failed, discarded: res.discarded, parked: res.parked },
+    { ok: true, pushed: 0, failed: 0, discarded: 0, parked: 0 },
   )
 })
 
 // ---------------------------------------------------------------- 关键回归：可重试失败不 break
 
-await atest('drain：上行失败（可重试）→ 保留草稿，但继续处理后续条目，不 break', async () => {
+await atest('drain：上行失败（可重试）→ 原样保留且仍算 pending，继续处理后续条目，不 break', async () => {
   reset()
   const sb = scopeOf(UID_A)
   for (let i = 0; i < 3; i += 1) {
@@ -359,7 +454,6 @@ await atest('drain：上行失败（可重试）→ 保留草稿，但继续处�
     scope: sb,
     uid: UID_A,
     force: true,
-    // 注入「网络抖动」形状的错误（可重试）
     push: async () => {
       attempted += 1
       return { ok: false, error: { code: '', message: 'TypeError: fetch failed' } }
@@ -367,45 +461,74 @@ await atest('drain：上行失败（可重试）→ 保留草稿，但继续处�
   })
   assert.equal(attempted, 3, '三条都必须被尝试（旧实现会在第一条失败后 break）')
   assert.equal(res.failed, 3, `failed 应为 3，实际 ${res.failed}`)
-  assert.equal(res.discarded, 0)
-  assert.equal(pendingCount(sb), 3, '可重试失败的草稿必须保留')
-  assert.equal(readDiscarded().entries.length, 0, '可重试失败不得写丢弃日志')
-  assert.equal(res.ok, false, '有失败时 ok 为 false，UI 据此提示用户')
+  assert.equal(res.parked, 0)
+  assert.equal(pendingCount(sb), 3, '可重试失败的草稿必须保留且仍算待传')
+  assert.equal(stuckCount(sb), 0, '可重试 ≠ 传不上去')
 })
 
-await atest('drain：永久失败（RLS 42501）→ 丢弃并记 push-rejected，不阻塞后续', async () => {
+await atest('drain：永久失败（RLS 42501）→ park 保留 + 记 push-rejected，不阻塞后续', async () => {
   reset()
   const sb = scopeOf(UID_A)
   for (let i = 0; i < 2; i += 1) {
     enqueue('learn', { ownerId: UID_A, rows: [{ wordKey: `w.y${i}`, record: { status: 'review' } }] }, sb)
   }
-  // 第三条是可重试的：验证永久失败被丢弃后仍会继续往后处理
+  // 第三条是可重试的：验证永久失败被 park 后仍会继续往后处理
   enqueue('stations', { row: { id: 'st-9', ownerId: UID_A, name: '雅思' } }, sb)
 
   const res = await drain({
     scope: sb,
     uid: UID_A,
     force: true,
-    push: async (kind) => {
-      if (kind === 'learn') {
-        return { ok: false, error: { code: '42501', message: 'new row violates row-level security policy' } }
-      }
+    push: async (kind) =>
+      kind === 'learn'
+        ? { ok: false, error: { code: '42501', message: 'new row violates row-level security policy' } }
+        : { ok: true, error: null },
+  })
+  assert.equal(res.parked, 2, '两条 42501 应被 park')
+  assert.equal(res.pushed, 1, '永久失败不阻塞后续条目')
+  assert.equal(res.failed, 0)
+  assert.equal(pendingCount(sb), 0, 'parked 不计入 pending')
+  assert.equal(stuckCount(sb), 2)
+  const log = readDiscarded()
+  assert.equal(log.entries.length, 2)
+  log.entries.forEach((e) => {
+    assert.equal(e.reason, 'push-rejected')
+    assert.equal(e.parked, true)
+  })
+})
+
+await atest('drain：push-rejected 的条目只在 force 时重试（定时 drain 不烧请求）', async () => {
+  reset()
+  const sc = scopeOf(UID_A)
+  enqueue('learn', { ownerId: UID_A, rows: [{ wordKey: 'w.rej', record: { status: 'review' } }] }, sc)
+  const alwaysReject = async () => ({ ok: false, error: { code: '42501', message: 'row-level security' } })
+  await drain({ scope: sc, uid: UID_A, force: true, push: alwaysReject })
+  assert.equal(stuckCount(sc), 1)
+
+  // 非 force 的第二轮：不应再尝试推送
+  let attempts = 0
+  await drain({
+    scope: sc,
+    uid: UID_A,
+    force: false,
+    push: async () => {
+      attempts += 1
       return { ok: true, error: null }
     },
   })
-  assert.equal(res.discarded, 2, '两条 42501 应被丢弃')
-  assert.equal(res.pushed, 1, '永久失败不阻塞后续条目')
-  assert.equal(res.failed, 0)
-  assert.equal(pendingCount(sb), 0, '队列清空')
-  const log = readDiscarded()
-  assert.equal(log.entries.length, 2)
-  log.entries.forEach((e) => assert.equal(e.reason, 'push-rejected'))
+  assert.equal(attempts, 0, '非 force 不该重推已知推不上去的条目')
+  assert.equal(stuckCount(sc), 1, '仍保留，等用户手动清除')
+
+  // force：允许重试并成功
+  const res = await drain({ scope: sc, uid: UID_A, force: true, push: async () => ({ ok: true, error: null }) })
+  assert.equal(res.pushed, 1, 'force 时可重试并成功')
+  assert.equal(stuckCount(sc), 0)
 })
 
-await atest('drain：认领丢弃后仍会处理同 kind 的后续条目（不 break）', async () => {
+await atest('drain：认领 park 后仍会处理同 kind 的后续条目（不 break）', async () => {
   reset()
   const sb = scopeOf(UID_B)
-  // 队首 3 条 A 的（认领丢弃），第 4 条 B 自己的（应真的推送）
+  // 队首 3 条 A 的（park），第 4 条 B 自己的（应真的推送）
   for (let i = 0; i < 3; i += 1) {
     enqueue('learn', { ownerId: UID_A, rows: [{ wordKey: `w.a${i}`, record: { status: 'review' } }] }, sb)
   }
@@ -421,18 +544,28 @@ await atest('drain：认领丢弃后仍会处理同 kind 的后续条目（不 b
       return { ok: true, error: null }
     },
   })
-  assert.equal(res.discarded, 3, 'A 的 3 条被认领丢弃')
+  assert.equal(res.parked, 3, 'A 的 3 条被 park')
   assert.equal(res.pushed, 1)
-  assert.deepEqual(pushedKeys, ['w.b0'], '只有 B 自己的那条被推送 —— A 的 word_key 绝不进 B 的上行')
-  assert.equal(pendingCount(sb), 0)
+  assert.deepEqual(pushedKeys, ['w.b0'], '★ 只有 B 自己的那条被推送 —— A 的 word_key 绝不进 B 的上行')
 })
 
-await atest('drain：push 抛异常也算可重试失败，草稿保留', async () => {
+await atest('drain：结构损坏 → 真丢弃（推上去必然失败，留着只会反复报错）', async () => {
   reset()
-  const sb = scopeOf(UID_A)
-  enqueue('learn', { ownerId: UID_A, rows: [{ wordKey: 'w.z', record: { status: 'review' } }] }, sb)
+  const sc = scopeOf(UID_A)
+  enqueue('learn', { ownerId: UID_A, rows: '不是数组' }, sc)
+  const res = await drain({ scope: sc, uid: UID_A, force: true, push: async () => ({ ok: true, error: null }) })
+  assert.equal(res.discarded, 1)
+  assert.equal(res.parked, 0)
+  assert.equal(pendingCount(sc), 0)
+  assert.equal(stuckCount(sc), 0)
+})
+
+await atest('drain：push 抛异常也算可重试失败，草稿保留且仍算 pending', async () => {
+  reset()
+  const sc = scopeOf(UID_A)
+  enqueue('learn', { ownerId: UID_A, rows: [{ wordKey: 'w.z', record: { status: 'review' } }] }, sc)
   const res = await drain({
-    scope: sb,
+    scope: sc,
     uid: UID_A,
     force: true,
     push: async () => {
@@ -440,8 +573,8 @@ await atest('drain：push 抛异常也算可重试失败，草稿保留', async 
     },
   })
   assert.equal(res.failed, 1)
-  assert.equal(res.discarded, 0)
-  assert.equal(pendingCount(sb), 1, '抛异常也必须保留草稿')
+  assert.equal(res.parked, 0)
+  assert.equal(pendingCount(sc), 1, '抛异常也必须保留草稿')
 })
 
 console.log(`\n通过 ${passed} · 失败 ${failed}`)

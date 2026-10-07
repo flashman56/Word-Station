@@ -69,8 +69,12 @@ export function useLearnCloud(words, { ownerId = null, online = true, privateWor
   const [syncStatus, setSyncStatus] = useState('idle') // idle | syncing | offline | error | done
   const [lastSyncAt, setLastSyncAt] = useState(() => readSync(scope).lastSyncAt || null)
   const [lastError, setLastError] = useState(null)
+  // 写盘失败信号（A-12）：内存是新的、磁盘是旧的 → 徽标红色告警，直到下一次写成功
+  const [storageError, setStorageError] = useState(null)
   // pending 响应式：草稿入队 / 补传都通过 onPendingChange 通知，徽标计数实时
   const [pending, setPending] = useState(() => offlineApi.pendingCount(scope))
+  // A-14：永久失败但被保留（parked）的草稿条数，与 pending 分开计
+  const [stuck, setStuck] = useState(() => offlineApi.stuckCount(scope))
   const onlineRef = useRef(online)
   onlineRef.current = online
   const ownerRef = useRef(ownerId)
@@ -99,6 +103,7 @@ export function useLearnCloud(words, { ownerId = null, online = true, privateWor
   const learn = useLearn(words, {
     ...learnOpts,
     onDirty: markDirty,
+    onStorageError: setStorageError,
     privateWords,
     scope,
     // ★ 常开：游客态也打 updatedAt，否则游客背的词在登录合并时会被云端默认值覆盖（GAP-4）
@@ -337,6 +342,7 @@ export function useLearnCloud(words, { ownerId = null, online = true, privateWor
     const sc = scopeRef.current
     const res = await offlineApi.drain({ scope: sc, uid })
     setPending(offlineApi.pendingCount(sc))
+    setStuck(offlineApi.stuckCount(sc))
     return res
   }, [])
 
@@ -346,6 +352,20 @@ export function useLearnCloud(words, { ownerId = null, online = true, privateWor
     await drainDrafts()
     await pull()
   }, [pushDirty, drainDrafts, pull])
+
+  /**
+   * 一键清除「传不上去」的草稿（A-14）。
+   *
+   * ★ 只删草稿队列，不碰任何学习记录 ★
+   *   学习记录在 learn 分区（keysFor(scope).learn），与草稿队列是两个独立的键。
+   *   学习进度早已落盘、并在联网时上行过 —— 删草稿 ≠ 删进度。
+   */
+  const clearStuckDrafts = useCallback(() => {
+    const cleared = offlineApi.clearStuck(scopeRef.current)
+    setPending(offlineApi.pendingCount(scopeRef.current))
+    setStuck(offlineApi.stuckCount(scopeRef.current))
+    return cleared
+  }, [])
 
   // ---------------------------------------------------------------- 切账号状态机
   //
@@ -370,6 +390,7 @@ export function useLearnCloud(words, { ownerId = null, online = true, privateWor
       timerRef.current = null
     }
     setPending(offlineApi.pendingCount(scope))
+    setStuck(offlineApi.stuckCount(scope))
     setLastSyncAt(readSync(scope).lastSyncAt || null)
     setLastError(null)
     setSyncStatus('idle')
@@ -441,6 +462,7 @@ export function useLearnCloud(words, { ownerId = null, online = true, privateWor
     () =>
       onPendingChange(() => {
         setPending(offlineApi.pendingCount(scopeRef.current))
+        setStuck(offlineApi.stuckCount(scopeRef.current))
       }),
     [],
   )
@@ -486,7 +508,10 @@ export function useLearnCloud(words, { ownerId = null, online = true, privateWor
     syncStatus,
     lastSyncAt,
     lastError,
+    storageError,
     pending,
+    stuck,
+    clearStuck: clearStuckDrafts,
     epoch: epochRef.current,
     pushNow: () => pushDirty(true),
     flush,
