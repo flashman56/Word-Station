@@ -9,6 +9,58 @@ import { TABLES, stationFromRow } from './schema.js'
 
 const ORDER = { column: 'pinned', ascending: false }
 
+/**
+ * 生成一个小站 id（离线建站用；客户端生成才能当幂等键）。
+ *
+ * ★ 为什么必须带兜底（M4①）★
+ *   `crypto.randomUUID` **只在安全上下文可用**：https、localhost、以及
+ *   127.0.0.1。局域网 `http://192.168.x.x` 直连开发时 `crypto` 可能整个不存在
+ *   或没有 randomUUID —— 那一行会直接抛 TypeError，于是「断网建站」这条
+ *   本来只在离线才走的路径，在内网开发时反而变成必崩。
+ *
+ * ★ 兜底为什么必须是 uuid 形状而不是随便拼一个随机串 ★
+ *   `stations.id` 的列类型是 uuid。Postgres 接受
+ *   `a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11` 形式的字面量，但会拒绝
+ *   `s-1699-abcd`。所以兜底也必须凑出 v4 的形状（8-4-4-4-12 + 版本位 + variant 位）。
+ *
+ * @returns {string} 合法 uuid 字面量
+ */
+export function newStationId() {
+  const g = typeof globalThis !== 'undefined' ? globalThis : {}
+  const c = g.crypto || null
+
+  // ---- 主路径 ----
+  if (c && typeof c.randomUUID === 'function') {
+    try {
+      return c.randomUUID()
+    } catch {
+      /* 非安全上下文下个别实现会抛，走兜底 */
+    }
+  }
+
+  // ---- 兜底 1：crypto.getRandomValues（也是原生，同样不需要 npm 包）----
+  const bytes = new Uint8Array(16)
+  if (c && typeof c.getRandomValues === 'function') {
+    c.getRandomValues(bytes)
+  } else {
+    // 连 crypto 都没有（极老的浏览器 / 某些内嵌 WebView）
+    for (let i = 0; i < 16; i += 1) bytes[i] = Math.floor(Math.random() * 256)
+  }
+  // v4：版本位 0100 << 4，variant 位 10xx
+  bytes[6] = (bytes[6] & 0x0f) | 0x40
+  bytes[8] = (bytes[8] & 0x3f) | 0x80
+
+  const hex = []
+  for (let i = 0; i < 16; i += 1) hex.push(bytes[i].toString(16).padStart(2, '0'))
+  return [
+    hex.slice(0, 4).join(''),
+    hex.slice(4, 6).join(''),
+    hex.slice(6, 8).join(''),
+    hex.slice(8, 10).join(''),
+    hex.slice(10, 16).join(''),
+  ].join('-')
+}
+
 function guard() {
   if (!supabase) {
     return { code: 'NO_SUPABASE', message: '未配置 Supabase（VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY），云端功能不可用' }

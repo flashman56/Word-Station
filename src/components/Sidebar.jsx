@@ -73,7 +73,17 @@ export default function Sidebar({
           className="w-full px-2.5 py-1.5 text-sm border border-slate-300 rounded-md focus:outline-none focus:border-blue-400"
         />
         {filters.query && (
-          <p className="text-xs text-slate-400 mt-1.5">命中 {hitCount} 个词群</p>
+          /* ★ A-05：命中数只统计「搜索命中」，与筛选器无关 ★
+             原先这里传的是 applyFilters 的 stats.morphCount，而那个 stats 吃
+             types/origins/minCefr/status/hideAutoKnown —— 于是「把难度收到 B2 再
+             搜 spec」会让这个数字变小，读起来像是「搜索本身命中变少了」。
+             现在它读 searchResult.morphs.length（零新增开销：searchResult 本来就
+             被 hitWordIds / visibleOrphans 消费，读 .length 是 O(1) 字段访问），
+             并补一行小字把口径写明。 */
+          <p className="text-xs text-slate-400 mt-1.5">
+            命中 {hitCount} 个词群
+            <span className="block text-slate-400">（当前筛选下的可见词群，不随筛选变化）</span>
+          </p>
         )}
         {filters.query && wordHits.length > 0 && (
           <div className="mt-2">

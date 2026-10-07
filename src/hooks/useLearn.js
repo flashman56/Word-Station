@@ -127,6 +127,26 @@ export function bandFilter(words, band) {
 const NO_PRIVATE_WORDS = []
 
 /**
+ * 批量操作的分批大小（只被本文件的 applyMany 用，故不放 lib/）。
+ *
+ * 取 500 的理由：一批 ≈ 500 条记录，setRecords 触发的重算（countByStatus 全库
+ * 6 万词）能在可感知的阈值内摊平；同时批数不至于多到让 persist 放大总字节太多
+ * （12 批 / 6000 条 ≈ 12 倍放大 —— 见 applyMany 注释里「分批不减少单次体积」的提醒，
+ * 配额真正的护栏是调用方的 2000 条上限，不是这个数）。
+ */
+const BULK_CHUNK = 500
+
+/**
+ * 「全选当前结果」一次最多批量操作的条数（A-07）。
+ *
+ * ★ 上限放在这里而不是组件里，是为了让它和 applyMany 的分批处在同一份约定下：
+ *   6.4 万条一次性 setRecords 会卡死，2000 条则既摊平了渲染又远小于配额危险区。
+ *   组件必须**只算一次**这个集合，然后文案与提交都用它（单一数据源）——
+ *   见 ListView 的 selectableAllIds 注释。
+ */
+export const BULK_SELECT_CAP = 2000
+
+/**
  * @param {Array} words 全量单词
  * @param {object} [opts]
  * @param {string} [opts.scope] 当前分区（scopeOf(ownerId) 的结果；默认 'guest'）
@@ -326,25 +346,58 @@ export function useLearn(
   /**
    * 批量操作：只 commit 一次，避免上万条逐个 setState 卡死。
    * kind: 'known'（我会了）| 'review'（加入待复习）| 'reset'（清除学习记录）
+   *
+   * ★ 分批的收益必须说清楚（别被「分批能缓解配额」的说法误导）★
+   *   `persist` → `writeLearn(records, scope)` 写的是**整个 records 映射**
+   *   （`{version, records}`）。所以分批之后，**每次 persist 写的仍然是全量**，
+   *   单次写入的体积一点没变，总字节反而放大 N 倍。
+   *   分批的真实收益只有两条：
+   *     ① 摊平上万次 setRecords 带来的渲染成本（这是真的卡顿来源）；
+   *     ② onDirty 能只在最后调一次。
+   *   **真正把 QuotaExceededError 压下去的是调用方的 2000 条上限**
+   *   （它把「新生成的记录数」从最多 6.4 万压到最多 2000）。
+   *   两条**缺一不可**：只有上限 → 大列表点一下仍会一次 setRecords 6 万条卡顿；
+   *   只有分批 → 配额照样爆。
+   *
+   * ★ 批内失败为什么不中断循环 ★
+   *   persist 内部已 catch 并走 onStorageError，**内存态已经是新的**。中途 break
+   *   会把「已写 2500 条」变成一个用户和磁盘都不认识的中间态 —— 而实际上内存里
+   *   已经有 6000 条了。继续跑完，让内存态与磁盘的差距保持为「整批未落盘」，
+   *   告警徽标会一直亮着，用户知道要导出备份。
+   *
+   * @returns {{ count: number, chunks: number }|null} 供调用方出准确文案
    */
   const applyMany = useCallback(
     (ids, kind) => {
-      if (!ids || !ids.length) return
+      if (!ids || !ids.length) return null
       const now = new Date().toISOString()
-      const next = { ...recordsRef.current }
-      ids.forEach((id) => {
-        const cur = getRecord(next, id)
-        let rec
-        if (kind === 'known') rec = markKnownPure(cur, now)
-        else if (kind === 'review') rec = setReviewPure(cur, now)
-        else rec = resetRecord(now)
-        // 同上：默认补 updatedAt，供冲突合并使用
-        next[id] = stampRef.current ? { ...rec, updatedAt: now } : rec
-      })
-      recordsRef.current = next
-      setRecords(next)
-      persist(next, scopeRef.current)
+      const chunks = Math.ceil(ids.length / BULK_CHUNK)
+      let next = recordsRef.current
+
+      for (let start = 0; start < ids.length; start += BULK_CHUNK) {
+        const batch = ids.slice(start, start + BULK_CHUNK)
+        const acc = { ...next }
+        batch.forEach((id) => {
+          const cur = getRecord(acc, id)
+          let rec
+          if (kind === 'known') rec = markKnownPure(cur, now)
+          else if (kind === 'review') rec = setReviewPure(cur, now)
+          else rec = resetRecord(now)
+          // 同上：默认补 updatedAt，供冲突合并使用
+          acc[id] = stampRef.current ? { ...rec, updatedAt: now } : rec
+        })
+        next = acc
+        // 直接改 ref 而不是等下一帧：下一批要在这个基础上继续累加
+        recordsRef.current = next
+        setRecords(next)
+        persist(next, scopeRef.current)
+      }
+
+      // ★ 只在最后调一次（不是每批一次）★
+      //   逐批调会让 useLearnCloud 起 N 个防抖窗口、N 次 pushDirty，而 pushDirty
+      //   读的是 recordsRef.current（此时已含全部批次）—— 逐批调纯属浪费。
       if (onDirtyRef.current) onDirtyRef.current(ids)
+      return { count: ids.length, chunks }
     },
     [persist],
   )
