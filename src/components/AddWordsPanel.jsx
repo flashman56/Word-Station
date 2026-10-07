@@ -31,6 +31,11 @@ export default function AddWordsPanel({ ownerId, stationId, existingKeys, online
   const [submitting, setSubmitting] = useState(false)
   const [progress, setProgress] = useState(null)
   const [message, setMessage] = useState(null)
+  // 「词条已入库、但没进小站」「配额校验失败」等真实原因。
+  // ★ 与 message（汇总计数）分开：统计口径不变（已入库的仍算 generated），
+  //   但把服务端回传的真实原因显示出来，避免「静默失败」——
+  //   用户看到「生成成功」却不知道词没进小站。
+  const [notice, setNotice] = useState([])
 
   // 首次挂载后台预取词条索引（1.7MB，IndexedDB 缓存后近乎瞬时）
   useEffect(() => {
@@ -112,8 +117,11 @@ export default function AddWordsPanel({ ownerId, stationId, existingKeys, online
     }
     setSubmitting(true)
     setMessage(null)
+    setNotice([])
     setProgress({ phase: 'save', done: 0, total: selected.length, text: '写入小站…' })
     const summary = { added: 0, skipped: 0, generated: 0, failed: 0, offline: 0 }
+    // 收集「统计口径不变、但必须让用户看见」的真实原因
+    const notes = []
 
     try {
       // ① 命中公共库 → 只存引用，重复自动跳过
@@ -160,10 +168,27 @@ export default function AddWordsPanel({ ownerId, stationId, existingKeys, online
             summary.failed += selectedMiss.length
             setMessage(`生成失败：${error.message}`)
           } else {
-            ;(data?.results || []).forEach((r) => {
+            const results = data?.results || []
+            results.forEach((r) => {
+              // ★ 统计口径保持原样：已入库的词仍算 generated / public_hit，
+              //   不因为「没进小站」就改判 failed（那会让用户以为白花了额度）。
               if (r.status === 'public_hit') summary.added += 1
               else if (r.status === 'generated') summary.generated += 1
               else summary.failed += 1
+
+              // ---- 以下只补充「原因说明」，不影响上面的计数 ----
+              if (r.code === 'QUOTA_CHECK_FAILED') {
+                notes.push('配额校验失败，请稍后重试（本次未消耗生成额度，也未调用生成服务）')
+              } else if (r.code === 'QUOTA_EXCEEDED') {
+                notes.push(r.message || '今日生成额度已用完')
+              }
+              if (r.stationAdded === false) {
+                if (r.stationAddCode === 'STATION_FORBIDDEN') {
+                  notes.push(`「${r.form}」：该小站不属于当前账号，词条已存入个人词库但未加入小站`)
+                } else {
+                  notes.push(`「${r.form}」：${r.stationAddMessage || '词条已保存到个人词库，但加入小站失败'}`)
+                }
+              }
             })
           }
         }
@@ -176,6 +201,8 @@ export default function AddWordsPanel({ ownerId, stationId, existingKeys, online
       if (summary.failed) parts.push(`${summary.failed} 条失败`)
       if (summary.offline) parts.push(`${summary.offline} 条存为离线草稿`)
       setMessage(parts.join(' · '))
+      // 同一条原因可能命中多个词（如整个小站都 FORBIDDEN），去重后再展示
+      setNotice([...new Set(notes)])
       setRaw('')
       if (onDone) onDone(summary)
     } finally {
@@ -269,6 +296,16 @@ export default function AddWordsPanel({ ownerId, stationId, existingKeys, online
         <div className="mt-2 text-xs px-2 py-1.5 rounded bg-emerald-50 border border-emerald-200 text-emerald-800">
           {message}
         </div>
+      )}
+
+      {/* 真实原因（成功计数之外）：词条入库了但没进小站 / 配额校验失败等。
+          不做成红色错误块：这些情况下词往往已经生成成功，红字会误导用户以为白花了额度。 */}
+      {notice.length > 0 && (
+        <ul className="mt-2 text-xs px-2 py-1.5 rounded bg-amber-50 border border-amber-200 text-amber-900 space-y-0.5">
+          {notice.map((n, i) => (
+            <li key={`${i}-${n.slice(0, 12)}`}>⚠ {n}</li>
+          ))}
+        </ul>
       )}
 
       {parsed.items.some((it) => !it.valid) && (
