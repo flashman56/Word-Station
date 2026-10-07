@@ -23,6 +23,10 @@ import VocabCard from './VocabCard.jsx'
  *   onChangeBand    (band) => void，band 为 bands 中的档位对象
  *   groupByFamily   需求1：按词族成组出题开关（默认 true）
  *   onToggleGroupByFamily () => void 切换开关
+ *   vocab            词汇量预测结果（不传则不渲染该区块）
+ *   showSharedNote   是否显示「小站复习与学习复习是同一份记录」说明（B-5，默认 false）
+ *   privateCount     私有词数量；>0 时在词汇量区块下渲染「含 N 个私有词」（B-3）
+ *   vocabIncludesPrivate 词汇量估算是否含私有词；false 时渲染 B-8 提示（阈值不暴露给用户）
  */
 export default function LearnHome({
   stats = { unknown: 0, review: 0, known: 0, total: 0 },
@@ -38,6 +42,9 @@ export default function LearnHome({
   groupByFamily = true,
   onToggleGroupByFamily,
   vocab = null,
+  showSharedNote = false,
+  privateCount = 0,
+  vocabIncludesPrivate = true,
 }) {
   // 当前选中档位 id（'all' 或 'lo-hi'），用于高亮按钮
   const activeBandId = band === 'all' || band == null ? 'all' : band.id
@@ -81,7 +88,23 @@ export default function LearnHome({
       {vocab && (
         <div className="mt-5">
           <VocabCard result={vocab} />
+          {/* B-3：一个数 + 一行注脚（Q6）。私有词确实参与了统计，这里说明它有几个 */}
+          {privateCount > 0 && (
+            <p className="mt-1.5 text-xs text-slate-400">含 {privateCount} 个私有词</p>
+          )}
+          {/* B-8：私有词过多时估算回退到公共词，明说「暂不含」——
+              阈值不暴露给用户（500 是实现细节，不是产品口径）。 */}
+          {!vocabIncludesPrivate && (
+            <p className="mt-1.5 text-xs text-slate-400">私有词较多，词汇量估算暂不含私有词</p>
+          )}
         </div>
+      )}
+
+      {/* B-5：说明「小站复习」与「学习复习」是同一份记录，避免用户以为是两套进度 */}
+      {showSharedNote && (
+        <p className="mt-3 text-xs leading-relaxed text-slate-400">
+          小站复习与学习复习是同一份记录、同一个到期时间（答错 +24h），到期后两边都会出现，不是重复出题。
+        </p>
       )}
 
       {/* 掌握进度条 */}

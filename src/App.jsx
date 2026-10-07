@@ -14,6 +14,7 @@ import {
 import { buildRelations, pairKey, relationsOf } from './lib/relations.js'
 import { phoneticsOfAsync } from './lib/dict.js'
 import { estimateVocabulary } from './lib/vocab.js'
+import { MAX_VOCAB_PRIVATE_WORDS } from './lib/derive.js'
 import { useSettings } from './hooks/useSettings.js'
 import { buildBands, normalizeBand } from './hooks/useLearn.js'
 import { useAuth } from './hooks/useAuth.js'
@@ -21,6 +22,7 @@ import { useStations } from './hooks/useStations.js'
 import { useSync } from './hooks/useSync.js'
 import { useLearnCloud } from './hooks/useLearnCloud.js'
 import { useStationWords } from './hooks/useStationWords.js'
+import { useUserWords } from './hooks/useUserWords.js'
 import Sidebar from './components/Sidebar.jsx'
 import LearnHome from './components/LearnHome.jsx'
 import StudySession from './components/StudySession.jsx'
@@ -108,7 +110,7 @@ export default function App() {
  * @param {object} [learn] useLearnCloud() 的返回值；词库未加载完时还没有它，
  *   此时徽标退化为只看 sync（仍可用，只少一态）。
  */
-function TopBar({ auth, stations, sync, view, setView, stats, sessionMode, learn = null }) {
+function TopBar({ auth, stations, sync, view, setView, stats, sessionMode, learn = null, onBeforeSignOut = null, pending = 0, stuck = 0, manualInherited = 0 }) {
   const tabs = [
     ['station', '小站'],
     ['learn', sessionMode !== 'none' ? '学习 · 进行中' : '学习'],
@@ -139,7 +141,13 @@ function TopBar({ auth, stations, sync, view, setView, stats, sessionMode, learn
             </div>
           )}
           <SyncBadge sync={sync} ownerId={auth.userId} learn={learn} />
-          <AuthPanel auth={auth} />
+          <AuthPanel
+            auth={auth}
+            beforeSignOut={onBeforeSignOut}
+            pendingCount={pending}
+            pendingStuck={stuck}
+            manualInherited={manualInherited}
+          />
         </div>
       </div>
       <StationBar stations={stations} auth={auth} />
@@ -154,15 +162,29 @@ function AppShell({ words, auth, stations, sync }) {
   const [filters, setFilters] = useSettings(DEFAULT_FILTERS)
   const activeBand = useMemo(() => normalizeBand(filters.learnBand), [filters.learnBand])
 
+  // T05：私有词并入统计 / 复习队列 / 词汇量预测（B-3 / B-4 / Q4）
+  const userWords = useUserWords(auth.userId)
+
   const learn = useLearnCloud(words, {
     ownerId: auth.userId,
     online: sync.online,
+    privateWords: userWords.words,
     learnOpts: {
       band: activeBand,
       groupByFamily: filters.groupByFamily !== false,
       morphemes,
     },
   })
+
+  /** Q7：登出前把该传的传完；返回 false 表示还没准备好、应中止登出 */
+  const beforeSignOut = useCallback(async () => {
+    try {
+      await learn.flush()
+      return true
+    } catch {
+      return true // 收尾失败不阻塞登出：用户要的是登出
+    }
+  }, [learn])
 
   const [view, setView] = useState(auth.userId ? 'station' : 'learn')
   const [sessionMode, setSessionMode] = useState('none')
@@ -216,7 +238,13 @@ function AppShell({ words, auth, stations, sync }) {
   const bands = useMemo(() => buildBands(maxRank), [maxRank])
 
   // 预测词汇量：纯本地派生（离线 / 未登录天然可用），随学习记录变化重算
-  const vocab = useMemo(() => estimateVocabulary(words, learn.records), [words, learn.records])
+  //
+  // B-8 护栏：私有词 freqRank 多为 null，会被归到最后一档而抬高尾档 knownP。
+  // 超过上限就回退到公共词（vocab.js 的判别式与闸门一律不动），
+  // 并用一行小字告诉用户「暂不含私有词」—— 阈值本身不暴露。
+  const vocabIncludesPrivate = userWords.words.length <= MAX_VOCAB_PRIVATE_WORDS
+  const vocabInput = vocabIncludesPrivate ? learn.statWords : words
+  const vocab = useMemo(() => estimateVocabulary(vocabInput, learn.records), [vocabInput, learn.records])
 
   const bandCounts = useMemo(() => {
     const counts = {}
@@ -430,6 +458,10 @@ function AppShell({ words, auth, stations, sync }) {
           stats={visibleStats}
           sessionMode={sessionMode}
           learn={learn}
+          onBeforeSignOut={beforeSignOut}
+          pending={learn.pending}
+          stuck={learn.stuck}
+          manualInherited={learn.migrationReport?.migratedManual || 0}
         />
 
         {view === 'focus' && (
@@ -473,7 +505,14 @@ function AppShell({ words, auth, stations, sync }) {
                 records={learn.records}
                 answer={learn.answer}
                 markKnown={learn.markKnown}
-                onRefresh={stationWords.refresh}
+                setReview={learn.setReview}
+                retreat={learn.retreat}
+                ownerId={auth.userId}
+                onRefresh={async () => {
+                  // 私有词可能被编辑过 → 顺手刷新全局私有词，否则学习页统计会停在旧值
+                  await stationWords.refresh()
+                  await userWords.refresh()
+                }}
               />
             </div>
           )}
@@ -497,6 +536,9 @@ function AppShell({ words, auth, stations, sync }) {
                   setFilters((prev) => ({ ...prev, groupByFamily: prev.groupByFamily === false }))
                 }
                 vocab={vocab}
+                showSharedNote
+                privateCount={userWords.words.length}
+                vocabIncludesPrivate={vocabIncludesPrivate}
               />
             </div>
           )}
