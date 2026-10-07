@@ -34,6 +34,7 @@ import AuthPanel from './components/AuthPanel.jsx'
 import StationBar from './components/StationBar.jsx'
 import AddWordsPanel from './components/AddWordsPanel.jsx'
 import StationLearn from './components/StationLearn.jsx'
+import PrivateWordsPanel from './components/PrivateWordsPanel.jsx'
 import SyncBadge from './components/SyncBadge.jsx'
 
 // 词云三视图：懒加载。用户不点「总览 / 聚焦 / 列表」就永远不下载这几个 chunk
@@ -196,6 +197,8 @@ function AppShell({ words, auth, stations, sync }) {
   const [networkFocusWordId, setNetworkFocusWordId] = useState(null)
   const [orderBy, setOrderBy] = useState('cefr')
   const [selectedIds, setSelectedIds] = useState(() => new Set())
+  // T04：「我的私有词」侧栏面板的展开态（不开新页签 —— 理由见 Sidebar 注释）
+  const [privateWordsOpen, setPrivateWordsOpen] = useState(false)
 
   // 登录状态变化时把用户带到「小站」页签（首次进入未登录则留学习页）
   useEffect(() => {
@@ -451,6 +454,24 @@ function AppShell({ words, auth, stations, sync }) {
         onImport={handleImport}
         onClear={handleClear}
         vocab={vocab}
+        privateWordCount={userWords.words.length}
+        privateWordsOpen={privateWordsOpen}
+        onTogglePrivateWords={() => setPrivateWordsOpen((v) => !v)}
+        privateWordsPanel={
+          <PrivateWordsPanel
+            userWords={userWords.words}
+            records={learn.records}
+            ownerId={auth.userId}
+            existingKeys={existingKeys}
+            currentStationName={stations.current ? stations.current.name : ''}
+            onClose={() => setPrivateWordsOpen(false)}
+            onRefresh={async () => {
+              // 彻底删除会同时动 user_words 与 station_words → 两边都要刷
+              await userWords.refresh()
+              await stationWords.refresh()
+            }}
+          />
+        }
       />
 
       <main className="flex-1 min-w-0 flex flex-col">
