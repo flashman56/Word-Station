@@ -90,7 +90,12 @@ export function useStationWords(stationId, ownerId, opts = {}) {
     const list = data || []
     setRefs(list)
     // ★ 只在成功时写缓存（失败时保留旧缓存，那才是断网时唯一的希望）
-    writeStationRefs(stationId, list, myScope)
+    //
+    // ★★ 写缓存前必须做列裁剪（见 pickCacheRef 的完整论证）★★
+    //   内存态 setRefs(list) 持**全字段**；落盘的只是「断网能看见词条 +
+    //   站内复习」所需的最小投影。将来 K5 接笔记 UI、或要按 id/addedAt 排序，
+    //   数据都在内存态与云端，缓存里没有不影响。
+    writeStationRefs(stationId, list.map(pickCacheRef), myScope)
 
     const pubKeys = list.filter((r) => !isUserKey(r.wordKey)).map((r) => r.wordKey)
     const userKeys = list.filter((r) => isUserKey(r.wordKey)).map((r) => r.wordKey)
@@ -223,6 +228,68 @@ export function useStationWords(stationId, ownerId, opts = {}) {
 
 /** 模块级空数组哨兵：默认参数里的字面量 [] 每次渲染都是新身份，会让下游 memo 失效 */
 const EMPTY_PRIVATE_WORDS = []
+
+/**
+ * 缓存投影：只留 `wordKey`（写盘前的唯一裁剪点）
+ * ------------------------------------------------------------------
+ * ★ 为什么裁（实测依据，不是估算）★
+ *   `schema.stationWordFromRow` 返回 8 个字段，序列化后**单条 299.7 字节**
+ *   （scripts/measure-station-cache.mjs，1000 条取平均，JSON.stringify + UTF-8）。
+ *   而 1 站 × 500 词 = 146.3KB ⇒ 256KB 护栏在**第 2 个站**就拒写
+ *   ⇒ A-02（断网刷新小站消失）在多站场景下等于没修好。
+ *
+ *   逐字段实测占比：id 22.7% / stationId 17.0% / ownerId 16.3% / updatedAt 13.0%
+ *   / addedAt 12.3% / source 5.9% / note 4.0% / **wordKey 8.0%**
+ *   ⇒ 裁掉 7 个字段省 **91.3%**（273.6 B/条）。
+ *   换句话说：现状那 300 字节里，**只有 8% 是真正承载信息的 wordKey**，
+ *   其余全是**每行重复的上下文**。
+ *
+ * ★ 为什么这 7 个字段都能裁（逐条追踪消费点，不是推测）★
+ *   id          无人读。updateNote 的入参是 (stationId, wordKey, note)，
+ *               全部来自调用处的变量，**没有一个来自 refs**。
+ *   stationId   无人读。缓存本身就是按 stationId 分条目的，条目内每行再存
+ *               一遍纯属重复。
+ *   ownerId     无人读。分区已由 storage key 的 scope 保证，行内再存是
+ *               第二重冗余。
+ *   source      无人读。★ 消费侧分流用的是 isUserKey(r.wordKey) 即
+ *               startsWith('u.')，而 words[].source 是**硬编码**的
+ *               （public 分支写 'public'、user 分支由 toUserWordView 写 'user'）
+ *               ⇒ r.source 与 wordKey 前缀是**同一信息的两份副本**。
+ *   note        无人用于显示。PRD §8-3 / B-08 明确「站内笔记本期不做」，
+ *               且 addToStation.js 构造的 item 是 {wordKey, source}（无 note）
+ *               ⇒ 库里 today 恒为 null。**将来 K5 接 UI 时必须走 refresh()
+ *               从云端取，不能读缓存** —— 这条前提写在 K5 的设计里。
+ *   addedAt     无人读。「按加入时间倒序」靠的是 refs 的**数组顺序**，
+ *               而 listByStation 已 .order('added_at', {ascending:false})；
+ *               normalizeByStation 的 filter 保持原序。
+ *   updatedAt   无人读。updateNote **自己写** updated_at（new Date().toISOString()），
+ *               从不读，也没有 eq('updated_at', ...) 的并发判定。
+ *
+ * ★ 不能牺牲的两条能力（裁剪后完全不受影响）★
+ *   ① 断网 + F5 能看到小站词条：消费点只用 wordKey
+ *      （useStationWords 的 noteByKey / isUserKey 分流 / 排序 / synced 去重，
+ *        App.jsx:220 的 existingKeys）。
+ *   ② 站内复习：buildLearnQueue / buildReviewQueue 的入参是由 wordKey 驱动的
+ *      视图对象 words，不读 refs 的其余字段。
+ *
+ * ★ 体积（test-station-words.mjs 里逐字节实测，最坏情况取最长词）★
+ *   wordKey-only 单条：**17 B（w.a）/ 36 B（w.internationalization）—— 差 2.12 倍**
+ *   1 站 × 500 词：**8.3 KB（短）/ 17.6 KB（长）**
+ *   10 站满配：  **83 KB（短）/ 175.8 KB（长）**
+ *   护栏 256KB + LRU 10 站 ⇒ 正常路径永不触发拒写；
+ *   **长词场景余量 31%**（175.8/256），短词场景余量 68%。
+ *
+ * ★★ 调这个护栏值之前必须重新实测，不能用短词估算 ★★
+ *   词形长度让单条体积差 **2.12 倍**（17B vs 36B）。
+ *   用短词测出「83KB，很安全」而按最长词实际是 175.8KB —— 结论虽仍在护栏内，
+ *   但余量差了一倍多。**按最坏情况留余量，不要按平均**（team-lead 明确要求）。
+ *
+ * @param {object} r stationWordsApi.stationWordFromRow 的输出
+ * @returns {{wordKey: string}} 落盘用的最小投影
+ */
+export function pickCacheRef(r) {
+  return { wordKey: r && r.wordKey }
+}
 
 /**
  * 读本小站还没上云的草稿词（**只经 offlineApi.readDrafts**，键不外泄）。
