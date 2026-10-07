@@ -27,9 +27,11 @@
     "test:storage": "node scripts/test-storage.mjs",
     "test:a12-ui": "node scripts/test-a12-ui.mjs",
     "test:private": "node scripts/test-private.mjs",
+    "test:race": "node scripts/test-race.mjs",
     "test:keys": "node scripts/check-storage-keys.mjs",
     "test:cloud": "npm run test:parse-forms && npm run test:merge && npm run test:partition && npm run test:drafts && npm run test:storage && npm run test:private && npm run test:keys",
     "test:a12": "npm run test:a12-ui",
+    "test:all-sync": "npm run test:cloud && npm run test:race && npm run test:a12-ui",
     "relations:report": "node scripts/relation-report.mjs",
     "test:all": "npm run validate && npm run validate:etym && npm run test:learning && npm run test:graph && npm run test:atlas && npm run test:e2e && npm run test:cloud && npm run test:vocab && npm run relations:report"
   },

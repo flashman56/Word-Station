@@ -22,3 +22,9 @@ scripts/.ecdict/
 # e2e / 探针的 esbuild 临时产物
 scripts/.qa-bundle.mjs
 scripts/.a12-bundle.mjs
+
+# 竞态测试的 esbuild 临时产物
+scripts/.race-bundle.mjs
+
+# vite 构建/开发时生成的临时产物（可达上百 MB）
+vite.config.js.timestamp-*.mjs

@@ -41,7 +41,23 @@ const DICT_FILE = 'lib/dict.js'
 /** 设备级设置钩子：禁止出现继承开关 */
 const SETTINGS_FILE = 'hooks/useSettings.js'
 
-/** 分区键前缀集合（命中即违规，除非在 KEY_OWNER 内） */
+/**
+ * R1 的核心规则：**命名空间裸前缀也禁**。
+ *
+ * 收紧这条的原因（P1，QA 在生产 bundle 里查出来）：规则原先只枚举具体键名，
+ * 于是 `useLearnCloud.js` 里那句 `key.startsWith('wrc.')` 两条规则都判过 ——
+ * 而它恰恰是「键名知识泄漏回业务文件」的同一种写法。业务代码一旦可以自己
+ * 判断命名空间，改键名 / 加分区键时就必然漏改一处。
+ *
+ * 所以这里匹配的是整个命名空间前缀，而不是某个键名。需要做这种判断时
+ * 调 migrate.js 的 `isStorageKey()` / `affectsLocalScope()`。
+ */
+const NAMESPACE_PATTERN = /wrc\./g
+
+/**
+ * 具体分区键名（保留更强的定位信息，命中时给出更精确的提示）。
+ * 注意它**不能**替代 NAMESPACE_PATTERN —— 裸前缀不含任何具体键名。
+ */
 const PARTITION_KEY_PATTERN =
   /wrc\.(?:learn\.v2|prefs\.v1|status\.v1(?!\.)|settings\.v1|migration\.v2|migration\.cloud|sync\.v1|drafts\.v1|drafts\.discarded|station\.current|partition\.v1|userwords\.v1)/g
 
@@ -104,12 +120,11 @@ files.forEach((full) => {
   if (rel === KEY_OWNER) return // 键的唯一来源，跳过
   const text = readFileSync(full, 'utf8')
 
-  // R1：分区键字面量独占（含注释）
-  hitsPerLine(text, PARTITION_KEY_PATTERN).forEach((h) => {
-    fail('R1', abs, h.lineNo, h.text, `分区键字面量只能写在 src/${KEY_OWNER}；请改用 keysFor(scopeOf(ownerId))。注释里也不许留旧键名。`)
-  })
-
   // R2：IndexedDB 白名单 —— dict.js 只允许 wrc.dict.v1:
+  //
+  // 放在 R1 之前 return：dict.js 是**有意**的第二个键名持有者（设备级 IndexedDB
+  // 词库缓存，与账号无关）。它不受 R1 的命名空间独占约束，但仍受 R2 约束 ——
+  // 只允许那一个前缀，不许有第二个。
   if (rel === DICT_FILE) {
     hitsPerLine(text, /wrc\.[A-Za-z0-9_.:]*/g).forEach((h) => {
       if (h.text !== 'wrc.dict.v1:') {
@@ -118,6 +133,18 @@ files.forEach((full) => {
     })
     return
   }
+
+  // R1：存储命名空间字面量独占（含注释、含裸前缀）
+  //
+  // 先扫裸前缀（粗但周全），再扫具体键名（细、提示更精确）。两者都要：
+  // 裸前缀保证「没有键名知识泄漏到业务文件」这条不变量无漏洞 ——
+  // `k.startsWith('wrc.')` 这类写法不含任何具体键名，只靠具体键名规则会漏判。
+  hitsPerLine(text, NAMESPACE_PATTERN).forEach((h) => {
+    fail('R1', abs, h.lineNo, h.text, `存储键命名空间只能出现在 src/${KEY_OWNER}。读键请用 keysFor(scope)；判断「某 key 是不是我们的」请用 migrate.js 的 isStorageKey() / affectsLocalScope()，不要自己写前缀比较。注释里也不许留键名。`)
+  })
+  hitsPerLine(text, PARTITION_KEY_PATTERN).forEach((h) => {
+    fail('R1', abs, h.lineNo, h.text, `分区键字面量只能写在 src/${KEY_OWNER}；请改用 keysFor(scopeOf(ownerId))。注释里也不许留旧键名。`)
+  })
 
   // R3：继承开关不得混入设备级设置
   if (rel === SETTINGS_FILE && text.includes('inheritFreqKnown')) {
@@ -140,8 +167,19 @@ files.forEach((full) => {
     hitsPerLine(text, /\bFROZEN_KEYS\b/g).forEach((h) => {
       fail('R5', abs, h.lineNo, h.text, 'FROZEN_KEYS 不得在 migrate.js 之外被引用：冻结键的读写必须走 migrate.js 的具名出口（如 readSettingsV1）。')
     })
-    hitsPerLine(text, /\bLEGACY_KEYS\b/g).forEach((h) => {
-      fail('R1', abs, h.lineNo, h.text, 'LEGACY_KEYS 只属于 migrate.js：业务代码一律用 keysFor(scope)。')
+    // LEGACY_KEYS / STORAGE_PREFIX / KEYS 同理：三者都是「键名载体」。
+    // 特别说明 STORAGE_PREFIX —— 它本身只是个前缀常量，但业务代码拿它拼出
+    // `${STORAGE_PREFIX}learn.v2:${uid}` 与直接写字面量是同一件事（键名知识泄漏），
+    // 而它**不含任何 `wrc.` 字面量**，只靠 R1 的字面量规则抓不到。
+    // 这条是门禁自检里的反样本「裸前缀字面量（模板拼接）」逼出来的。
+    ;[
+      ['LEGACY_KEYS', '旧键清单只能由 migrate.js 使用；业务代码一律用 keysFor(scope)'],
+      ['STORAGE_PREFIX', '命名空间前缀只能由 migrate.js 使用；要判断键请调 isStorageKey() / affectsLocalScope()'],
+      ['KEYS', '键名表只能由 migrate.js 使用；业务代码一律用 keysFor(scope)'],
+    ].forEach(([sym, hint]) => {
+      hitsPerLine(text, new RegExp(`\\b${sym}\\b`, 'g')).forEach((h) => {
+        fail('R1', abs, h.lineNo, h.text, `${hint}。`)
+      })
     })
   }
 
@@ -179,12 +217,82 @@ migrateText.split(/\r?\n/).forEach((line, i) => {
   })
 })
 
+// ---------------------------------------------------------------- 门禁自检
+//
+// 一道门禁自己是不是有效的，必须能被证明 —— 否则「全绿」可能只是规则从来没
+// 命中过任何东西。P1 的成因正是如此：R1 只枚举具体键名，裸前缀写法两条规则
+// 都判过，于是它一直「全绿」却漏掉了生产代码里的一处真实违规。
+//
+// 所以这里用几段**样本代码**当场验证规则本身：
+//   正样本（应当通过）= 迁移到新写法后的业务代码
+//   反样本（必须被拦）= 迁移前的旧写法 / 各类绕过尝试
+// 任何一条不符合预期，这个门禁就报失败 —— 宁可误报，不可漏报。
+
+const SELFTEST_GOOD = [
+  ['命名空间判定交给 migrate.js', `import { affectsLocalScope } from '../lib/migrate.js'\nif (!affectsLocalScope(e.key)) return`],
+  ['用 keysFor 读写分区键', `const keys = keysFor(scopeOf(ownerId))\nlocalStorage.getItem(keys.learn)`],
+  ['设备级设置也是走访问器', `writeSettingsV2({ band })`],
+  ['注释里提到「键约定见 migrate.js」', `// 存储键约定见 lib/migrate.js，本文件不出现键名`],
+]
+
+const SELFTEST_BAD = [
+  ['裸前缀比较（就是 P1 那处）', `if (!key.startsWith('wrc.')) return`],
+  ['裸前缀字面量（模板拼接）', "const k = `${STORAGE_PREFIX}learn.v2:${uid}`"],
+  ['裸前缀比较（includes）', `if (key.includes('wrc.')) reload()`],
+  ['直接拼分区键名', `localStorage.setItem('wrc.learn.v2:' + uid, JSON.stringify(v))`],
+  ['注释里留旧键名', `// 读的是 wrc.learn.v2:<scope> 这个键`],
+  ['引用 FROZEN_KEYS 拿键名', `localStorage.getItem(FROZEN_KEYS.statusV1)`],
+  ['引用 LEGACY_KEYS 拼旧键', `localStorage.getItem(LEGACY_KEYS.learn)`],
+  ['引用 KEYS 拼分区键', `localStorage.getItem(KEYS.learn + ':' + uid)`],
+]
+
+/** 对一段样本代码跑 R1/R5 的字面量判定，返回命中的规则名数组 */
+function judgeSample(text) {
+  const rules = new Set()
+  if (hitsPerLine(text, NAMESPACE_PATTERN).length > 0) rules.add('R1')
+  if (hitsPerLine(text, PARTITION_KEY_PATTERN).length > 0) rules.add('R1')
+  FROZEN_NAMES.forEach((name) => {
+    if (hitsPerLine(text, new RegExp(name.replace(/\./g, '\\.'), 'g')).length > 0) rules.add('R5')
+  })
+  if (hitsPerLine(text, /\bFROZEN_KEYS\b/g).length > 0) rules.add('R5')
+  ;['LEGACY_KEYS', 'STORAGE_PREFIX', 'KEYS'].forEach((sym) => {
+    if (hitsPerLine(text, new RegExp(`\\b${sym}\\b`, 'g')).length > 0) rules.add('R1')
+  })
+  return [...rules]
+}
+
+const selftestFailures = []
+
+SELFTEST_GOOD.forEach(([name, code]) => {
+  const rules = judgeSample(code)
+  if (rules.length > 0) {
+    selftestFailures.push(`正样本「${name}」被误判为违规（命中 ${rules.join(',')}）—— 规则过严，会逼着人写绕路代码`)
+  }
+})
+
+SELFTEST_BAD.forEach(([name, code]) => {
+  const rules = judgeSample(code)
+  if (rules.length === 0) {
+    selftestFailures.push(`反样本「${name}」未被拦住 —— 门禁有洞，规则的「全绿」不可信`)
+  }
+})
+
+if (selftestFailures.length > 0) {
+  console.error('[test:keys] ✗ 门禁自检失败（规则本身不可信）\n')
+  selftestFailures.forEach((f) => console.error(`  ✗ ${f}`))
+  console.error('')
+  process.exit(1)
+}
+
 // ---------------------------------------------------------------- 汇总
 
 if (violations.length === 0) {
   console.log('[test:keys] ✓ 通过')
   console.log(`  扫描 ${files.length} 个源文件，migrate.js 与 dict.js 白名单外无任何存储键字面量`)
-  console.log('  R1 键字面量独占 ✓   R2 IndexedDB 白名单 ✓   R3 继承开关隔离 ✓   R4 单一入口 ✓   R5 冻结键只读 ✓')
+  console.log(
+    `  门禁自检：${SELFTEST_GOOD.length} 个正样本通过、${SELFTEST_BAD.length} 个反样本被拦（含裸前缀写法）`,
+  )
+  console.log('  R1 键命名空间独占 ✓   R2 IndexedDB 白名单 ✓   R3 继承开关隔离 ✓   R4 单一入口 ✓   R5 冻结键只读 ✓')
   process.exit(0)
 }
 
