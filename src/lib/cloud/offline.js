@@ -461,12 +461,22 @@ export async function drain({ scope = 'guest', uid = null, force = false, onProg
     const total = queue.length
     let done = 0
     let i = 0
+    // ★ 游标契约（这里改错过一次，GAP-A）★
+    //   `i` 指向当前待处理元素。每个分支必须自己决定要不要推进：
+    //     - 原地改写（park / 解除 park）→ length 不变 → **必须 i += 1**，
+    //       否则会一直重访同一条、死循环；
+    //     - `splice(i, 1)` → 后面的元素左移到了 i，**绝不能再 i += 1** ——
+    //       那样会把刚移过来的那条整个跳过，破坏「单轮 drain 逐条走完队列」的
+    //       契约（首页登录那一次 drain 很可能就是唯一一次机会）。
+    //   所以下面的分支里，推进游标的位置各不相同，且都紧贴对应操作。
     while (i < queue.length) {
       const item = queue[i]
 
       // ① 认领。与错误形态无关的第一道防线：非本账号的条目在推送之前就被摘掉。
       const verdict = claim(kind, item, uid)
       if (!verdict.ok) {
+        done += 1
+        notifyPendingChanged()
         if (verdict.verdict === 'discard') {
           // 跨账号（A-14）：**保留**并 park，不删除。
           // 它们属于别的账号 —— A 自己的登录态可能马上回来、届时本可正常上行，
@@ -475,15 +485,22 @@ export async function drain({ scope = 'guest', uid = null, force = false, onProg
           queue[i] = { ...item, parked: true, parkedReason: verdict.reason }
           moveToDiscarded(kind, item, verdict.reason, true)
           parked += 1
+          i += 1 // 原地改写，length 未变 → 推进
         } else {
-          // 结构损坏：推上去必然失败，留着只会反复报错 → 真丢弃
+          // 结构损坏（缺 rows / stationId 等）：推上去必然失败，留着只会反复报错
+          // → 真丢弃。
+          //
+          // ★ 为什么丢草稿不算丢数据（别误判成数据丢失）★
+          //   草稿只是**上行队列项**，不是数据源。真正的数据源是 learn 分区 ——
+          //   答题时就已经落盘（本地先于上行持久化），草稿只是「把这份数据送上去」
+          //   的一次性载体。所以删草稿不会让学习进度消失：原主人下次登录时，
+          //   pull / migrateToCloud 会从 learn 分区重新上行。
+          //   ★ 反过来，跨账号时把 A 的草稿「落回 B」才是危险的：那等于用 B 的
+          //     身份推 A 的数据，可能造成跨账号重复上行。所以此处宁可丢草稿。
           moveToDiscarded(kind, item, verdict.reason)
-          queue.splice(i, 1)
+          queue.splice(i, 1) // ★ length 变了 → 此处「不」推进 i（GAP-A 的修法）
           discarded += 1
         }
-        done += 1
-        i += 1
-        notifyPendingChanged()
         continue // 无论哪条分支都不阻塞后续
       }
 
@@ -504,7 +521,7 @@ export async function drain({ scope = 'guest', uid = null, force = false, onProg
         void parked
         void parkedReason
         cur = rest
-        queue[i] = cur
+        queue[i] = cur // 原地改写，length 未变
       }
 
       // ② 上行
@@ -520,7 +537,7 @@ export async function drain({ scope = 'guest', uid = null, force = false, onProg
       }
 
       if (ok) {
-        queue.splice(i, 1)
+        queue.splice(i, 1) // ★ length 变了 → 不推进 i
         pushed += 1
         done += 1
         notifyPendingChanged()
@@ -531,12 +548,13 @@ export async function drain({ scope = 'guest', uid = null, force = false, onProg
       // ③ 永久失败（本 scope + 已实测白名单）→ **park 保留**，记日志，不阻塞后续。
       //   不删除：删了就找不回来了，而用户可能只是暂时登出/换号。
       //   不计入 pendingCount：否则徽标永远显示一个减不掉的数字（A-14）。
+      //   （丢弃草稿不丢数据的理由同上：数据源是 learn 分区，见 ① 的注释。）
       if (isPermanentError(lastError)) {
         queue[i] = { ...item, parked: true, parkedReason: 'push-rejected' }
         moveToDiscarded(kind, item, 'push-rejected', true)
         parked += 1
         done += 1
-        i += 1
+        i += 1 // 原地改写，length 未变 → 推进
         notifyPendingChanged()
         continue
       }
