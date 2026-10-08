@@ -1,91 +1,260 @@
+%% 词根词缀单词云 · 小站打磨 · 数据结构与接口类图
+%% 源文档：docs/station-polish-design.md §3
+%% 灰色标注「本轮新增」的部分对应 T01–T05 的产物
+
 classDiagram
-    class SpeechModule {
-        <<module singleton>>
-        +string[] voicesCache
-        +void ensureListener()
-        +pickVoice() SpeechSynthesisVoice
-        +subscribe(fn) unsubscribe
-    }
-    class useSpeech {
-        +boolean supported
-        +boolean speaking
-        +string voiceLang
-        +speak(text, opts) void
-        +cancel() void
-    }
-    class SpeakerButton {
-        +string text
-        +string size
-        +boolean stopPropagation
-        +string title
-        +number rate
-        +string lang
-    }
-    class vocab {
-        <<pure functions>>
-        +estimateVocabulary(words, records, opts) VocabResult
-        +referenceOf(estimate) ReferenceBand
-    }
-    class VocabCard {
-        +VocabResult result
-        +boolean compact
-    }
-    class etym {
-        <<pure + lazy>>
-        +composeEtymology(morph) EtymEntry
-        +loadEtymologyMap() Promise
-        +resolveEtymology(morph) Promise
-    }
-    class EtymologyPanel {
-        +Morph morph
-        +EtymEntry entry
-        +boolean defaultOpen
-    }
-    class EtymEntry {
-        +string origin
-        +string proto
-        +string protoGloss
-        +boolean pie
-        +string story
-        +TimelineStep[] timeline
-        +Cognate[] cognates
-        +string source
-    }
-    class VocabResult {
-        +number estimate
-        +number low
-        +number high
-        +boolean sufficient
-        +number sampleSize
-        +VocabBand[] bands
-        +ReferenceBand reference
-    }
-    class VocabBand {
-        +number lo
-        +number hi
-        +number libraryN
-        +number studiedN
-        +number knownP
-        +number estKnown
-        +boolean included
-    }
-    class Morph {
-        +string id
-        +string type
-        +string form
-        +string display
-        +string[] variants
-        +string gloss
-        +string glossEn
-        +string origin
-        +string note
+    direction LR
+
+    class ScopeKeys {
+        <<新增两键>>
+        +string scope
+        +string learn
+        +string prefs
+        +string migration
+        +string sync
+        +string cloudMigration
+        +string drafts
+        +string stationCurrent
+        +string userWordsCache
+        +string stationsCacheNEW
+        +string stationWordsCacheNEW
+        +string settings
+        +string partition
+        +string draftsDiscarded
     }
 
-    useSpeech ..> SpeechModule : uses
-    SpeakerButton ..> useSpeech : uses
-    VocabCard ..> vocab : uses
-    EtymologyPanel ..> etym : uses
-    etym ..> Morph : reads
-    etym --> EtymEntry : produces
-    vocab --> VocabResult : produces
-    VocabResult --> VocabBand : contains
+    class MigrateApi {
+        <<migrate.js：键的唯一来源>>
+        +scopeOf(userId) string
+        +keysFor(scope) ScopeKeys
+        +affectsLocalScope(key) boolean
+        +ensurePartition(scope) object
+        +readStationsCache(scope) objectNEW
+        +writeStationsCache(stations, scope) booleanNEW
+        +readStationRefs(stationId, scope) objectNEW
+        +writeStationRefs(stationId, refs, scope) booleanNEW
+        +dropStationRefs(stationId, scope) voidNEW
+        +dropAllStationRefs(scope) voidNEW
+        +readLearn(scope) object
+        +writeLearn(records, scope) void
+        +readPrefs(scope) object
+        +writePrefs(patch, scope) void
+        +readSync(scope) object
+        +writeSync(lastSyncAt, scope) void
+        +readCloudMigration(scope) object
+        +writeCloudMigration(scope) void
+    }
+
+    class StationsCachePayload {
+        <<新增缓存载荷>>
+        +number v = 1
+        +string savedAt
+        +Station[] stations
+    }
+
+    class StationWordsCachePayload {
+        <<新增缓存载荷>>
+        +number v = 1
+        +string savedAt
+        +object byStation
+        +StationWordsEntry~stationId~ entry
+    }
+
+    class StationWordsEntry {
+        +string savedAt
+        +StationWordRef[] refs
+    }
+
+    class Station {
+        +string id
+        +string ownerId
+        +string name
+        +boolean pinned
+        +string createdAt
+        +string updatedAt
+    }
+
+    class StationWordRef {
+        <<投影：只落 wordKey，R1-P2>>
+        +string wordKey
+    }
+
+    class UseStations {
+        +Station[] stations
+        +object current
+        +string currentId
+        +boolean loading
+        +boolean busy
+        +object error
+        +createStation(name) Promise~Station或null~
+        +renameStation(id, name) Promise~boolean~
+        +removeStation(id) Promise~boolean~
+        +togglePin(id, pinned) Promise~boolean~
+        +setCurrentId(id) void
+        +refresh() Promise~void~
+    }
+
+    class UseStationWords {
+        +Word[] words
+        +StationWordRef[] refs
+        +PendingRow[] pendingNEW
+        +boolean loading
+        +object error
+        +counts object
+        +number pendingCountNEW
+        +removeWord(wordKey) Promise~boolean~
+        +updateNote(wordKey, note) Promise~boolean~
+        +refresh() Promise~void~
+    }
+
+    class PendingRow {
+        <<离线草稿投影>>
+        +string wordKey
+        +string source
+        +string form
+        +string pos
+        +string gloss
+        +string queuedAt
+    }
+
+    class OfflineApi {
+        <<零改动>>
+        +enqueue(kind, payload, scope) number
+        +readDrafts(scope) object
+        +pendingCount(scope) number
+        +stuckCount(scope) number
+        +drain(opts) object
+        +claim(kind, item, uid) object
+        +isPermanentError(error) boolean
+        +DRAIN_ORDER string[]
+    }
+
+    class AddToStation {
+        <<新增：唯一加词出口>>
+        +addToStation(args) Promise~AddResult~
+    }
+
+    class AddResult {
+        +boolean ok
+        +number inserted
+        +number skipped
+        +number offline
+        +object error
+    }
+
+    class AddToStationMenu {
+        <<新增组件，三处共用>>
+        +string ownerId
+        +Station[] stations
+        +boolean loading
+        +boolean online
+        +string[] wordKeys
+        +object sources
+        +Set existingKeys
+        +string currentStationId
+        +function onDone(result)
+    }
+
+    class BulkActionBar {
+        +number count
+        +string[] ids
+        +function onMarkKnown
+        +function onSetReview
+        +function onReset
+        +function onClear
+        +string layout
+        +function onAddToStationNEW
+    }
+
+    class PrivateWordsPanel {
+        <<新增：B 与 C-私有词的前置>>
+        +boolean open
+        +Word[] words
+        +Station[] stations
+        +Set existingKeys
+        +object records
+        +function onRefresh()
+    }
+
+    class UseUserWords {
+        +Word[] words
+        +boolean loading
+        +object error
+        +refresh() Promise~void~
+    }
+
+    class UserWordView {
+        +string id
+        +string wordKey
+        +string form
+        +string pos
+        +string gloss
+        +string kind = 'user'
+        +string source = 'user'
+        +string userWordId
+        +boolean editedByUser
+    }
+
+    class UseLearn {
+        +object records
+        +Word[] statWords
+        +Word[] learnQueue
+        +Word[] reviewQueue
+        +object stats
+        +applyMany(ids, kind) objectNEW
+        +markKnown(wordKey) void
+        +setReview(wordKey) void
+        +retreat(wordKey) void
+        +reset(wordKey) void
+        +exportJson() string
+    }
+
+    class StationsApi {
+        +list(ownerId) Promise
+        +create(ownerId, name) Promise
+        +update(id, patch) Promise
+        +remove(id) Promise
+        +upsert(station) Promise
+        +newStationId() stringNEW
+    }
+
+    class StationWordsApi {
+        <<零改动>>
+        +listByStation(stationId) Promise
+        +addMany(ownerId, stationId, items) Promise
+        +remove(stationId, wordKey) Promise
+        +updateNote(stationId, wordKey, note) Promise
+    }
+
+    MigrateApi ..> ScopeKeys : 构造
+    MigrateApi ..> StationsCachePayload : 读写
+    MigrateApi ..> StationWordsCachePayload : 读写
+    StationWordsCachePayload "1" o-- "*" StationWordsEntry : byStation
+    StationsCachePayload "1" *-- "*" Station : stations
+    StationWordsEntry "1" *-- "*" StationWordRef : refs
+
+    UseStations --> MigrateApi : 读写 stationsCache / stationCurrent
+    UseStations --> StationsApi : CRUD
+    UseStationWords --> MigrateApi : 读写 stationWordsCache
+    UseStationWords --> StationWordsApi : list / remove
+    UseStationWords --> OfflineApi : readDrafts 投影
+    UseStationWords "1" *-- "*" PendingRow : pending
+
+    AddToStation --> StationWordsApi : addMany（在线）
+    AddToStation --> OfflineApi : enqueue('stationWords')（离线/失败）
+    AddToStation ..> AddResult : 返回
+
+    AddToStationMenu --> AddToStation : 唯一调用点
+    BulkActionBar --> AddToStationMenu : 渲染
+    PrivateWordsPanel --> AddToStationMenu : 渲染
+    PrivateWordsPanel --> UseUserWords : words（全量 + 本地缓存）
+    UseUserWords ..> UserWordView : toUserWordView 产出
+    UseUserWords --> MigrateApi : userWordsCache
+
+    BulkActionBar --> UseLearn : onMarkKnown / onSetReview / onReset
+    UseStationWords --> UseLearn : 共享 records（同一份，不含小站维度）
+    PrivateWordsPanel --> UseLearn : records（StatusPill / reviewQueue）
+    UseStationWords ..> UseUserWords : u.* 离线反查词条
+
+    Note for OfflineApi "本轮零改动：删除草稿无法复用 stationWords kind\n（claim 会判 malformed），故 Q1 选方案 A 禁止离线删除"
+    Note for UseLearn "applyMany 分批 500，onDirty 只调一次\nlearning.js 纯函数层零改动"
