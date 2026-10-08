@@ -259,26 +259,49 @@ Dashboard → Edge Functions → Logs 里该次调用应只有配额分支、没
 
 > Step 2 会临时改限额，测完请把 `quota` 改回 50（或直接删掉该行让它回落默认）。
 
-### 4.5 部署前的结构门禁（必跑）
+### 4.5 部署前的结构门禁（**已接入部署预检，BLOCKED 即不得部署**）
 
 本函数文件头有两条红线（service_role 不得用于受 owner_id 保护的写入、
 配额检查必须 fail closed）。它们**已由 `npm run test:rls` 机器检查**：
 
 ```bash
-npm run test:rls        # 已并入 npm run test:cloud
+npm run test:rls        # 已并入 npm run test:cloud，且是部署预检的第 1b 步
+```
+
+**这道门禁现在是部署路径的一部分**，不是「记得跑测试的人才受保护」：
+
+```
+$ node scripts/deploy-generate-fn.mjs --use-api
+[1/4] 预检：config.toml / 函数入口 / 依赖可解析性
+[1b/4] 预检：红线门禁 test:rls（service_role 写入须有归属校验）
+[test:rls] ✗ 失败
+  [R2] supabase/functions/generate-word/index.ts:380  命中「station_words.station_id → stations」
+✗ BLOCKED: 红线门禁 test:rls 未通过 —— 已阻止部署。
 ```
 
 | 判据 | 含义 |
 | --- | --- |
-| `✓ 通过` | 服务端代码里没有「service_role 写 owner 保护表却没校验归属」，也没有「service_role 直调 `auth.uid()` 型 RPC」 |
-| `✗ 失败` | **不要部署**。按提示补归属校验、或改用 anon 客户端 |
-| `门禁自检：7 个正样本通过、9 个反样本被拦` | 门禁**自身**的有效性证明。任何一条不符预期，门禁会先自报失败 |
+| `✓ 通过` / `红线门禁 test:rls: OK` | 无「service_role 写 owner 保护表却没校验归属」，也无「service_role 直调 `auth.uid()` 型 RPC」 |
+| `✗ BLOCKED` | **已阻止部署**（exit 1，在任何写操作之前）。按门禁输出修，或本地跑 `npm run test:rls` |
+| `门禁自检：12 个正样本通过、9 个反样本被拦` | 门禁**自身**的有效性证明。任何一条不符预期，门禁会先自报失败 |
 
-> 该门禁会同时扫 `scripts/dev-generate-plugin.mjs`（本函数的本地镜像）。
-> 曾出现过「`index.ts` 修了归属校验、镜像没修」的漂移 ⇒ 越权在本地仍然成立。
-> 两边任一违规都会红。
+> `--dry-run` 也会跑这道预检 —— 预检的意义就是提前暴露问题。
 
-**改完任何写入路径后请跑它**，别等到部署前。
+**扫描范围**（含镜像，这是它抓过真 bug 的原因）：
+
+| 类别 | 是否扫描 | 理由 |
+| --- | --- | --- |
+| `supabase/functions/**` | ✅ | 部署路径，真正的信任边界 |
+| `scripts/` 下 `dev-*` / `*-plugin` / `*-mirror` / `*-local` 且**真建客户端**者 | ✅ | **生产逻辑的本地镜像** |
+| `scripts/qa-*.mjs`、`scripts/test-*.mjs` | ❌ | 测试夹具，用高权限造数据是本职工作，纳入只会变噪音 |
+
+镜像**按规则识别、不写死文件名** —— 否则「这次是特例」就会变成「合法豁免」，
+下一个新建的镜像会静默逃出扫描。实测：临时造一个从未硬编码过的
+`scripts/dev-station-mirror.mjs` 含越权写入，门禁立即自动纳入并报红。
+
+> 曾真的漂移过一次：第一次事故在 `index.ts` 修了，**镜像里没修** ⇒ 越权在本地仍然成立。
+
+**改完任何写入路径后请跑它**，别等到部署前 —— 虽然部署预检会兜住。
 
 ---
 
