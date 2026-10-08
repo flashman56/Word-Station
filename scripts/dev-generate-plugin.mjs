@@ -500,18 +500,48 @@ export default function devGeneratePlugin(options = {}) {
                 generationStatus: data.generation_status,
               }
               if (stationId) {
-                await admin
-                  .from('station_words')
-                  .upsert(
-                    {
-                      station_id: stationId,
-                      owner_id: uid,
-                      word_key: data.word_key,
-                      source: 'user',
-                      updated_at: new Date().toISOString(),
-                    },
-                    { onConflict: 'station_id,word_key', ignoreDuplicates: true },
-                  )
+                // ⚠️ 为什么这里必须显式校验归属（红线一，与 Edge Function 同构）：
+                //   写入用的是 service_role 客户端，它**绕过 RLS**（本项目 dict_cache 零策略
+                //   仍可被 service_role 全表读取即为证据）。而 stations 的 RLS 策略是
+                //   `owner_id = auth.uid()`，对 service_role 不生效。
+                //   因此若只靠数据库兜底，调用方可以传任意他人的 stationId，
+                //   把词条塞进别人的小站（越权写入）。这里必须自己在应用层核对。
+                //   ⚠️ 注意：光把 owner_id 钉成自己的 uid **不够** —— 那次真实越权的
+                //   payload 里也写了 owner_id: uid。
+                const { data: owned } = await admin
+                  .from('stations')
+                  .select('id')
+                  .eq('id', stationId)
+                  .eq('owner_id', uid)
+                  .maybeSingle()
+
+                if (!owned) {
+                  // 不属于该用户：明确回报，不静默吞掉
+                  r.stationAdded = false
+                  r.stationAddCode = 'STATION_FORBIDDEN'
+                  r.stationAddMessage = '小站不存在或不属于当前用户，词条已保存到个人词库但未加入小站'
+                } else {
+                  const { error: swErr } = await admin
+                    .from('station_words')
+                    .upsert(
+                      {
+                        station_id: stationId,
+                        owner_id: uid,
+                        word_key: data.word_key,
+                        source: 'user',
+                        updated_at: new Date().toISOString(),
+                      },
+                      { onConflict: 'station_id,word_key', ignoreDuplicates: true },
+                    )
+                  if (swErr) {
+                    console.error('station_words upsert failed:', swErr.message)
+                    r.stationAdded = false
+                    r.stationAddCode = 'STATION_WRITE_FAILED'
+                    r.stationAddMessage = `词条已保存到个人词库，但加入小站失败：${String(swErr.message).slice(0, 120)}`
+                  } else {
+                    r.stationAdded = true
+                  }
+                }
               }
               // 写回跨用户生成缓存（不含任何用户数据）
               await admin
