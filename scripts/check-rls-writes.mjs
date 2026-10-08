@@ -83,11 +83,12 @@
  * ②才是真入口：改完服务端代码直接部署的人，不一定会记得先跑测试套件。
  *
  * ============================== 演进方向（尚未做） ==============================
- * ⚠️ **当前 A2 是「文本推断」，不是「声明」。** 它靠「同一块作用域 + 查过父表
+ * ⚠️ **当前 A2 是「文本推断」，不是「声明」。** 它靠「同一个函数体 + 查过父表
  *   + 按 owner 列过滤 + 同一个外键表达式」这几个**文本特征**推断「归属已校验」。
+ *   能力边界见文末「为什么这类门禁不可收敛」一节。
  *
  * ============================ ⚠️ 已知边界：A2 不感知控制流 ============================
- * 下列形态**均可绕过**（QA 第二轮构造并复核成立，本轮**只记录不修**）：
+ * 下列形态**均可绕过**（QA 构造并复核成立，本轮**只记录不修**）：
  *
  *   ① 校验包在**调用方可跳过的分支**里：
  *        if (req.body.skipCheck) { const owned = …查归属… ; if (!owned) throw … }
@@ -95,15 +96,15 @@
  *   ② 校验在 try 内且 **catch 吞掉异常**：
  *        try { const owned = …查归属… } catch (e) { console.warn(e) }
  *        await admin.from('station_words').upsert(…)
- *   ③ 循环外校验、循环内写入（没有「每轮重新校验」的概念）：
- *        for (const id of req.body.targets) { await admin.from('station_words').upsert({ station_id: id, … }) }
  *
  * 为什么不修：控制流要真 AST / 数据流才能判，而强上必然推高误报 ——
  * 而**这个门禁的漏报（假绿）比误报更危险**，因为它给人虚假的安全感。
  * 详见 docs/engineering-discipline.md。
  *
- * ⚠️ 这 2 条形态已固化成自检里的 **SELFTEST_KNOWN_GAP**（断言「当前确实判绿」）。
- *   固化不是为了「现在拦住」，而是**将来有人改作用域栈时会立刻看到它们转红** ——
+ * ⚠️ 这 2 条形态已固化成自检里的 **SELFTEST_KNOWN_GAP**（断言「当前确实判绿」），
+ *   且**每条都有函数形态与 class 容器形态两个变体** —— 只固化函数形态的话，
+ *   「换语法糖就失效」这个机制就没有样本守着（本轮 S7 正是 class 形态下才暴露的）。
+ *   固化不是为了「现在拦住」，而是**将来有人改作用域判据时会立刻看到它们转红** ——
  *   这正是「自检十几条却一条都没覆盖这些形态」暴露的机制本身：**没覆盖 = 静默漏判**。
  *
  * ================== 残留洞：已用「请求来源」判据关闭（我先前的断言是错的） ==================
@@ -115,12 +116,19 @@
  *       .upsert({ station_id: sId, owner_id: body.ownerId, ... })
  *
  * 我当时说「要抓它只能要求 owner 值可溯源到 auth.getUser，但会误伤『uid 由入参传入』」。
- * **错在把判据下得太重**：不需要**全文件溯源**，只需**排除请求来源表达式**
- * （body.* / req.* / params.* / event.* / formData / searchParams / payload.*，
- * 含经局部变量中转的一层）。
+ * **错在把判据下得太重**：不需要**全文件溯源**，只需**排除请求来源表达式**。
  * 而**函数形参名既不是 body.* 也不是 req.*，不是请求来源** ⇒ 该判据对
  * 「uid 由入参传入」这类**合法**写法恒不触发 ⇒ 不误伤。
- * 实测：QA 的 P1（body 来源）红、P2（形参）绿、P3（req 经局部变量中转）红。
+ *
+ * ⚠️ 但「排除请求来源」这个判据**本身**也被 QA 打穿过一次（第三轮 E2/E5/E6/E7）：
+ *   我第一版用 `^(?:body|req|…)\b` 前缀正则去「证明像请求数据」，于是
+ *   `ctx.body.ownerId`（根是 ctx）、`req2.body.ownerId`（词边界）、
+ *   解构 / 局部变量中转出来的裸标识符 —— 全都漏。
+ * ⇒ **判据方向改为否决式**：不试图证明来源，只对**成员表达式的根标识**做拒绝名单
+ *   命中判定，并沿**局部绑定**传递（解构 / `const b = X.y` / `await X.json()`）。
+ *   命中即**否决豁免**，绝不发放豁免。
+ *   这是本文件最重要的一条方法论：**「证明安全」的判据永远会被新的写法绕过，
+ *   「像不安全就判红」的判据才会收敛。**
  *
  * 【终局形态：声明式归属断言】
  *   引入显式函数（如 `assertOwnership('stations', stationId, uid)`），由它统一
@@ -129,6 +137,24 @@
  *   真实代码（行为改动），与「零侵入」原则冲突，留待专门一轮。
  *   ⚠️ 采纳时注意：引入命名的单一出口 = 给「统一改名」留了后路，
  *   纪律 §9.1 的教训仍适用 —— 出口本身要被门禁检查，不能只靠约定。
+ *
+ * 【为什么这类门禁不可收敛（本轮 12 条缺陷的共同根因）】
+ *   这 12 条分三类，但**是同一个根因的三种表现**：
+ *     ① 作用域（6 条）：用**反向文本扫描**推断「哪个块包住写入点」；
+ *     ② 取值来源（4 条）：用**前缀正则**推断「这个值是不是请求带来的」；
+ *     ③ 解析容忍度（2 条）：把**表面写法**（引号种类、换行）当成了语义。
+ *   共同点是：**在用文本模式去推断程序语义（作用域 / 取值来源 / 值同一性）**。
+ *   文本模式可以做到「像」，做不到「是」—— 于是每补一个模式，就多出一个
+ *   「模式没覆盖到的同义写法」。这就是「每修一个洞长出新的洞」：
+ *   **洞的总量不随修复减少，只是换了一批写法。**
+ *
+ *   要让门禁可收敛，只有两条路：
+ *     A. 收敛判据：**减少需要推断的语义**，只保留「不推断也判得准」的判据；
+ *     B. 让**生产代码显式声明**，门禁只认声明（上面的 `assertOwnership`）；
+ *     C. 明确声明检测范围，**范围外一律判红**（fail closed 的极端版）。
+ *   ⇒ **推荐 B**，理由与代价见提交信息与 docs/engineering-discipline.md：
+ *     只有 B 把「判定」从「猜」变成「查」；代价是要改 index.ts 与镜像的真实代码，
+ *     并且出口本身必须被门禁检查（否则又是一次「统一改名即可绕过」）。
  * ==========================================================================
  */
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
@@ -1257,34 +1283,39 @@ function judgeCode(code, relPath, schema) {
           if (!guardCovers(tree, gIdx, m.index)) continue
           const qChain = readChain(priorCode, fm.index + fm[0].length)
           if (!qChain.methods.includes('select')) continue
-          // ★ owner 列匹配：查了父表还不够，必须**按 owner 列过滤** ——
-          //   只按主键查（`.eq('id', X)`）根本不是归属校验。
-          //   （这条判据原先没有自检样本覆盖，属于「可静默腐化」的盲区，已补。）
-          //   列名允许反引号（QA E8）+ 大小写不敏感（QA E9），由 `i` 标志与反引号类提供。
+          // 一次解析链上所有 `.eq(<列名>, <值>)`：
+          //   - 列名用 **normName** 归一（剥引号 / 反引号 + 转小写）
+          //     ⇒ `.eq('owner_id', …)` / `.eq(\`owner_id\`, …)` / `.eq('OWNER_ID', …)`
+          //       是同一件事（QA E8 / E9）；
+          //   - 取值用 **normExpr** 归一（**不**转小写，见其注释）。
+          // ⚠️ 值捕获用 `[^)]*`：跨行的实参（QA E13）由 `\s` 吃掉换行，
+          //    尾随逗号由 normExpr 剥掉。
+          const ownerCols = new Set([...refGuardCols].map(normName))
+          const refCol = normName(ref.col)
           let ownerMatched = false
-          for (const oc of refGuardCols) {
-            const eqRe = new RegExp(`\\.\\s*eq\\(\\s*['"\`]${oc}['"\`]\\s*,\\s*([^)]*)\\)`, 'gi')
-            for (const em of qChain.text.matchAll(eqRe)) {
+          let fkMatched = false
+          for (const em of qChain.text.matchAll(
+            /\.eq\(\s*(['"`])([\w$]+)\1\s*,\s*([^)]*)\)/gi,
+          )) {
+            const col = normName(em[2])
+            const val = em[3]
+            // ★ owner 列匹配：查了父表还不够，必须**按 owner 列过滤** ——
+            //   只按主键查（`.eq('id', X)`）根本不是归属校验。
+            //   （这条判据原先没有自检样本覆盖，属于「可静默腐化」的盲区，已补。）
+            if (ownerCols.has(col)) {
               ownerMatched = true
               // ★ 请求来源表达式不可信：**否决式**判定 ——
               //   只要该值的根标识命中「调用方提供」名单（含经解构 / 局部变量中转），
               //   它证明的就不是「这是当前用户的 uid」，而是「调用方说这是某个 uid」
               //   ⇒ 不给它发放豁免（QA E2/E5/E6/E7）。
-              const gExpr = normExpr(em[1])
-              if (!isRequestDerived(em[1], bindings)) guardUidExprs.add(gExpr)
+              if (!isRequestDerived(val, bindings)) guardUidExprs.add(normExpr(val))
             }
+            // ★ 必须用**同一个外键值**过滤 —— 比较 .eq() 的**第二个实参表达式**
+            //   与 payload 外键值（归一化后全等），而不是裸子串包含。
+            //   裸子串会把「写入变量名恰好是链文本的子串」（如 `id` 之于
+            //   `.eq('id', …)`）误判成同一个值 ⇒ 「验 A 站、写 B 站」漏过。
+            if (col === refCol && normExpr(val) === fkNorm) fkMatched = true
           }
-          // ★ 必须用**同一个外键值**过滤 —— 比较 .eq() 的**第二个实参表达式**
-          //   与 payload 外键值（归一化后全等），而不是裸子串包含。
-          //   裸子串会把「写入变量名恰好是链文本的子串」（如 `id` 之于
-          //   `.eq('id', …)`）误判成同一个值 ⇒ 「验 A 站、写 B 站」漏过。
-          const fkEqRe = new RegExp(
-            `\\.\\s*eq\\(\\s*['"\`]${ref.col}['"\`]\\s*,\\s*([^)]*)\\)`,
-            'gi',
-          )
-          const fkMatched = [...qChain.text.matchAll(fkEqRe)].some(
-            (em) => normExpr(em[1]) === fkNorm,
-          )
           if (ownerMatched && fkMatched) {
             guarded = true
             break
@@ -1576,6 +1607,178 @@ const { data: userData } = await anon.auth.getUser(token)
 const uid = userData.user.id
 await anon.from('user_words').upsert({ owner_id: uid, form, form_key: fk })`,
   ],
+
+  // ---- 「安全孪生」正样本（QA 硬性要求：每条新反样本配一个只改判别式的孪生）----
+  //
+  // 判据没有自检样本 ⇒ 可静默腐化。反样本只能证明「现在拦得住」，
+  // 孪生正样本才能证明「拦的原因是**那个判别式**，而不是随手报一条」。
+  // 下面每一条与对应的反样本**只差一个判别式**，语义仍然合法。
+
+  [
+    '函数体内的合法写入①（补 0 覆盖）：async 函数体内 校验 + 写入',
+    `const { data: userData } = await anon.auth.getUser(token)
+const uid = userData.user.id
+const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'))
+export async function saveWords(req) {
+  const stationId = req.body.station_id
+  const { data: owned } = await admin.from('stations').select('id').eq('id', stationId).eq('owner_id', uid).maybeSingle()
+  if (!owned) throw new Error('STATION_FORBIDDEN')
+  await admin.from('station_words').upsert({ station_id: stationId, owner_id: uid, word_key: req.body.word_key })
+}`,
+  ],
+  [
+    '函数体内的合法写入②（补 0 覆盖）：对象方法体内 校验 + 写入',
+    `const { data: userData } = await anon.auth.getUser(token)
+const uid = userData.user.id
+const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'))
+export const api = {
+  async saveWords(stationId, wordKey) {
+    const { data: owned } = await admin.from('stations').select('id').eq('id', stationId).eq('owner_id', uid).maybeSingle()
+    if (!owned) throw new Error('STATION_FORBIDDEN')
+    await admin.from('station_words').upsert({ station_id: stationId, owner_id: uid, word_key: wordKey })
+  },
+}`,
+  ],
+  [
+    'S4 孪生（正）：嵌套 class，但校验与写入在**同一个**方法体内',
+    `const { data: userData } = await anon.auth.getUser(token)
+const uid = userData.user.id
+const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'))
+class Outer {
+  async saveWords(stationId, wordKey) {
+    class Inner {
+      static async ping() {
+        return 1
+      }
+    }
+    const { data: owned } = await admin.from('stations').select('id').eq('id', stationId).eq('owner_id', uid).maybeSingle()
+    if (!owned) throw new Error('STATION_FORBIDDEN')
+    await admin.from('station_words').upsert({ station_id: stationId, owner_id: uid, word_key: wordKey })
+  }
+}`,
+  ],
+  [
+    'S7 孪生（正）：方法体内嵌套了 class，但校验**无条件地**与方法体同级',
+    `const { data: userData } = await anon.auth.getUser(token)
+const uid = userData.user.id
+const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'))
+class Api {
+  async saveWords(stationId, wordKey, x) {
+    class Inner {
+      static async ping() {
+        return x
+      }
+    }
+    const { data: owned } = await admin.from('stations').select('id').eq('id', stationId).eq('owner_id', uid).maybeSingle()
+    if (!owned) throw new Error('STATION_FORBIDDEN')
+    await admin.from('station_words').upsert({ station_id: stationId, owner_id: uid, word_key: wordKey })
+  }
+}`,
+  ],
+  [
+    'X2 孪生（正）：顶层 if 块内**同块**校验 + 写入（顺序即保证）',
+    `const { data: userData } = await anon.auth.getUser(token)
+const uid = userData.user.id
+const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'))
+if (env.FLAG) {
+  const { data: owned } = await admin.from('stations').select('id').eq('id', stationId).eq('owner_id', uid).maybeSingle()
+  if (!owned) throw new Error('STATION_FORBIDDEN')
+  await admin.from('station_words').upsert({ station_id: stationId, owner_id: uid, word_key: wordKey })
+}`,
+  ],
+  [
+    'X3 孪生（正）：顶层 try 块内**同块**校验 + 写入',
+    `const { data: userData } = await anon.auth.getUser(token)
+const uid = userData.user.id
+const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'))
+try {
+  const { data: owned } = await admin.from('stations').select('id').eq('id', stationId).eq('owner_id', uid).maybeSingle()
+  if (!owned) throw new Error('STATION_FORBIDDEN')
+  await admin.from('station_words').upsert({ station_id: stationId, owner_id: uid, word_key: wordKey })
+} catch (e) {
+  throw e
+}`,
+  ],
+  [
+    'X4 孪生（正）：计算属性名方法 [M]() 内**同方法**校验 + 写入',
+    `const { data: userData } = await anon.auth.getUser(token)
+const uid = userData.user.id
+const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'))
+const M = 'saveWords'
+export const api = {
+  [M](stationId, wordKey) {
+    const { data: owned } = await admin.from('stations').select('id').eq('id', stationId).eq('owner_id', uid).maybeSingle()
+    if (!owned) throw new Error('STATION_FORBIDDEN')
+    await admin.from('station_words').upsert({ station_id: stationId, owner_id: uid, word_key: wordKey })
+  },
+}`,
+  ],
+  [
+    'E2/E5 孪生（正）：ctx / req2 都在场，但 owner 值取自**已鉴权** uid',
+    `const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'))
+export async function saveWords(ctx, req2, sid) {
+  const { data: userData } = await ctx.auth.getUser(req2.headers.authorization)
+  const uid = userData.user.id
+  const { data: owned } = await admin.from('stations').select('id').eq('id', sid).eq('owner_id', uid).maybeSingle()
+  if (!owned) throw new Error('STATION_FORBIDDEN')
+  await admin.from('station_words').upsert({ station_id: sid, owner_id: uid, word_key: ctx.body.word_key })
+}`,
+  ],
+  [
+    'E6/E7 孪生（正）：局部变量中转自**已鉴权 uid**（const ownerId = uid）',
+    `const { data: userData } = await anon.auth.getUser(token)
+const uid = userData.user.id
+const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'))
+export async function saveWords(sid, wordKey) {
+  const ownerId = uid
+  const { data: owned } = await admin.from('stations').select('id').eq('id', sid).eq('owner_id', ownerId).maybeSingle()
+  if (!owned) throw new Error('STATION_FORBIDDEN')
+  await admin.from('station_words').upsert({ station_id: sid, owner_id: ownerId, word_key: wordKey })
+}`,
+  ],
+  [
+    '请求来源判据不误伤①：形参名恰含 body 前缀（bodyOwnerId）不是请求来源',
+    `const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'))
+export async function saveWords(sid, bodyOwnerId, wordKey) {
+  const { data: owned } = await admin.from('stations').select('id').eq('id', sid).eq('owner_id', bodyOwnerId).maybeSingle()
+  if (!owned) throw new Error('STATION_FORBIDDEN')
+  await admin.from('station_words').upsert({ station_id: sid, owner_id: bodyOwnerId, word_key: wordKey })
+}`,
+  ],
+  [
+    'E8 孪生（正）：模板字符串做列名 .eq(`owner_id`, uid)（合法写法）',
+    `const { data: userData } = await anon.auth.getUser(token)
+const uid = userData.user.id
+const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'))
+export async function saveWords(req) {
+  const stationId = req.body.station_id
+  const { data: owned } = await admin.from('stations').select('id').eq('id', stationId).eq(\`owner_id\`, uid).maybeSingle()
+  if (!owned) throw new Error('STATION_FORBIDDEN')
+  await admin.from('station_words').upsert({ station_id: stationId, owner_id: uid, word_key: req.body.word_key })
+}`,
+  ],
+  [
+    'E13 孪生（正）：.eq( 与实参跨行、payload 在下方（合法写法）',
+    `const { data: userData } = await anon.auth.getUser(token)
+const uid = userData.user.id
+const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'))
+export async function saveWords(req) {
+  const stationId = req.body.station_id
+  const { data: owned } = await admin
+    .from('stations')
+    .select('id')
+    .eq(
+      'id',
+      stationId,
+    )
+    .eq('owner_id', uid)
+    .maybeSingle()
+  if (!owned) throw new Error('STATION_FORBIDDEN')
+  await admin
+    .from('station_words')
+    .upsert({ station_id: stationId, owner_id: uid, word_key: req.body.word_key })
+}`,
+  ],
 ]
 
 /** 反样本（必须被拦，且断言命中的规则号与内容） */
@@ -1787,6 +1990,157 @@ export async function saveWords(req) {
 }`,
     { rule: 'R2', text: 'station_words（owner 列：owner_id）' },
   ],
+  // ---- 作用域：花括号树必须认得出这些容器（QA 第三轮 S4/S7/X1–X4）----
+  [
+    'S4：嵌套 class —— 校验在内层 class 的方法里、写入在外层 class 的方法里（必须红）',
+    `const { data: userData } = await anon.auth.getUser(token)
+const uid = userData.user.id
+const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'))
+class Outer {
+  async saveWords(stationId, wordKey) {
+    class Inner {
+      static async ensureOwned(stationId) {
+        const { data: owned } = await admin.from('stations').select('id').eq('id', stationId).eq('owner_id', uid).maybeSingle()
+        return owned
+      }
+    }
+    await admin.from('station_words').upsert({ station_id: stationId, owner_id: uid, word_key: wordKey })
+  }
+}`,
+    { rule: 'R2', text: 'station_words.station_id → stations' },
+  ],
+  [
+    'S7：分支块里再嵌套函数体 —— `class{ m(){ if(x){ function inner(){} ; 校验 } 写入 } }`（必须红）',
+    `const { data: userData } = await anon.auth.getUser(token)
+const uid = userData.user.id
+const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'))
+class Api {
+  async saveWords(stationId, wordKey, x) {
+    if (x) {
+      function inner() {}
+      const { data: owned } = await admin.from('stations').select('id').eq('id', stationId).eq('owner_id', uid).maybeSingle()
+      if (!owned) throw new Error('STATION_FORBIDDEN')
+    }
+    await admin.from('station_words').upsert({ station_id: stationId, owner_id: uid, word_key: wordKey })
+  }
+}`,
+    { rule: 'R2', text: 'station_words.station_id → stations' },
+  ],
+  [
+    'X1：顶层写入，而归属校验在一个**未被调用的具名函数**里（必须红）',
+    `const { data: userData } = await anon.auth.getUser(token)
+const uid = userData.user.id
+const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'))
+export async function ensureStationOwned(stationId) {
+  const { data: owned } = await admin.from('stations').select('id').eq('id', stationId).eq('owner_id', uid).maybeSingle()
+  return owned
+}
+await admin.from('station_words').upsert({ station_id: stationId, owner_id: uid, word_key: wordKey })`,
+    { rule: 'R2', text: 'station_words.station_id → stations' },
+  ],
+  [
+    'X2：顶层 `if (env.FLAG) {` 块内写入，校验在更早的函数里（必须红）',
+    `const { data: userData } = await anon.auth.getUser(token)
+const uid = userData.user.id
+const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'))
+export async function ensureStationOwned(stationId) {
+  const { data: owned } = await admin.from('stations').select('id').eq('id', stationId).eq('owner_id', uid).maybeSingle()
+  return owned
+}
+if (env.FLAG) {
+  await admin.from('station_words').upsert({ station_id: stationId, owner_id: uid, word_key: wordKey })
+}`,
+    { rule: 'R2', text: 'station_words.station_id → stations' },
+  ],
+  [
+    'X3：顶层 `try {` 块内写入，校验在更早的函数里（必须红）',
+    `const { data: userData } = await anon.auth.getUser(token)
+const uid = userData.user.id
+const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'))
+export async function ensureStationOwned(stationId) {
+  const { data: owned } = await admin.from('stations').select('id').eq('id', stationId).eq('owner_id', uid).maybeSingle()
+  return owned
+}
+try {
+  await admin.from('station_words').upsert({ station_id: stationId, owner_id: uid, word_key: wordKey })
+} catch (e) {
+  console.warn(e)
+}`,
+    { rule: 'R2', text: 'station_words.station_id → stations' },
+  ],
+  [
+    'X4：计算属性名方法 `[M](x){}` 里写入，校验在更早的函数里（必须红）',
+    `const { data: userData } = await anon.auth.getUser(token)
+const uid = userData.user.id
+const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'))
+export async function ensureStationOwned(stationId) {
+  const { data: owned } = await admin.from('stations').select('id').eq('id', stationId).eq('owner_id', uid).maybeSingle()
+  return owned
+}
+const M = 'saveWords'
+export const api = {
+  [M](stationId, wordKey) {
+    await admin.from('station_words').upsert({ station_id: stationId, owner_id: uid, word_key: wordKey })
+  },
+}`,
+    { rule: 'R2', text: 'station_words.station_id → stations' },
+  ],
+  // ---- 请求来源判据：否决式判定必须覆盖的四种取值写法（QA 第三轮 E2/E5/E6/E7）----
+  [
+    'E2：owner 值写成 ctx.body.ownerId（请求来源在**两层**）（必须红）',
+    `const { data: userData } = await anon.auth.getUser(token)
+const uid = userData.user.id
+const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'))
+export async function saveWords(ctx) {
+  const sid = ctx.body.station_id
+  const { data: owned } = await admin.from('stations').select('id').eq('id', sid).eq('owner_id', ctx.body.ownerId).maybeSingle()
+  if (owned) {
+    await admin.from('station_words').upsert({ station_id: sid, owner_id: ctx.body.ownerId, word_key: kw })
+  }
+}`,
+    { rule: 'R2', text: 'station_words（owner 列：owner_id）' },
+  ],
+  [
+    'E5：owner 值写成 req2.body.ownerId（变量名是 req 的**前缀变体**）（必须红）',
+    `const { data: userData } = await anon.auth.getUser(token)
+const uid = userData.user.id
+const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'))
+export async function saveWords(req2, sid) {
+  const { data: owned } = await admin.from('stations').select('id').eq('id', sid).eq('owner_id', req2.body.ownerId).maybeSingle()
+  if (owned) {
+    await admin.from('station_words').upsert({ station_id: sid, owner_id: req2.body.ownerId, word_key: kw })
+  }
+}`,
+    { rule: 'R2', text: 'station_words（owner 列：owner_id）' },
+  ],
+  [
+    'E6：解构出来的 owner 值 `const { owner_id: ownerId } = ctx`（必须红）',
+    `const { data: userData } = await anon.auth.getUser(token)
+const uid = userData.user.id
+const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'))
+export async function saveWords(ctx, sid) {
+  const { owner_id: ownerId } = ctx
+  const { data: owned } = await admin.from('stations').select('id').eq('id', sid).eq('owner_id', ownerId).maybeSingle()
+  if (owned) {
+    await admin.from('station_words').upsert({ station_id: sid, owner_id: ownerId, word_key: kw })
+  }
+}`,
+    { rule: 'R2', text: 'station_words（owner 列：owner_id）' },
+  ],
+  [
+    'E7：局部变量中转一层 `const ownerId = ctx.body.ownerId`（必须红）',
+    `const { data: userData } = await anon.auth.getUser(token)
+const uid = userData.user.id
+const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'))
+export async function saveWords(ctx, sid) {
+  const ownerId = ctx.body.ownerId
+  const { data: owned } = await admin.from('stations').select('id').eq('id', sid).eq('owner_id', ownerId).maybeSingle()
+  if (owned) {
+    await admin.from('station_words').upsert({ station_id: sid, owner_id: ownerId, word_key: kw })
+  }
+}`,
+    { rule: 'R2', text: 'station_words（owner 列：owner_id）' },
+  ],
 ]
 
 /**
@@ -1803,9 +2157,13 @@ export async function saveWords(req) {
  *   （依据：本门禁的**漏报比误报更危险** —— 假绿会给人虚假的安全感。）
  */
 const SELFTEST_KNOWN_GAP = [
-  [
-    '控制流①：校验包在调用方可跳过的 if 分支里（A2 不感知控制流 ⇒ 当前判绿）',
-    `const { data: userData } = await anon.auth.getUser(token)
+  {
+    id: 'N4',
+    name: '控制流①：校验包在调用方可跳过的 if 分支里（A2 不感知控制流 ⇒ 当前判绿）',
+    variants: [
+      [
+        '函数形态',
+        `const { data: userData } = await anon.auth.getUser(token)
 const uid = userData.user.id
 const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'))
 export async function saveWords(req) {
@@ -1816,10 +2174,32 @@ export async function saveWords(req) {
   }
   await admin.from('station_words').upsert({ station_id: stationId, owner_id: uid, word_key: req.body.word_key })
 }`,
-  ],
-  [
-    '控制流②：校验在 try 内且 catch 吞掉异常（A2 不感知控制流 ⇒ 当前判绿）',
-    `const { data: userData } = await anon.auth.getUser(token)
+      ],
+      [
+        'class 容器形态（同一形态换语法糖：作用域判据不得把它顺带判红）',
+        `const { data: userData } = await anon.auth.getUser(token)
+const uid = userData.user.id
+const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'))
+class Api {
+  async saveWords(req) {
+    const stationId = req.body.station_id
+    if (req.body.skipCheck) {
+      const { data: owned } = await admin.from('stations').select('id').eq('id', stationId).eq('owner_id', uid).maybeSingle()
+      if (!owned) throw new Error('FORBIDDEN')
+    }
+    await admin.from('station_words').upsert({ station_id: stationId, owner_id: uid, word_key: req.body.word_key })
+  }
+}`,
+      ],
+    ],
+  },
+  {
+    id: 'N5',
+    name: '控制流②：校验在 try 内且 catch 吞掉异常（A2 不感知控制流 ⇒ 当前判绿）',
+    variants: [
+      [
+        '函数形态',
+        `const { data: userData } = await anon.auth.getUser(token)
 const uid = userData.user.id
 const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'))
 export async function saveWords(req) {
@@ -1831,8 +2211,30 @@ export async function saveWords(req) {
   }
   await admin.from('station_words').upsert({ station_id: stationId, owner_id: uid, word_key: req.body.word_key })
 }`,
-  ],
+      ],
+      [
+        'class 容器形态（同一形态换语法糖：作用域判据不得把它顺带判红）',
+        `const { data: userData } = await anon.auth.getUser(token)
+const uid = userData.user.id
+const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'))
+class Api {
+  async saveWords(req) {
+    const stationId = req.body.station_id
+    try {
+      const { data: owned } = await admin.from('stations').select('id').eq('id', stationId).eq('owner_id', uid).maybeSingle()
+    } catch (e) {
+      console.warn('check failed', e)
+    }
+    await admin.from('station_words').upsert({ station_id: stationId, owner_id: uid, word_key: req.body.word_key })
+  }
+}`,
+      ],
+    ],
+  },
 ]
+
+/** 已知可绕过形态的**条数**（不是样本数：每条有两种容器形态） */
+const KNOWN_GAP_SHAPE_COUNT = SELFTEST_KNOWN_GAP.length
 
 const selftestFailures = []
 
@@ -1927,13 +2329,21 @@ for (const [name, code, expect] of SELFTEST_BAD) {
 // 已知边界自检：断言「这些形态当前确实判绿」（= 确实仍可被绕过）。
 // 若哪天它们转红 ⇒ 说明控制流感知被顺带实现了 ⇒ 必须更新记录并补真正的判据，
 // 否则这条断言会一直按旧预期报错、变成噪音。
-for (const [name, code] of SELFTEST_KNOWN_GAP) {
-  const found = judgeCode(code, '__known_gap__', schema)
-  if (found.length > 0) {
-    selftestFailures.push(
-      `已知边界「${name}」已不再被判绿（命中 ${found.map((f) => `${f.rule}@${f.text}`).join(', ')}）` +
-        `—— 控制流感知可能已被实现，请更新 SELFTEST_KNOWN_GAP 记录并补真正的判据，别让这条断言变成噪音`,
-    )
+//
+// ⚠️ 每条**两种容器形态**都要断言（QA 要求）：只断言函数形态的话，
+// 「作用域判据换语法糖就失效」这个机制就没有样本守着 ——
+// 而本轮 S7 恰恰是 class 容器形态下才暴露出来的。
+for (const gap of SELFTEST_KNOWN_GAP) {
+  for (const [shape, code] of gap.variants) {
+    const found = judgeCode(code, '__known_gap__', schema)
+    if (found.length > 0) {
+      selftestFailures.push(
+        `已知边界「${gap.id} ${gap.name}」的${shape}已不再被判绿（命中 ${found
+          .map((f) => `${f.rule}@${f.text}`)
+          .join(', ')}）` +
+          `—— 控制流感知可能已被实现，请更新 SELFTEST_KNOWN_GAP 记录并补真正的判据，别让这条断言变成噪音`,
+      )
+    }
   }
 }
 
@@ -1965,8 +2375,11 @@ if (realViolations.length === 0) {
   console.log(
     `  门禁自检：${SELFTEST_GOOD.length} 个正样本通过、${SELFTEST_BAD.length} 个反样本被拦`,
   )
+  // ⚠️ 这是**警告槽位**，不是「通过」的一部分：这几条形态当前**确实可被绕过**。
+  //    写成 ✓ 会让人以为门禁守住了；写成 ⚠️ 才与事实一致。
   console.log(
-    `  已知边界（A2 不感知控制流，当前仍可绕过）：${SELFTEST_KNOWN_GAP.length} 条已固化为可执行断言`,
+    `  ⚠️ 已知可绕过形态：${KNOWN_GAP_SHAPE_COUNT} 条（控制流不感知，N4/N5）` +
+      ` —— 已固化成可执行断言（函数 / class 两种容器形态各一份）`,
   )
   console.log('  R1 读一律放行 ✓   R2 写入须归属校验 ✓   R3 身份型 RPC 禁 service_role 直调 ✓')
   process.exit(0)
