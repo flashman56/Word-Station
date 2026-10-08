@@ -31,9 +31,14 @@
  *     语义：写不进别人的分区。
  *     ⚠️ A1 单独**不够**：station_words 那次越权的 payload 里也写了 owner_id: uid，
  *     但 station_id 指向别人的小站 —— 行归属自己 ≠ 资源归属自己。
+ *     ⚠️ A1 的溯源是**文件内**的（collectUidExpressions）；uid 由入参传入时它不成立。
  *   豁免 A2（父资源已验归属）：若写入行里有列指向**另一个 owner 保护表**，
  *     则必须在该写入**之前**存在一次针对那个父表的归属查询，
  *     且该查询用的是**同一个变量**（否则「验的是 A 站、写的是 B 站」拦不住）。
+ *     ★ A2 命中即**足以放行整个写入**，不要求再叠加 A1 ——
+ *       「写入前已确认父资源属于当前用户」本身就保证不越界，
+ *       比 A1 更强。这也是「uid/client 不在本文件内可溯源」那类**合法**写法
+ *       不会被误报的原因（误报边界已实测，见 SELFTEST_GOOD 的 5 条「误报边界」）。
  *   豁免 B（共享表）：写的是零策略的共享表 ⇒ 合法。
  *
  * R3（红线二本体）—— service_role 客户端调用**靠 auth.uid() 推导身份**的 RPC ⇒ 失败。
@@ -54,18 +59,31 @@
  * 本门禁**按 service_role 处理**。代价是可能误报，收益是「换个写法藏起来」不再是漏洞。
  * 这条取舍是刻意的：门禁误报一次会被修，漏报一次就是越权。
  *
+ * ⚠️ 但「可能误报」不能只是写着 —— 必须**实测边界**并把边界固化成正样本。
+ * 实测出的 5 类误报（client 由入参传入 / client 跨模块 / key 透传 / key 拼出来 / …）
+ * 全部已收进 SELFTEST_GOOD，靠豁免 A2 合法通过。
+ * 若将来有人把A2 改窄，这5 条会立刻把门禁顶红。
+ *
  * ============================== 扫描范围 ==============================
  * 只扫**服务端**代码 —— 即会拿真实用户请求去碰数据库的路径：
  *   - supabase/functions/**   部署到 Edge 的服务端代码，真正的信任边界
- *   - scripts/dev-generate-plugin.mjs
- *     红线二明写「必须与本文件保持同构」，它是 Edge Function 的本地镜像，
- *     所以必须在范围内（否则本地跑的那条路径就无人看管）
+ *   - scripts/ 下的**生产逻辑本地镜像**（dev-* / *-plugin / *-mirror / *-local
+ *     且真建客户端者）—— 按规则识别，不写死文件名。
+ *     为什么必须扫：红线二明写「dev-generate-plugin.mjs 必须与本文件保持同构」，
+ *     而那份漂移**真的发生过**（第一次事故在 index.ts 修了、镜像没修）。
+ *     ⚠️ 镜像恰好在 scripts/ 下，而规则又是「scripts下大多不扫」——
+ *     所以这里若写成硬编码名单，「这次是特例」就会变成「合法豁免」。
  * **不扫 scripts/qa-*.mjs / scripts/test-*.mjs**：那些是测试夹具，
  *  用 service_role 造数据是它们的本职工作（QA 脚本要建他人账号的数据来验证隔离）。
  *  把它们纳入范围只会让门禁变成噪音 —— 而噪音的门禁会被绕过，比没有门禁更糟。
+ *
+ * ============================ 门禁挂在哪 ============================
+ * ① npm run test:cloud（开发者入口）
+ * ② scripts/deploy-generate-fn.mjs 的预检第 1b 步（**部署入口**，exit 1 即 BLOCKED）
+ * ②才是真入口：改完服务端代码直接部署的人，不一定会记得先跑测试套件。
  * ================================================================
  */
-import { readFileSync, readdirSync, statSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -577,7 +595,12 @@ function judgeCode(code, relPath, schema) {
     const payloadExpr = argsText === null ? '' : splitTopLevel(argsText)[0]
     const payload = resolvePayloadObject(payloadExpr, code, openIdx + 1)
 
-    // 豁免 A1：写入行把 owner 列钉到已鉴权 uid
+    // 豁免 A1：写入行把 owner 列钉到**本文件内可溯源到 auth.getUser 的** uid。
+    //
+    //   ⚠️ 溯源是**文件内**的（collectUidExpressions）。所以当 uid 是函数入参、
+    //   或 client 来自别的模块时，本文件里追不到它 ⇒ A1 不成立。
+    //   这不是 bug，而是 A1 的**适用边界**：它只覆盖「uid 在本文件内可见」的场景。
+    //   那种场景由 A2兜住（见下），所以不会产生误报。
     let selfScoped = payload !== null
     if (selfScoped) {
       for (const col of guardCols) {
@@ -589,7 +612,12 @@ function judgeCode(code, relPath, schema) {
       }
     }
 
-    // 豁免 A2：行里有指向另一个 owner 保护表的外键 ⇒ 必须先验父资源归属
+    // 豁免 A2：行里有指向另一个 owner 保护表的外键 ⇒ 必须先验父资源归属。
+    //   A2 命中即**足以放行**整个写入（不需要再叠加 A1）：
+    //   既然写入前已确认「该父资源属于当前用户」，这次写入就不可能越界到别人身上。
+    //   这一点很重要 —— 它让「uid 从入参传入 / client 跨模块」这类同样安全的写法
+    //   不会被误报（实测：那类写法若只认 A1 就是假绿/假红两选一）。
+    let parentOk = false
     let parentViolation = null
     const tableFks = payload === null ? null : schema.fks.get(table)
     if (tableFks) {
@@ -615,7 +643,9 @@ function judgeCode(code, relPath, schema) {
             break
           }
         }
-        if (!guarded) {
+        if (guarded) {
+          parentOk = true
+        } else {
           parentViolation = {
             rule: 'R2',
             file: relPath,
@@ -625,7 +655,7 @@ function judgeCode(code, relPath, schema) {
               `写 ${table} 时 ${col} 指向 owner 保护表 ${refTable}，但本次写入之前没有对 ${refTable} 做归属校验。` +
               `service_role 绕过 RLS（铁证：dict_cache 零策略仍可被它全表读出 64559 行），` +
               `所以「数据库会挡住」是错的假设 —— 调用方可传任意他人的 ${col}，把数据写进别人的资源。` +
-              `（注意：光把 owner_id 钉成自己的 uid 不够，那次真实越权的 payload 里也写了 owner_id: uid。）` +
+              `（注意：光把 owner_id 钉成自己的 uid 不够 —— 那次真实越权的 payload 里也写了 owner_id: uid。）` +
               `修法：写入前先查 ${refTable} 并同时过滤主键与 owner 列` +
               `（如 .eq('id', <${col}>).eq('${[...refGuardCols][0]}', uid)），不匹配则拒绝写入。`,
           }
@@ -636,16 +666,18 @@ function judgeCode(code, relPath, schema) {
 
     if (parentViolation) violations.push(parentViolation)
 
-    if (!selfScoped) {
+    // A2 已确认父资源归属 ⇒ 整个写入放行，不再要求 A1
+    if (!selfScoped && !parentOk) {
       violations.push({
         rule: 'R2',
         file: relPath,
         lineNo: lineOf(m.index),
         text: `${table}（owner 列：${[...guardCols].join(', ')}）`,
         hint:
-          `service_role 客户端写 owner 保护表 ${table}，但写入行没有把 owner 列钉到「已鉴权的 uid」` +
-          `（已鉴权 uid 来自 auth.getUser(token) 的返回值）。service_role 绕过 RLS，` +
-          `写进去的行不再受 owner 策略约束。修法：写入前显式校验归属，或把 owner 列钉到已鉴权 uid。`,
+          `service_role 客户端写 owner 保护表 ${table}，但这次写入既没有把 owner 列钉到已鉴权 uid，` +
+          `也没有在写入前校验父资源归属。service_role 绕过 RLS，写进去的行不再受 owner 策略约束。` +
+          `修法（二选一）：①把 owner 列钉到 auth.getUser(token) 拿到的 uid；` +
+          `②写入前显式查父表并过滤 owner 列，确认归属后再写。`,
       })
     }
   }
@@ -673,13 +705,54 @@ function judgeCode(code, relPath, schema) {
 }
 
 // ---------------------------------------------------------------- 扫描范围
+//
+// ⚠️ 这里最容易被写成硬编码白名单（`{ kind: 'file', rel: 'scripts/dev-generate-plugin.mjs' }`），
+// 而那正是**镜像漂移的缝**：镜像恰好在 scripts/ 下，规则写着「scripts 下都不扫」，
+// 于是这个特例一旦被硬编码，「漂移过一次」就变成「合法豁免」。
+// 所以下面用**识别规则**把镜像挑出来，而不是列名单 —— 新增镜像自动纳入。
 
-/** 服务端代码：会拿真实用户请求去碰数据库的路径 */
-const SCAN_TARGETS = [
-  { kind: 'dir', rel: 'supabase/functions', exts: ['.ts', '.js', '.mjs'] },
-  // 红线二要求与 Edge Function 同构的本地镜像，必须同等待遇
-  { kind: 'file', rel: 'scripts/dev-generate-plugin.mjs' },
-]
+/** 服务端目录：部署到 Edge 的代码，真正的信任边界 */
+const SERVER_DIRS = [{ rel: 'supabase/functions', exts: ['.ts', '.js', '.mjs'] }]
+
+/**
+ * 「本地镜像」的文件名形态（规则的可测部分，与文件是否存在无关）。
+ *
+ * 抽出来单独判，是为了让自检能在**不真的建文件**的前提下验证规则 ——
+ * 否则自检只能验「已存在的那一个」，恰恰验不到「规则退化成硬编码名单」。
+ */
+function mirrorNameShape(relPath) {
+  if (!relPath.startsWith('scripts/')) return false
+  const name = path.basename(relPath)
+  return /^(dev-|.*-(plugin|mirror|local)\.)/.test(name)
+}
+
+/**
+ * 「本地镜像」的识别规则（三条同时满足才算，避免把普通脚本全拉进来）：
+ *   ① 位于 scripts/ 下；
+ *   ② 文件名是 dev-* / *-plugin / *-mirror / *-local 形态
+ *      —— 即「替代真实服务在本地跑」这一类名字约定；
+ *   ③ 文件里真的构造了 supabase 客户端（createClient）。
+ *
+ * 判据 ③ 是关键：光靠名字会误伤，光靠「用了 createClient」又会把
+ * 一次性 QA 脚本（qa-*.mjs / test-*.mjs）全拉进来 —— 那些是测试夹具，
+ * 用 service_role 造数据是本职工作，纳入范围只会让门禁变噪音。
+ * 镜像的定义性特征是「**承载了生产逻辑的第二份实现**」，
+ * dev-* 命名 + 真客户端这两条一起，足以把它和夹具区分开。
+ */
+function isLocalMirror(relPath) {
+  if (!mirrorNameShape(relPath)) return false
+  const full = path.join(ROOT, relPath)
+  if (!existsSync(full) || !statSync(full).isFile()) return false
+  return /createClient\s*\(/.test(readFileSync(full, 'utf8'))
+}
+
+/**
+ * 测试夹具：明确排除。它们用高权限造数据是本职工作，
+ * 纳入扫描只会制造噪音 —— 而噪音的门禁会被绕过，比没有门禁更糟。
+ */
+function isTestFixture(relPath) {
+  return /^scripts\/(qa-|test-|validate-|gen-)/.test(relPath)
+}
 
 /** 递归收集目录下的源码文件（Edge Function 是 fn-name/index.ts 这种嵌套布局） */
 function collectFiles(dir, exts, out = []) {
@@ -697,15 +770,19 @@ function collectFiles(dir, exts, out = []) {
 /** 展开成待扫描文件列表 */
 function collectTargets() {
   const out = []
-  for (const t of SCAN_TARGETS) {
-    const abs = path.join(ROOT, t.rel)
-    if (t.kind === 'file') {
-      if (statSync(abs).isFile()) out.push({ abs, rel: toPosix(t.rel) })
-      continue
+  for (const d of SERVER_DIRS) {
+    for (const full of collectFiles(path.join(ROOT, d.rel), d.exts)) {
+      out.push({ abs: full, rel: toPosix(path.relative(ROOT, full)), why: '部署路径' })
     }
-    for (const full of collectFiles(abs, t.exts)) {
-      out.push({ abs: full, rel: toPosix(path.relative(ROOT, full)) })
-    }
+  }
+  // 本地镜像：按规则识别（不写死文件名），纳入同一套规则
+  const scriptsDir = path.join(ROOT, 'scripts')
+  for (const rel of collectFiles(scriptsDir, ['.mjs', '.js']).map((f) =>
+    toPosix(path.relative(ROOT, f)),
+  )) {
+    if (isTestFixture(rel)) continue
+    if (!isLocalMirror(rel)) continue
+    out.push({ abs: path.join(ROOT, rel), rel, why: '生产逻辑的本地镜像' })
   }
   return out.sort((a, b) => a.rel.localeCompare(b.rel))
 }
@@ -790,6 +867,51 @@ const { data: q } = await anonAsUser.rpc('consume_generation_quota', { n: 1 })`,
     `const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'))
 const { data: mine } = await admin.from('user_words').select('id').eq('owner_id', uid)
 const { data: cacheRows } = await admin.from('dict_cache').select('payload').in('form_key', keys)`,
+  ],
+  // ---- 下面 5 条是「fail closed 的误报边界」实测样本（2026-09 补）----
+  //
+  // 溯源失败时按 service_role 处理（fail closed），代价是可能误报。
+  // 误报的**真实边界**就是下面这几类：uid 或 client 不在本文件内可溯源。
+  // 它们全部靠**豁免 A2**（写入前已验父资源归属）合法通过 ——
+  // 也就是说 A2 命中即足以放行整个写入，不需要再叠加 A1。
+  // 若没有这 5 条，上面那种「为了门禁去改生产代码」的压力就会落到人身上，
+  // 而报红的门禁会被绕过 —— 那是比漏报更坏的结果。
+  [
+    '误报边界 ①：client 由函数入参传入（溯源失败）+ 归属校验齐全 ⇒ 不得误报',
+    `function handler(admin, uid, stationId, kw) {
+  const { data: owned } = await admin.from('stations').select('id').eq('id', stationId).eq('owner_id', uid).maybeSingle()
+  if (!owned) return null
+  return admin.from('station_words').upsert({ station_id: stationId, owner_id: uid, word_key: kw })
+}`,
+  ],
+  [
+    '误报边界 ②：client 来自别的模块（本文件追不到）+ 归属校验齐全 ⇒ 不得误报',
+    `import { getServiceClient } from './db.js'
+const db = getServiceClient()
+const { data: owned } = await db.from('stations').select('id').eq('id', stationId).eq('owner_id', uid).maybeSingle()
+if (!owned) throw new Error('STATION_FORBIDDEN')
+await db.from('station_words').upsert({ station_id: stationId, owner_id: uid, word_key: kw })`,
+  ],
+  [
+    '误报边界 ③：key 由入参透传（溯源失败）+ 只写共享表 + 只读受保护表',
+    `const admin = createClient(options.url, options.key)
+const rows = await admin.from('user_words').select('id').eq('owner_id', uid)
+await admin.from('dict_cache').upsert({ form_key: fk, payload })`,
+  ],
+  [
+    '误报边界 ④：key 由入参透传 + 写 user_words（自限写入，无需父资源校验）',
+    `const admin = createClient(options.url, options.key)
+const { data: userData } = await anon.auth.getUser(token)
+const uid = userData.user.id
+await admin.from('user_words').upsert({ owner_id: uid, form, form_key: fk }, { onConflict: 'owner_id,form_key' })`,
+  ],
+  [
+    '误报边界 ⑤：key 是拼出来的（溯源失败）但确为 anon 客户端 + 自限写入',
+    `const key = [prefix, suffix].join('')
+const anon = createClient(url, key)
+const { data: userData } = await anon.auth.getUser(token)
+const uid = userData.user.id
+await anon.from('user_words').upsert({ owner_id: uid, form, form_key: fk })`,
   ],
 ]
 
@@ -909,8 +1031,40 @@ for (const [name, code, expect] of SELFTEST_BAD) {
   const uids = collectUidExpressions(probe)
   if (!uids.has('uid') || !uids.has('userdata.user.id')) {
     selftestFailures.push(
-      `中间量自检失败：uid 溯源结果为 {${[...uids].join(', ')}}，应同时含 uid 与 userdata.user.id`,
+      `中间量自检失败：uid 溯源结果为 {${[...uids].join(', ')}}，应同时含 uid 与 userData.user.id`,
     )
+  }
+}
+
+// 扫描范围自检：镜像识别规则必须真的认得出镜像，且**不误伤测试夹具**。
+//
+// 这条尤其重要：镜像漂移就是从「scripts/ 下都不扫」这个缝钻进来的。
+// 如果识别规则退化成「只认 dev-generate-plugin.mjs 这一个文件名」，
+// 那么下一个新建的镜像就会静默逃出扫描 —— 门禁会一直绿，而越权已经在那儿了。
+// 所以这里断言规则的**判据**（名字形态 + 真客户端），而不是某个具体文件名。
+{
+  // 镜像：dev-* 命名 + 真的建了客户端 ⇒ 必须被纳入
+  if (!isLocalMirror('scripts/dev-generate-plugin.mjs')) {
+    selftestFailures.push('扫描范围自检失败：已知的本地镜像 scripts/dev-generate-plugin.mjs 未被识别（规则可能退化成硬编码名单）')
+  }
+  // 换一个**没被硬编码**的名字，同样必须被识别 —— 证明是规则而非名单
+  if (!mirrorNameShape('scripts/dev-cache-plugin.mjs')) {
+    selftestFailures.push('扫描范围自检失败：新命名的镜像（scripts/dev-cache-plugin.mjs）未被识别 —— 说明识别退化成硬编码文件名，新增镜像会静默逃出扫描')
+  }
+  // 测试夹具：即使建客户端、有 service_role，也**不该**被纳入（否则门禁变噪音）
+  if (isTestFixture('scripts/qa-live-two-account.mjs') === false) {
+    selftestFailures.push('扫描范围自检失败：QA 夹具未被识别为测试脚本，会被错误纳入扫描')
+  }
+  if (isTestFixture('scripts/test-cache-compat.mjs') === false) {
+    selftestFailures.push('扫描范围自检失败：test-*.mjs 未被识别为测试脚本')
+  }
+  // 非 scripts/ 下的文件不该被当成镜像
+  if (mirrorNameShape('src/lib/supabase.js')) {
+    selftestFailures.push('扫描范围自检失败：src/ 下的文件被误判为本地镜像')
+  }
+  // 测试夹具即便命中名字形态（如 scripts/dev-*.mjs 恰好叫这名字）也由 isTestFixture 先挡掉
+  if (mirrorNameShape('scripts/qa-anything.mjs')) {
+    selftestFailures.push('扫描范围自检失败：qa-* 被误判为镜像命名形态')
   }
 }
 
@@ -931,7 +1085,11 @@ const rpcList = [...schema.authUidRpcs].sort()
 
 if (realViolations.length === 0) {
   console.log('[test:rls] ✓ 通过')
-  console.log(`  扫描 ${targets.length} 个服务端文件：${targets.map((t) => t.rel).join('、')}`)
+  console.log(
+    `  扫描 ${targets.length} 个服务端文件：` +
+      targets.map((t) => `${t.rel}〔${t.why}〕`).join('、'),
+  )
+  console.log(`    （镜像按规则识别：scripts/ 下 dev-*-plugin / *-mirror / *-local 且真建客户端者自动纳入；qa-* / test-* 为测试夹具，不扫）`)
   console.log(`  owner 保护表（据建库 SQL 解析）：${guardedList.join(', ')}`)
   console.log(`  共享表（开了 RLS 但零策略）：${sharedList.join(', ')}`)
   console.log(`  身份推导型 RPC（禁 service_role 直调）：${rpcList.join(', ')}`)

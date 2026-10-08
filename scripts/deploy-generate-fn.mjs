@@ -277,6 +277,41 @@ if (!USE_API && escapesSupabase && !DRY_RUN) {
   )
 }
 
+// -----------------------------------------------------------------------------
+// ①-2 预检：红线门禁 test:rls
+//
+// 为什么必须在这里跑，而不是只挂在 test:cloud 里：
+//   test:cloud 只保护「记得跑测试的人」。而部署是另一条独立入口 ——
+//   改完函数直接跑本脚本的人，不一定会记得先跑测试套件。
+//   放到预检里，门禁才真正保护**部署路径**本身。
+//
+// 拦的是什么（generate-word/index.ts 文件头两条红线）：
+//   R2 service_role 写 owner 保护表却没校验归属（已发生过越权写入）
+//   R3 service_role 直调靠 auth.uid() 推导身份的 RPC（已发生过配额失效）
+// 该门禁同时扫 supabase/functions/** 与它的本地镜像 dev-generate-plugin.mjs，
+// 后者曾真的漂移过（index.ts 修了、镜像没修 ⇒ 越权在本地仍然成立）。
+//
+// dry-run 也跑：预检的意义就是提前暴露问题。
+// -----------------------------------------------------------------------------
+step('1b', TOTAL, '预检：红线门禁 test:rls（service_role 写入须有归属校验）')
+
+const rlsGate = spawnSync(process.execPath, [path.join('scripts', 'check-rls-writes.mjs')], {
+  cwd: ROOT,
+  stdio: ['ignore', 'pipe', 'pipe'],
+  encoding: 'utf8',
+  shell: false,
+})
+if (rlsGate.stdout) process.stdout.write(redact(rlsGate.stdout))
+if (rlsGate.stderr) process.stderr.write(redact(rlsGate.stderr))
+if (rlsGate.status !== 0) {
+  fail(
+    '红线门禁 test:rls 未通过 —— 已阻止部署。',
+    'service_role 绕过 RLS，本项目已因此发生过越权写入与配额失效。修法见门禁输出；' +
+      '本地自查：npm run test:rls',
+  )
+}
+console.log('红线门禁 test:rls: OK')
+
 // ② 预检：认证 + CLI 版本
 step(2, TOTAL, '预检：认证与 CLI 版本（值一律不打印）')
 
