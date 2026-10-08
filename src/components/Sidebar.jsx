@@ -60,9 +60,10 @@ export default function Sidebar({
   return (
     <aside
       className={[
-        'w-72 shrink-0 h-full overflow-y-auto bg-white border-r border-slate-200 p-4 text-slate-700',
-        'fixed md:relative top-0 left-0 h-screen md:h-full transition-transform duration-200 ease-out z-40',
-        mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
+        'w-72 shrink-0 h-full overflow-y-auto bg-white border-r border-slate-200 p-4 text-slate-700 z-40',
+        mobileOpen
+          ? 'fixed md:relative inset-y-0 left-0 block h-screen md:h-full'
+          : 'hidden md:block md:relative md:h-full h-full',
       ].join(' ')}
     >
       <button
