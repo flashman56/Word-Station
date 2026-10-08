@@ -675,8 +675,8 @@ function AppShell({ words, auth, stations, sync }) {
                 onSelectMorph={openMorph}
                 onSelectWord={setSelectedWord}
                 onOpenFocus={openMorph}
-                width={Math.max(560, window.innerWidth - 620)}
-                height={Math.max(420, window.innerHeight - 140)}
+                width={window.innerWidth < 768 ? window.innerWidth : Math.max(560, window.innerWidth - 620)}
+                height={window.innerWidth < 768 ? window.innerHeight - 120 : Math.max(420, window.innerHeight - 140)}
               />
             </Suspense>
           )}
@@ -700,8 +700,8 @@ function AppShell({ words, auth, stations, sync }) {
                   onReset={bulkReset}
                   addToStationProps={addToStationProps}
                   onBackToMap={() => setView('overview')}
-                  width={Math.max(520, window.innerWidth - 640)}
-                  height={Math.max(420, window.innerHeight - 140)}
+                  width={window.innerWidth < 768 ? window.innerWidth : Math.max(520, window.innerWidth - 640)}
+                  height={window.innerWidth < 768 ? window.innerHeight - 120 : Math.max(420, window.innerHeight - 140)}
                 />
               </Suspense>
             ) : (
@@ -736,8 +736,32 @@ function AppShell({ words, auth, stations, sync }) {
         </div>
       </main>
 
-      {/* 右侧详情 */}
-      <aside className="w-80 shrink-0 h-full overflow-y-auto bg-white border-l border-slate-200 p-4">
+      {/* 右侧详情：桌面（md+）常驻 320px 列；移动端默认隐藏，
+          仅当已选中词/词群时以全屏浮层出现（否则会挤压主区成窄条） */}
+      <aside
+        className={[
+          'bg-white border-slate-200 overflow-y-auto p-4 z-40',
+          selectedWord || selectedMorph
+            ? 'fixed inset-0 w-full h-full md:static md:w-80 md:shrink-0 md:h-full md:border-l'
+            : 'hidden md:block md:static md:w-80 md:shrink-0 md:h-full md:border-l',
+        ].join(' ')}
+      >
+        {(selectedWord || selectedMorph) && (
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedWord(null)
+              setSelectedMorphId(null)
+            }}
+            className="md:hidden mb-2 -ml-1 p-1 rounded-md text-slate-600 hover:bg-slate-100"
+            aria-label="关闭详情"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="6" y1="6" x2="18" y2="18" />
+              <line x1="18" y1="6" x2="6" y2="18" />
+            </svg>
+          </button>
+        )}
         {selectedWord ? (
           <WordDetail
             word={selectedWord}
