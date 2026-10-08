@@ -83,31 +83,53 @@
  * ②才是真入口：改完服务端代码直接部署的人，不一定会记得先跑测试套件。
  *
  * ============================== 演进方向（尚未做） ==============================
- * ⚠️ **当前 A2 是「文本推断」，不是「声明」。** 它靠「同一函数体内 + 查过父表
- *   + 按 owner 列过滤 + 用同一个外键值」这几个**文本特征**推断「归属已校验」。
+ * ⚠️ **当前 A2 是「文本推断」，不是「声明」。** 它靠「同一块作用域 + 查过父表
+ *   + 按 owner 列过滤 + 同一个外键表达式」这几个**文本特征**推断「归属已校验」。
  *
- *   【残留洞（已实测，零侵入前提下关不掉）】
- *   下面这个形态与「uid 由函数入参传入」的**合法**写法结构上**完全同形**，
- *   静态推断无法区分 —— 只能靠「uid 的可信来源」才能分辨：
+ * ============================ ⚠️ 已知边界：A2 不感知控制流 ============================
+ * 下列形态**均可绕过**（QA 第二轮构造并复核成立，本轮**只记录不修**）：
+ *
+ *   ① 校验包在**调用方可跳过的分支**里：
+ *        if (req.body.skipCheck) { const owned = …查归属… ; if (!owned) throw … }
+ *        await admin.from('station_words').upsert(…)      // ← 校验可被完全跳过
+ *   ② 校验在 try 内且 **catch 吞掉异常**：
+ *        try { const owned = …查归属… } catch (e) { console.warn(e) }
+ *        await admin.from('station_words').upsert(…)
+ *   ③ 循环外校验、循环内写入（没有「每轮重新校验」的概念）：
+ *        for (const id of req.body.targets) { await admin.from('station_words').upsert({ station_id: id, … }) }
+ *
+ * 为什么不修：控制流要真 AST / 数据流才能判，而强上必然推高误报 ——
+ * 而**这个门禁的漏报（假绿）比误报更危险**，因为它给人虚假的安全感。
+ * 详见 docs/engineering-discipline.md。
+ *
+ * ⚠️ 这 2 条形态已固化成自检里的 **SELFTEST_KNOWN_GAP**（断言「当前确实判绿」）。
+ *   固化不是为了「现在拦住」，而是**将来有人改作用域栈时会立刻看到它们转红** ——
+ *   这正是「自检十几条却一条都没覆盖这些形态」暴露的机制本身：**没覆盖 = 静默漏判**。
+ *
+ * ================== 残留洞：已用「请求来源」判据关闭（我先前的断言是错的） ==================
+ * 我曾断言下面这个洞「零侵入关不掉」，**那个断言错了**（QA 反驳成立，已修正）：
  *
  *     const { data: owned } = await admin.from('stations')
  *       .select('id').eq('id', sId).eq('owner_id', body.ownerId).maybeSingle()  // ← 攻击者可控
  *     if (owned) await admin.from('station_words')
  *       .upsert({ station_id: sId, owner_id: body.ownerId, ... })
  *
- *   此处 owner_id 与归属校验里过滤的值是**同一个** body.ownerId ⇒ A1② 与 A2 都成立。
- *   要抓它，只能要求「归属校验里过滤的 owner 值」本身可溯源到 auth.getUser ——
- *   但那会把「uid 从入参传入」这类**合法**写法全部误报（正是本轮修掉的 5 类）。
- *   ⇒ 这是文本推断的**固有边界**，不是调参能消掉的问题。
+ * 我当时说「要抓它只能要求 owner 值可溯源到 auth.getUser，但会误伤『uid 由入参传入』」。
+ * **错在把判据下得太重**：不需要**全文件溯源**，只需**排除请求来源表达式**
+ * （body.* / req.* / params.* / event.* / formData / searchParams / payload.*，
+ * 含经局部变量中转的一层）。
+ * 而**函数形参名既不是 body.* 也不是 req.*，不是请求来源** ⇒ 该判据对
+ * 「uid 由入参传入」这类**合法**写法恒不触发 ⇒ 不误伤。
+ * 实测：QA 的 P1（body 来源）红、P2（形参）绿、P3（req 经局部变量中转）红。
  *
  * 【终局形态：声明式归属断言】
  *   引入显式函数（如 `assertOwnership('stations', stationId, uid)`），由它统一
  *   「取 uid + 查父表 + 过滤 owner 列 + 不匹配即抛」，门禁只认这一个出口 ⇒
- *   上述残留洞与跨函数洞一并消失。本轮**不做**：它要改 index.ts 与镜像的真实代码
- *   （行为改动），与「零侵入」原则冲突，留待专门一轮。
+ *   上述**控制流**洞与跨作用域洞一并消失。本轮**不做**：它要改 index.ts 与镜像的
+ *   真实代码（行为改动），与「零侵入」原则冲突，留待专门一轮。
  *   ⚠️ 采纳时注意：引入命名的单一出口 = 给「统一改名」留了后路，
  *   纪律 §9.1 的教训仍适用 —— 出口本身要被门禁检查，不能只靠约定。
- * ================================================================
+ * ==========================================================================
  */
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import path from 'node:path'
@@ -324,7 +346,10 @@ function parseSchema(sql) {
     else guardedTables.set(table, cols)
   }
 
-  // 外键：create table public.X ( ... <col> ... references public.Y(...) ... )
+  // 外键：create table public.X ( ... <col> ... references public.Y(<refCol>) ... )
+  // 连被引用列一起记录（station_words.station_id → stations.id）：
+  // A2 要比对「链里 .eq(<refCol>, X) 的 X」与「payload 外键列的值」是不是同一表达式，
+  // 只知道被引用表不够。
   for (const m of sql.matchAll(/create\s+table\s+(?:if\s+not\s+exists\s+)?(?:public\.)?(\w+)\s*\(/gi)) {
     const table = m[1]
     const openIdx = m.index + m[0].length - 1
@@ -334,7 +359,7 @@ function parseSchema(sql) {
     for (const f of body.matchAll(
       /(\w+)\s+[\w\s]+?references\s+(?:public\.)?(\w+)\s*\(\s*(\w+)\s*\)/gi,
     )) {
-      cols.set(f[1], f[2])
+      cols.set(f[1], { table: f[2], col: f[3] })
     }
     if (cols.size > 0) fks.set(table, cols)
   }
@@ -496,41 +521,223 @@ function collectUidExpressions(code) {
 
 /** 判断一个表达式文本是否就是「已鉴权的 uid」 */
 function isUidExpression(expr, uidExprs) {
-  const norm = String(expr ?? '')
+  const norm = normExpr(expr)
+  return norm.length > 0 && uidExprs.has(norm)
+}
+
+/**
+ * 表达式归一化：去空白、去尾分号、转小写。
+ * 「同一个值」的比较必须基于它 —— 裸子串包含会把 `id` 之于 `.eq('id', …)`
+ * 这类「恰好是子串」的情况误判成同一个值（QA 构造的绕过形态）。
+ */
+function normExpr(expr) {
+  return String(expr ?? '')
     .trim()
     .replace(/\s+/g, '')
     .replace(/;$/, '')
     .toLowerCase()
-  return norm.length > 0 && uidExprs.has(norm)
+}
+
+/**
+ * 判断一个表达式是否为**请求来源**（值由 HTTP 请求带入，本文件内看不到约束）。
+ *
+ * 🔴 这条判据的作用（QA 提出，推翻了我「静态推断关不掉」的结论 —— 它是对的）：
+ *   归属校验里 `.eq('owner_id', X)` 的 X 若来自 body.* / req.* / params.* …，
+ *   那它证明的不是「这是当前用户的 uid」，而是「调用方说这是某个 uid」。
+ *   payload 的 owner 列若写同一个表达式，A1② 就会给它开门 ⇒ 越权。
+ *
+ *   为什么不必强求「X 可溯源到 auth.getUser」（我原先的过重断言）：
+ *   **函数形参名既不是 body.* 也不是 req.*，不是请求来源** ——
+ *   所以这条判据对「uid 由入参传入」这类**合法**写法恒不触发。
+ *   ⇒ 排除请求来源即可，不必强求全文件溯源。
+ *
+ * @param {string} exprNorm 已归一化的表达式
+ */
+function isRequestSource(exprNorm) {
+  const e = String(exprNorm ?? '')
+  // 形如 body.x / req.body.x / params.x / event.x / payload.x / searchParams.get(...)
+  if (/^(?:body|req|request|params|event|payload|query|form)\b/.test(e)) return true
+  // 裸标识符本身叫这些名字（body / req / params …）
+  if (/^(?:body|req|request|params|event|payload|query|form)$/.test(e)) return true
+  if (/^(?:formdata|searchparams|urlsearchparams)$/.test(e)) return true
+  if (/^(?:formdata|searchparams)\./.test(e)) return true
+  return false
+}
+
+/**
+ * 同上，但**追一层本地绑定**。
+ *
+ * 🔴 QA 的 P3 样本揭示的漏洞：owner 值不是直接写成 `body.owner_id`，
+ *   而是先存进局部变量再用：
+ *     const ownerId = req.nextUrl.searchParams.get('owner_id')
+ *     … .eq('owner_id', ownerId)
+ *   此时 `.eq()` 的第二个实参是 `ownerId` —— 一个看不出来源的普通标识符。
+ *   只做「表达式长得像不像请求来源」会被这层间接引用绕过。
+ *
+ * @param {string} expr 表达式原文（未归一）
+ * @param {string} code 文件全文（用于回溯局部绑定）
+ */
+function isRequestSourceExpr(expr, code, depth = 0) {
+  const norm = normExpr(expr)
+  if (!norm || depth > 3) return false
+  if (isRequestSource(norm)) return true
+  if (/^[a-z_$][\w$]*$/.test(norm)) {
+    const bindRe = new RegExp(
+      `(?:const|let|var)\\s+${norm}\\s*=\\s*([^;\\n]+)`,
+      'gi',
+    )
+    for (const b of code.matchAll(bindRe)) {
+      if (isRequestSourceExpr(b[1], code, depth + 1)) return true
+    }
+  }
+  return false
 }
 
 // ---------------------------------------------------------------- 写入行对象
 
 /**
- * 取「包含 idx 的那个函数」的代码切片 —— A2 归属校验**必须在同一函数体内**。
+ * 取「包含 idx 的那个**最内层块作用域**」的代码切片 ——
+ * A2 归属校验必须与写入在**同一块**内。
  *
- * 🔴 为什么必须限定函数（QA 构造出的真漏洞）：
- *   原来用 `code.slice(0, idx)`，只看「文本上更靠前」。于是可以在文件更早处
- *   放一段正当的归属校验，再**追加一个新函数**、沿用同一个变量名、
- *   自己不做任何校验 ⇒ 白拿 A2 豁免，门禁放行。
- *   唯一防线是「换个变量名」—— 纯约定，编译器不管、也没人提醒。
+ * 🔴 为什么要按花括号配对，而不是按「函数起点正则」（QA 连续两轮证明）：
+ *   上一轮我用正则找函数起点（function 具名 / => {），QA 指出它**只认两种语法**：
+ *   class 方法、对象字面量方法、匿名 function 都不算边界 ⇒ marks 为空 ⇒
+ *   fallback 退回「看整个文件」⇒ **上一轮的漏洞换一种语法糖就回来了**。
+ *   唯一能挡住它的，是把 fallback 删掉 —— 而删掉之后必须fail closed，
+ *   否则顶层写入会全部误报。
  *
- * 做法：从 idx 往前找最近一个「函数起点」标记（function 声明 / 箭头函数 /
- * 方法定义），从那里切到 idx。找不到就说明写入在顶层（如 Edge Function 的
- * 模块级代码），此时用整段文件的前半部分 —— 与旧行为一致。
+ *   ⇒ 结论：**作用域边界必须靠花括号配对，不能靠猜语法**。
+ *   本实现从 idx 往回扫，找到**最近的、未闭合的 `{`**（用配对而非正则），
+ *   从那里切片。这样：
+ *     class 方法 / 对象方法 / 匿名 function / 箭头函数 —— 一视同仁地被切开；
+ *     顶层代码 ⇒ 找不到未闭合 `{` ⇒ fail closed（start = -1 表示「无作用域」）。
  *
- * @returns {{start: number, text: string}} start 是该函数起点在 code 中的绝对下标
+ * @returns {{start: number, text: string}} start = -1 表示找不到块作用域（顶层）
  */
 function enclosingFunctionScope(code, idx) {
-  const before = code.slice(0, idx)
-  // 函数起点标记：function 声明、箭头函数、async 方法定义
-  const marks = [...before.matchAll(/(?:^|[\s;{}()])(?:export\s+)?(?:async\s+)?function\s*\*?\s*[A-Za-z_$][\w$]*|=>\s*\{/g)]
-  if (marks.length === 0) return { start: 0, text: before }
-  const last = marks[marks.length - 1]
-  const start = last.index + (last[0].length - (last[0].trimStart().length))
-  return { start, text: code.slice(start, idx) }
-}
+  /** 从 from 处向前跳过空白与注释，返回下一个有意义的字符的下标（找不到返回 -1） */
+  const skipBack = (from) => {
+    let i = from
+    while (i >= 0) {
+      const c = code[i]
+      if (/\s/.test(c)) { i -= 1; continue }
+      if (c === '/' && code[i - 1] === '*') {
+        const open = code.lastIndexOf('/*', i - 1)
+        if (open < 0) return -1
+        i = open - 1
+        continue
+      }
+      if (c === '/' && code[i - 1] === '/') {
+        const n = code.lastIndexOf('\n', i - 1)
+        if (n < 0) return -1
+        i = n - 1
+        continue
+      }
+      return i
+    }
+    return -1
+  }
 
+  /** 该 '{' 是否是**函数体**的开括号（而不是 if/for/try/普通块） */
+  const isFunctionBodyBrace = (braceIdx) => {
+    const prev = skipBack(braceIdx - 1)
+    if (prev < 0) return false
+    // 箭头函数：=> {
+    if (code[prev] === '>') {
+      const arrow = skipBack(prev - 1)
+      if (arrow >= 0 && code[arrow] === '=') return true
+      return false
+    }
+    // 参数表后：function f(...) { / 方法名(...) { / class 的 constructor(...) {
+    if (code[prev] === ')') {
+      let depth = 0
+      let j = prev
+      for (; j >= 0; j -= 1) {
+        const c = code[j]
+        if (c === ')') depth += 1
+        else if (c === '(') { depth -= 1; if (depth === 0) break }
+        else if (c === "'" || c === '"' || c === '`') {
+          const q = c
+          j -= 1
+          while (j >= 0 && code[j] !== q) {
+            if (code[j] === '\\') j -= 1
+            j -= 1
+          }
+        }
+      }
+      if (j < 0) return false
+      const kw = skipBack(j - 1)
+      if (kw < 0) return false
+      let e = kw + 1
+      let b = kw
+      while (b >= 0 && /[\w$]/.test(code[b])) b -= 1
+      const word = code.slice(b + 1, e).toLowerCase()
+      if (!word) return false
+      // 控制流关键字 ⇒ 不是函数体
+      if (['if', 'for', 'while', 'switch', 'catch', 'with'].includes(word)) return false
+      return true
+    }
+    // try { / else { / do { / finally {
+    let e = prev + 1
+    let b = prev
+    while (b >= 0 && /[\w$]/.test(code[b])) b -= 1
+    const word = code.slice(b + 1, e).toLowerCase()
+    if (['try', 'else', 'do', 'finally'].includes(word)) return false
+    return false
+  }
+
+  // 从 idx 往回做花括号配对，逐层向外找出**最内层的函数体**
+  let depth = 0
+  const braces = []
+  for (let i = idx - 1; i >= 0; i -= 1) {
+    const c = code[i]
+    if (c === "'" || c === '"' || c === '`') {
+      const quote = c
+      i -= 1
+      while (i >= 0 && code[i] !== quote) {
+        if (code[i] === '\\') i -= 1
+        i -= 1
+      }
+      continue
+    }
+    if (c === '/' && code[i - 1] === '*') {
+      const open = code.lastIndexOf('/*', i - 1)
+      if (open < 0) break
+      i = open - 1
+      continue
+    }
+    if (c === '/' && code[i - 1] === '/') {
+      const n = code.lastIndexOf('\n', i - 1)
+      if (n < 0) break
+      i = n - 1
+      continue
+    }
+    // ⚠️ 反向扫描时 depth 的语义是「**已找到的、包含 idx 的块**的个数」，只会单调增加：
+//   遇`{` ⇒ 进入一个包含 idx 的块 ⇒ depth += 1 并记录（**总是**记录）；
+//   遇 `}` ⇒ 说明我们刚退出了某个块 ⇒ depth -= 1。
+// 我第一版把这两个写反了（`}` 时+1、`{` 时判depth===0 才记），
+// 结果只收集到最内层那个块、且层数在 0/1 之间来回跳 ⇒
+// 外层函数体永远进不了候选 ⇒ index.ts 的合法写法被误报。
+if (c === '}') depth -= 1
+    else if (c === '{') {
+      depth += 1
+      braces.push(i)
+    }
+  }
+
+  // 最内层的函数体优先；找不到函数体则退回最内层普通块；
+  // 连块都没有 ⇒ 模块顶层（语句按序执行，顺序即保证）。
+  const fnBrace = braces.find((b) => isFunctionBodyBrace(b))
+  const chosen = fnBrace !== undefined ? fnBrace : braces[0]
+  if (chosen === undefined) {
+    return { start: 0, text: code.slice(0, idx), kind: 'top' }
+  }
+  return {
+    start: chosen + 1,
+    text: code.slice(chosen + 1, idx),
+    kind: fnBrace !== undefined ? 'function' : 'block',
+  }
+}
 /**
  * 取出写入行 payload 的对象文本。
  * upsert(row, ...) 里 row 可能是变量 ⇒ 回溯它的 `const row = {` 声明。
@@ -676,13 +883,16 @@ function judgeCode(code, relPath, schema) {
     const guardUidExprs = new Set()
     const tableFks = payload === null ? null : schema.fks.get(table)
     if (tableFks) {
-      for (const [col, refTable] of tableFks) {
+      for (const [col, ref] of tableFks) {
+        const refTable = ref.table
         const refGuardCols = schema.guardedTables.get(refTable)
         if (!refGuardCols) continue // 父表不是 owner 保护表 ⇒ 无需额外校验
         const fkValue = payloadValue(payload, col)
         if (!fkValue) continue
+        const fkNorm = normExpr(fkValue)
 
-        // ⚠️ 只在**同一函数体内**找前置的归属校验
+        // ⚠️ 只在**同一个块作用域**内找前置的归属校验（花括号配对，不靠猜语法）
+        //    scope.start === -1 ⇒ 写入在顶层，找不到块作用域 ⇒ fail closed
         const scope = enclosingFunctionScope(code, m.index)
         const priorCode = scope.text
         let guarded = false
@@ -699,11 +909,25 @@ function judgeCode(code, relPath, schema) {
             const eqRe = new RegExp(`\\.\\s*eq\\(\\s*['"]${oc}['"]\\s*,\\s*([^)]*)\\)`, 'gi')
             for (const em of qChain.text.matchAll(eqRe)) {
               ownerMatched = true
-              guardUidExprs.add(String(em[1]).trim().replace(/\s+/g, '').toLowerCase())
+              // ★ 请求来源表达式不可信：body.* / req.* / params.* / event.* /
+              //   formData / searchParams / payload.* 的值来自 HTTP 请求，
+              //   本文件里看不到任何约束 ⇒ 不能当作「已证明的 uid」。
+              const gExpr = normExpr(em[1])
+              if (!isRequestSourceExpr(em[1], code)) guardUidExprs.add(gExpr)
             }
           }
-          // 且必须用**同一个外键值**过滤 —— 否则「验的是 A 站、写的是 B 站」拦不住
-          if (ownerMatched && qChain.text.includes(fkValue)) {
+          // ★ 必须用**同一个外键值**过滤 —— 比较 .eq() 的**第二个实参表达式**
+          //   与 payload 外键值（归一化后全等），而不是裸子串包含。
+          //   裸子串会把「写入变量名恰好是链文本的子串」（如 `id` 之于
+          //   `.eq('id', …)`）误判成同一个值 ⇒ 「验 A 站、写 B 站」漏过。
+          const fkEqRe = new RegExp(
+            `\\.\\s*eq\\(\\s*['"]${ref.col}['"]\\s*,\\s*([^)]*)\\)`,
+            'gi',
+          )
+          const fkMatched = [...qChain.text.matchAll(fkEqRe)].some(
+            (em) => normExpr(em[1]) === fkNorm,
+          )
+          if (ownerMatched && fkMatched) {
             guarded = true
             break
           }
@@ -1102,6 +1326,156 @@ if (!owned) throw new Error('STATION_FORBIDDEN')
 await admin.from('station_words').upsert({ station_id: stationId, owner_id: body.owner_id, word_key: kw })`,
     { rule: 'R2', text: 'station_words（owner 列：owner_id）' },
   ],
+  // ---- 跨方法 / 跨函数作用域（QA 第二轮：上一轮的修复换语法糖就会失效）----
+  [
+    '作用域①：校验在 class 的**另一个方法**里，写入在本方法（必须红）',
+    `const { data: userData } = await anon.auth.getUser(token)
+const uid = userData.user.id
+const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'))
+class StationWordsApi {
+  async ensureOwned(stationId) {
+    const { data: owned } = await admin.from('stations').select('id').eq('id', stationId).eq('owner_id', uid).maybeSingle()
+    return owned
+  }
+  async saveWords(stationId, wordKey) {
+    await admin.from('station_words').upsert({ station_id: stationId, owner_id: uid, word_key: wordKey })
+  }
+}`,
+    { rule: 'R2', text: 'station_words.station_id → stations' },
+  ],
+  [
+    '作用域②：校验在对象字面量的另一个方法里（必须红）',
+    `const { data: userData } = await anon.auth.getUser(token)
+const uid = userData.user.id
+const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'))
+const api = {
+  async ensureOwned(stationId) {
+    const { data: owned } = await admin.from('stations').select('id').eq('id', stationId).eq('owner_id', uid).maybeSingle()
+    return owned
+  },
+  async saveWords(stationId, wordKey) {
+    await admin.from('station_words').upsert({ station_id: stationId, owner_id: uid, word_key: wordKey })
+  },
+}`,
+    { rule: 'R2', text: 'station_words.station_id → stations' },
+  ],
+  [
+    '作用域③：写入在匿名 default export function 内，校验在更早的具名函数里（必须红）',
+    `const { data: userData } = await anon.auth.getUser(token)
+const uid = userData.user.id
+const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'))
+export async function ensureStationOwned(stationId) {
+  const { data: owned } = await admin.from('stations').select('id').eq('id', stationId).eq('owner_id', uid).maybeSingle()
+  return owned
+}
+export default async function (req) {
+  await admin.from('station_words').upsert({ station_id: req.body.station_id, owner_id: uid, word_key: req.body.word_key })
+}`,
+    { rule: 'R2', text: 'station_words.station_id → stations' },
+  ],
+  // ---- 「同一个外键值」必须是表达式全等，不能是子串包含（QA 第二轮）----
+  [
+    '同一个外键值③：写入变量名恰是校验链文本的子串（`id` 之于 .eq(\'id\',…)）（必须红）',
+    `const { data: userData } = await anon.auth.getUser(token)
+const uid = userData.user.id
+const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'))
+export async function saveWords(req) {
+  const stationId = req.body.station_id
+  const { data: owned } = await admin.from('stations').select('id').eq('id', stationId).eq('owner_id', uid).maybeSingle()
+  if (!owned) throw new Error('FORBIDDEN')
+  const id = req.body.other_station_id
+  await admin.from('station_words').upsert({ station_id: id, owner_id: uid, word_key: req.body.word_key })
+}`,
+    { rule: 'R2', text: 'station_words.station_id → stations' },
+  ],
+  [
+    '循环变量与被校验变量不同物：循环里逐个写入 req 传来的站点（必须红）',
+    `const { data: userData } = await anon.auth.getUser(token)
+const uid = userData.user.id
+const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'))
+export async function saveWords(req) {
+  const stationId = req.body.station_id
+  const { data: owned } = await admin.from('stations').select('id').eq('id', stationId).eq('owner_id', uid).maybeSingle()
+  if (!owned) throw new Error('FORBIDDEN')
+  for (const id of req.body.targets) {
+    await admin.from('station_words').upsert({ station_id: id, owner_id: uid, word_key: req.body.word_key })
+  }
+}`,
+    { rule: 'R2', text: 'station_words.station_id → stations' },
+  ],
+  // ---- 请求来源表达式不可信（含局部变量中转，QA 的 P1/P3）----
+  [
+    '请求来源①：归属校验里的 owner 值取自 body.*（必须红）',
+    `const { data: userData } = await anon.auth.getUser(token)
+const uid = userData.user.id
+const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'))
+export async function saveWords(body) {
+  const { data: owned } = await admin.from('stations').select('id').eq('id', body.station_id).eq('owner_id', body.owner_id).maybeSingle()
+  if (owned) {
+    await admin.from('station_words').upsert({ station_id: body.station_id, owner_id: body.owner_id, word_key: body.word_key })
+  }
+}`,
+    { rule: 'R2', text: 'station_words（owner 列：owner_id）' },
+  ],
+  [
+    '请求来源②：经局部变量中转的 req 来源（`.eq` 里是普通标识符，看不出来源）（必须红）',
+    `const { data: userData } = await anon.auth.getUser(token)
+const uid = userData.user.id
+const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'))
+export async function saveWords(req) {
+  const ownerId = req.nextUrl.searchParams.get('owner_id')
+  const { data: owned } = await admin.from('stations').select('id').eq('id', sId).eq('owner_id', ownerId).maybeSingle()
+  if (owned) {
+    await admin.from('station_words').upsert({ station_id: sId, owner_id: ownerId, word_key: kw })
+  }
+}`,
+    { rule: 'R2', text: 'station_words（owner 列：owner_id）' },
+  ],
+]
+
+/**
+ * 「已知边界」样本：A2 **不感知控制流**，这些形态当前**判绿**（即：可被绕过）。
+ *
+ * ⚠️ 为什么断言的是「期望绿」而不是「期望红」：
+ *   它们是**真实存在的缺口**，写成期望红 ⇒ 门禁现在就红 ⇒ 无法交付；
+ *   若干脆不写，又回到「自检里一条都没覆盖」的老问题 ——
+ *   将来有人改作用域栈时，无从知道这些形态是否被顺带修掉了。
+ *
+ *   ⇒ 这里断言的是**当前的真实行为**，并在它真被修掉时**主动报错**：
+ *   若哪天这些样本转红，门禁会提示「已知边界已被关闭，请更新此记录并补真正的判据」。
+ *   这把「记录在案」变成**可执行的记录**，而不是注释里的一句话。
+ *   （依据：本门禁的**漏报比误报更危险** —— 假绿会给人虚假的安全感。）
+ */
+const SELFTEST_KNOWN_GAP = [
+  [
+    '控制流①：校验包在调用方可跳过的 if 分支里（A2 不感知控制流 ⇒ 当前判绿）',
+    `const { data: userData } = await anon.auth.getUser(token)
+const uid = userData.user.id
+const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'))
+export async function saveWords(req) {
+  const stationId = req.body.station_id
+  if (req.body.skipCheck) {
+    const { data: owned } = await admin.from('stations').select('id').eq('id', stationId).eq('owner_id', uid).maybeSingle()
+    if (!owned) throw new Error('FORBIDDEN')
+  }
+  await admin.from('station_words').upsert({ station_id: stationId, owner_id: uid, word_key: req.body.word_key })
+}`,
+  ],
+  [
+    '控制流②：校验在 try 内且 catch 吞掉异常（A2 不感知控制流 ⇒ 当前判绿）',
+    `const { data: userData } = await anon.auth.getUser(token)
+const uid = userData.user.id
+const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'))
+export async function saveWords(req) {
+  const stationId = req.body.station_id
+  try {
+    const { data: owned } = await admin.from('stations').select('id').eq('id', stationId).eq('owner_id', uid).maybeSingle()
+  } catch (e) {
+    console.warn('check failed', e)
+  }
+  await admin.from('station_words').upsert({ station_id: stationId, owner_id: uid, word_key: req.body.word_key })
+}`,
+  ],
 ]
 
 const selftestFailures = []
@@ -1194,6 +1568,19 @@ for (const [name, code, expect] of SELFTEST_BAD) {
   }
 }
 
+// 已知边界自检：断言「这些形态当前确实判绿」（= 确实仍可被绕过）。
+// 若哪天它们转红 ⇒ 说明控制流感知被顺带实现了 ⇒ 必须更新记录并补真正的判据，
+// 否则这条断言会一直按旧预期报错、变成噪音。
+for (const [name, code] of SELFTEST_KNOWN_GAP) {
+  const found = judgeCode(code, '__known_gap__', schema)
+  if (found.length > 0) {
+    selftestFailures.push(
+      `已知边界「${name}」已不再被判绿（命中 ${found.map((f) => `${f.rule}@${f.text}`).join(', ')}）` +
+        `—— 控制流感知可能已被实现，请更新 SELFTEST_KNOWN_GAP 记录并补真正的判据，别让这条断言变成噪音`,
+    )
+  }
+}
+
 if (selftestFailures.length > 0) {
   console.error('[test:rls] ✗ 门禁自检失败（规则本身不可信）\n')
   selftestFailures.forEach((f) => console.error(`  ✗ ${f}`))
@@ -1221,6 +1608,9 @@ if (realViolations.length === 0) {
   console.log(`  身份推导型 RPC（禁 service_role 直调）：${rpcList.join(', ')}`)
   console.log(
     `  门禁自检：${SELFTEST_GOOD.length} 个正样本通过、${SELFTEST_BAD.length} 个反样本被拦`,
+  )
+  console.log(
+    `  已知边界（A2 不感知控制流，当前仍可绕过）：${SELFTEST_KNOWN_GAP.length} 条已固化为可执行断言`,
   )
   console.log('  R1 读一律放行 ✓   R2 写入须归属校验 ✓   R3 身份型 RPC 禁 service_role 直调 ✓')
   process.exit(0)
