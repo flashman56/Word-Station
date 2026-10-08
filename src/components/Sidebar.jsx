@@ -46,6 +46,8 @@ export default function Sidebar({
   privateWordsOpen = false,
   onTogglePrivateWords,
   privateWordsPanel = null,
+  mobileOpen = false,
+  onCloseMobile,
 }) {
   const patch = (p) => setFilters((f) => ({ ...f, ...p }))
 
@@ -56,7 +58,21 @@ export default function Sidebar({
     })
 
   return (
-    <aside className="w-72 shrink-0 h-full overflow-y-auto bg-white border-r border-slate-200 p-4 text-slate-700">
+    <aside
+      className={[
+        'w-72 shrink-0 h-full overflow-y-auto bg-white border-r border-slate-200 p-4 text-slate-700',
+        'fixed md:relative top-0 left-0 h-screen md:h-full transition-transform duration-200 ease-out z-40',
+        mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
+      ].join(' ')}
+    >
+      <button
+        type="button"
+        onClick={onCloseMobile}
+        className="md:hidden absolute top-2 right-2 p-1 text-slate-400 hover:text-slate-600"
+        aria-label="关闭筛选"
+      >
+        ✕
+      </button>
       <div className="mb-4">
         <h1 className="text-base font-bold text-slate-800">词根词缀单词云</h1>
         <p className="text-xs text-slate-400 mt-0.5">词素为干，单词为叶</p>

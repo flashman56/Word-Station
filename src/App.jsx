@@ -115,7 +115,7 @@ export default function App() {
  * @param {object} [learn] useLearnCloud() 的返回值；词库未加载完时还没有它，
  *   此时徽标退化为只看 sync（仍可用，只少一态）。
  */
-function TopBar({ auth, stations, sync, view, setView, stats, sessionMode, learn = null, onBeforeSignOut = null, pending = 0, stuck = 0, manualInherited = 0 }) {
+function TopBar({ auth, stations, sync, view, setView, stats, sessionMode, learn = null, onBeforeSignOut = null, pending = 0, stuck = 0, manualInherited = 0, onMenuToggle }) {
   const tabs = [
     ['station', '小站'],
     ['learn', sessionMode !== 'none' ? '学习 · 进行中' : '学习'],
@@ -126,19 +126,33 @@ function TopBar({ auth, stations, sync, view, setView, stats, sessionMode, learn
   return (
     <>
       <div className="flex items-center gap-2 px-4 h-12 shrink-0 bg-white border-b border-slate-200">
-        <span className="text-sm font-semibold text-slate-700 mr-2">词根词缀单词云</span>
-        {tabs.map(([key, label]) => (
-          <button
-            key={key}
-            onClick={() => setView && setView(key)}
-            className={`px-3 py-1 rounded-md text-sm ${
-              view === key ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-100'
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-        <div className="ml-auto flex items-center gap-2">
+        <button
+          type="button"
+          onClick={onMenuToggle}
+          className="md:hidden -ml-1 p-1 rounded-md text-slate-600 hover:bg-slate-100"
+          aria-label="打开筛选"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="4" y1="6" x2="20" y2="6" />
+            <line x1="4" y1="12" x2="20" y2="12" />
+            <line x1="4" y1="18" x2="20" y2="18" />
+          </svg>
+        </button>
+        <span className="hidden sm:inline text-sm font-semibold text-slate-700 mr-2">词根词缀单词云</span>
+        <div className="flex-1 min-w-0 flex items-center gap-2 overflow-x-auto">
+          {tabs.map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => setView && setView(key)}
+              className={`shrink-0 px-3 py-1 rounded-md text-sm ${
+                view === key ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <div className="ml-auto flex items-center gap-2 shrink-0">
           {/* 口径与左栏「可见单词」一致（都按 word.id 去重）；保持纯文本 div 便于回归测试断言 */}
           {stats && (
             <div className="text-xs text-slate-400">
@@ -203,6 +217,7 @@ function AppShell({ words, auth, stations, sync }) {
   const [selectedIds, setSelectedIds] = useState(() => new Set())
   // T04：「我的私有词」侧栏面板的展开态（不开新页签 —— 理由见 Sidebar 注释）
   const [privateWordsOpen, setPrivateWordsOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   // 登录状态变化时把用户带到「小站」页签（首次进入未登录则留学习页）
   useEffect(() => {
@@ -479,6 +494,12 @@ function AppShell({ words, auth, stations, sync }) {
 
   return (
     <>
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/30 z-30 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
       <Sidebar
         filters={filters}
         setFilters={setFilters}
@@ -497,6 +518,8 @@ function AppShell({ words, auth, stations, sync }) {
         privateWordCount={userWords.words.length}
         privateWordsOpen={privateWordsOpen}
         onTogglePrivateWords={() => setPrivateWordsOpen((v) => !v)}
+        mobileOpen={sidebarOpen}
+        onCloseMobile={() => setSidebarOpen(false)}
         privateWordsPanel={
           <PrivateWordsPanel
             userWords={userWords.words}
@@ -529,6 +552,7 @@ function AppShell({ words, auth, stations, sync }) {
           pending={learn.pending}
           stuck={learn.stuck}
           manualInherited={learn.migrationReport?.migratedManual || 0}
+          onMenuToggle={() => setSidebarOpen(true)}
         />
 
         {view === 'focus' && (
