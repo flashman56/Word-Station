@@ -521,73 +521,200 @@ function collectUidExpressions(code) {
 
 /** 判断一个表达式文本是否就是「已鉴权的 uid」 */
 function isUidExpression(expr, uidExprs) {
-  const norm = normExpr(expr)
+  const norm = normExpr(expr).toLowerCase()
   return norm.length > 0 && uidExprs.has(norm)
 }
 
 /**
- * 表达式归一化：去空白、去尾分号、转小写。
+ * 表达式归一化：去空白、去尾分号 / 尾逗号。
  * 「同一个值」的比较必须基于它 —— 裸子串包含会把 `id` 之于 `.eq('id', …)`
  * 这类「恰好是子串」的情况误判成同一个值（QA 构造的绕过形态）。
+ *
+ * ⚠️ **不做 toLowerCase**（QA E 组实测出的缺陷）：取值表达式的大小写本身是区分度，
+ *    一律转小写会让 `StationId` 与 `stationId` 被当成同一个值。
+ *    大小写归一只用于**已知是名字**的东西（列名 / 标识符）—— 那是 normName 的职责。
+ *
+ * ⚠️ 尾逗号必须剥掉（QA E13）：`.eq(` 与实参跨行时，捕获到的实参文本是
+ *    `'id', stationId,\n` 这种带尾逗号的形式，不剥就永远比不上 payload 里的值。
  */
 function normExpr(expr) {
   return String(expr ?? '')
     .trim()
     .replace(/\s+/g, '')
-    .replace(/;$/, '')
+    .replace(/[;,]+$/, '')
+}
+
+/**
+ * 名字归一化（**只用于列名 / 标识符**这种已知是名字的东西）：
+ * 剥掉引号与反引号、去空白、转小写。
+ *
+ * 为什么要单独一个函数：写法上 `.eq('owner_id', uid)` / `.eq(\`owner_id\`, uid)` /
+ * `.eq('OWNER_ID', uid)` 是同一件事（QA E8 / E9），而取值表达式不能这么归一。
+ */
+function normName(name) {
+  return String(name ?? '')
+    .trim()
+    .replace(/^['"`]+|['"`]+$/g, '')
+    .replace(/\s+/g, '')
     .toLowerCase()
 }
 
 /**
- * 判断一个表达式是否为**请求来源**（值由 HTTP 请求带入，本文件内看不到约束）。
+ * 「由调用方提供」语义的**根标识**拒绝名单。
  *
- * 🔴 这条判据的作用（QA 提出，推翻了我「静态推断关不掉」的结论 —— 它是对的）：
- *   归属校验里 `.eq('owner_id', X)` 的 X 若来自 body.* / req.* / params.* …，
- *   那它证明的不是「这是当前用户的 uid」，而是「调用方说这是某个 uid」。
- *   payload 的 owner 列若写同一个表达式，A1② 就会给它开门 ⇒ 越权。
+ * 🔴 判据方向是**否决式**的（QA E 组把旧判据打穿后的重构结论）：
+ *   旧实现用 `^(?:body|req|…)\b` 这种**前缀正则**去「证明像请求数据」：
+ *     - `ctx.body.ownerId` 不以 body 开头 ⇒ 漏（E2）
+ *     - `req2.body.ownerId` 的 `req2` 不满足词边界 ⇒ 漏（E5）
+ *     - 解构 / 局部变量中转出来的裸标识符根本不长那样 ⇒ 漏（E6 / E7）
+ *   ⇒ 反过来做：不试图证明来源，只做**「像请求数据就判红」的否决**。
  *
- *   为什么不必强求「X 可溯源到 auth.getUser」（我原先的过重断言）：
- *   **函数形参名既不是 body.* 也不是 req.*，不是请求来源** ——
- *   所以这条判据对「uid 由入参传入」这类**合法**写法恒不触发。
- *   ⇒ 排除请求来源即可，不必强求全文件溯源。
+ *   判据是**成员表达式的根标识**（`ctx.body.ownerId` 的根是 `ctx`），
+ *   并且允许数字后缀（`req2` ⇒ `req`）。命中即红。
  *
- * @param {string} exprNorm 已归一化的表达式
+ * ⚠️ 这条**只用来否决豁免，绝不用来发放豁免**：
+ *    命中 ⇒ 该值不能算「已证明的 uid」（不进 guardUidExprs）；
+ *    不命中 ⇒ 什么也不发生（不会因此放行写入）。
  */
-function isRequestSource(exprNorm) {
-  const e = String(exprNorm ?? '')
-  // 形如 body.x / req.body.x / params.x / event.x / payload.x / searchParams.get(...)
-  if (/^(?:body|req|request|params|event|payload|query|form)\b/.test(e)) return true
-  // 裸标识符本身叫这些名字（body / req / params …）
-  if (/^(?:body|req|request|params|event|payload|query|form)$/.test(e)) return true
-  if (/^(?:formdata|searchparams|urlsearchparams)$/.test(e)) return true
-  if (/^(?:formdata|searchparams)\./.test(e)) return true
-  return false
+const REQUEST_ROOTS = new Set([
+  'body', 'req', 'request', 'res', 'response',
+  'ctx', 'context', 'event', 'evt',
+  'params', 'param', 'query', 'searchparams', 'urlsearchparams', 'nexturl',
+  'form', 'formdata', 'headers', 'header', 'cookies', 'cookie',
+  'json', 'raw', 'payload', 'input', 'data',
+])
+
+/** 从 openIdx（指向 '('）向后匹配出 ')' 的下标；-1 = 找不到 */
+function matchParenForward(text, openIdx) {
+  let depth = 0
+  for (let j = openIdx; j < text.length; j += 1) {
+    const c = text[j]
+    if (c === "'" || c === '"' || c === '`') {
+      const q = c
+      j += 1
+      while (j < text.length && text[j] !== q) {
+        if (text[j] === '\\') j += 1
+        j += 1
+      }
+      continue
+    }
+    if (c === '(') depth += 1
+    else if (c === ')') {
+      depth -= 1
+      if (depth === 0) return j
+    }
+  }
+  return -1
+}
+
+/** 剥掉表达式外层的多余括号：`(uid)` ⇒ `uid` */
+function stripOuterParens(text) {
+  let s = String(text ?? '').trim()
+  while (s.startsWith('(')) {
+    const close = matchParenForward(s, 0)
+    if (close !== s.length - 1) break
+    s = s.slice(1, -1).trim()
+  }
+  return s
 }
 
 /**
- * 同上，但**追一层本地绑定**。
+ * 取表达式的**根标识**：`ctx.body.ownerId` ⇒ `ctx`；`req2` ⇒ `req`。
+ * @returns {string|null} 取不到（如以 `[` / 数字开头）返回 null
+ */
+function exprRoot(expr) {
+  let s = String(expr ?? '').trim()
+  s = s.replace(/^await\s+/, '')
+  s = stripOuterParens(s)
+  const m = s.match(/^([A-Za-z_$][\w$]*)/)
+  if (!m) return null
+  // 数字后缀剥离：`req2` ⇒ `req`、`body2` ⇒ `body`
+  return m[1].replace(/\d+$/, '').toLowerCase()
+}
+
+/**
+ * 收集文件内所有「局部绑定名 → 右值表达式列表」。
  *
- * 🔴 QA 的 P3 样本揭示的漏洞：owner 值不是直接写成 `body.owner_id`，
- *   而是先存进局部变量再用：
- *     const ownerId = req.nextUrl.searchParams.get('owner_id')
- *     … .eq('owner_id', ownerId)
- *   此时 `.eq()` 的第二个实参是 `ownerId` —— 一个看不出来源的普通标识符。
- *   只做「表达式长得像不像请求来源」会被这层间接引用绕过。
+ * 覆盖的形态（QA E6 / E7 点名的两类 + 既有形态）：
+ *   const ownerId = ctx.body.ownerId          // 普通声明
+ *   const { owner_id: ownerId } = ctx         // 对象解构（含重命名）
+ *   const [ownerId] = ctx.list                // 数组解构
+ *   ownerId = ctx.body.ownerId                // 裸赋值
+ *
+ * @param {string} code 文件全文
+ * @returns {Map<string, string[]>}
+ */
+function collectBindings(code) {
+  /** @type {Map<string, string[]>} */
+  const map = new Map()
+  const add = (rawName, rhs) => {
+    // 解构项可能带默认值：`const { a = 1 } = x`
+    const name = String(rawName ?? '').trim().split(/\s*=\s*/)[0].trim()
+    if (!/^[A-Za-z_$][\w$]*$/.test(name)) return
+    const value = String(rhs ?? '').trim()
+    if (!value) return
+    if (!map.has(name)) map.set(name, [])
+    map.get(name).push(value)
+  }
+
+  // 对象解构：`const { owner_id: ownerId, other } = ctx`
+  for (const m of code.matchAll(
+    /(?:const|let|var)\s*\{([^}]*)\}\s*(?::[^=;\n]*)?=\s*([^;\n]+)/g,
+  )) {
+    for (const part of splitTopLevel(m[1])) {
+      const p = String(part).trim()
+      if (!p) continue
+      add(p.includes(':') ? p.slice(p.lastIndexOf(':') + 1) : p, m[2])
+    }
+  }
+  // 数组解构：`const [ownerId] = ctx.list`
+  for (const m of code.matchAll(
+    /(?:const|let|var)\s*\[([^\]]*)\]\s*(?::[^=;\n]*)?=\s*([^;\n]+)/g,
+  )) {
+    for (const part of splitTopLevel(m[1])) add(part, m[2])
+  }
+  // 普通声明（容忍 TS 类型标注 `const a: string = b`）
+  for (const m of code.matchAll(
+    /(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*(?::[^=;\n]*)?=\s*([^;\n]+)/g,
+  )) {
+    add(m[1], m[2])
+  }
+  // 裸赋值（`==` / `!==` 不会命中：`=` 之后不允许再是 `=`）
+  for (const m of code.matchAll(
+    /(?:^|[;{}\n])\s*([A-Za-z_$][\w$]*)\s*=\s*([^;=\n]+)/g,
+  )) {
+    add(m[1], m[2])
+  }
+  return map
+}
+
+/**
+ * 判定一个取值表达式是否**由请求带入**（⇒ 不可信，只能否决豁免）。
+ *
+ * 两条路径：
+ *   ① 成员表达式的**根标识**命中拒绝名单（`ctx.body.ownerId` ⇒ `ctx`）；
+ *   ② 沿**局部绑定**做传递（至少 2 跳）：解构 `const { a: b } = X`、
+ *      `const b = X.y`、`let b = await X.json()`，只要右值根标识命中，左值也算。
+ *
+ * ⚠️ 函数**形参名**不在任何绑定里，因此恒不触发 ——
+ *    这正是「uid 由入参传入」这类**合法**写法不被误伤的原因（QA 的 F1 形态）。
  *
  * @param {string} expr 表达式原文（未归一）
- * @param {string} code 文件全文（用于回溯局部绑定）
+ * @param {Map<string, string[]>} bindings collectBindings 的结果
  */
-function isRequestSourceExpr(expr, code, depth = 0) {
-  const norm = normExpr(expr)
-  if (!norm || depth > 3) return false
-  if (isRequestSource(norm)) return true
-  if (/^[a-z_$][\w$]*$/.test(norm)) {
-    const bindRe = new RegExp(
-      `(?:const|let|var)\\s+${norm}\\s*=\\s*([^;\\n]+)`,
-      'gi',
-    )
-    for (const b of code.matchAll(bindRe)) {
-      if (isRequestSourceExpr(b[1], code, depth + 1)) return true
+function isRequestDerived(expr, bindings, depth = 0) {
+  const raw = String(expr ?? '').trim()
+  if (!raw || depth > 3) return false
+  const s = stripOuterParens(raw.replace(/^await\s+/, ''))
+  const root = exprRoot(s)
+  if (root !== null && REQUEST_ROOTS.has(root)) return true
+  const bare = s.match(/^([A-Za-z_$][\w$]*)$/)
+  if (bare) {
+    const rhsList = bindings.get(bare[1])
+    if (rhsList) {
+      for (const rhs of rhsList) {
+        if (isRequestDerived(rhs, bindings, depth + 1)) return true
+      }
     }
   }
   return false
@@ -595,148 +722,364 @@ function isRequestSourceExpr(expr, code, depth = 0) {
 
 // ---------------------------------------------------------------- 写入行对象
 
+// ---------------------------------------------------------------- 作用域：词法扫描 + 花括号树
+//
+// 🔴 为什么彻底删掉「反向文本扫描」（QA 连续三轮的结论）：
+//    反向扫描遇 `{` 就记一个候选，既不验证这个 `{` **真的包住写入点**，也认不出
+//    class 方法 / 计算属性名方法 / 对象方法这些函数体形态；而它的 `depth` 参数是死代码。
+//    后果（QA 实测全绿 = 全漏）：
+//      S4 嵌套 class、S7 分支块里再嵌 function、X1 顶层写入 + 校验在未调用函数里、
+//      X2/X3 顶层 if/try 块内写入、X4 计算属性名方法里写入。
+//    更根本的是：它读不懂字符串与注释 —— **一条 `// }` 注释就能重新捅出洞**，
+//    这正是「每修一个洞长出新的洞」的机制本身。
+//
+// ⇒ 改为：先做一次**词法扫描**（跳过行注释 / 块注释 / 字符串 / 模板 `${}` / 正则字面量），
+//   一次性建出**花括号树**；之后所有作用域问题都在树上做**查询**，不再反向猜。
+
+/** 控制流关键字：其后的 `{` 是语句块，不是函数体 */
+const CONTROL_KEYWORDS = new Set(['if', 'for', 'while', 'switch', 'catch', 'with'])
+/** 其它非函数体的块头关键字（class 体本身不是函数体，它里面的**方法**才是） */
+const BLOCK_KEYWORDS = new Set(['try', 'else', 'do', 'finally', 'class'])
+/** 这些关键字之后的 `/` 是正则字面量开头，而不是除法 */
+const REGEX_AFTER_KEYWORDS = new Set([
+  'return', 'typeof', 'instanceof', 'in', 'of', 'new', 'delete', 'void',
+  'case', 'yield', 'await', 'throw',
+])
+
 /**
- * 取「包含 idx 的那个**最内层块作用域**」的代码切片 ——
- * A2 归属校验必须与写入在**同一块**内。
- *
- * 🔴 为什么要按花括号配对，而不是按「函数起点正则」（QA 连续两轮证明）：
- *   上一轮我用正则找函数起点（function 具名 / => {），QA 指出它**只认两种语法**：
- *   class 方法、对象字面量方法、匿名 function 都不算边界 ⇒ marks 为空 ⇒
- *   fallback 退回「看整个文件」⇒ **上一轮的漏洞换一种语法糖就回来了**。
- *   唯一能挡住它的，是把 fallback 删掉 —— 而删掉之后必须fail closed，
- *   否则顶层写入会全部误报。
- *
- *   ⇒ 结论：**作用域边界必须靠花括号配对，不能靠猜语法**。
- *   本实现从 idx 往回扫，找到**最近的、未闭合的 `{`**（用配对而非正则），
- *   从那里切片。这样：
- *     class 方法 / 对象方法 / 匿名 function / 箭头函数 —— 一视同仁地被切开；
- *     顶层代码 ⇒ 找不到未闭合 `{` ⇒ fail closed（start = -1 表示「无作用域」）。
- *
- * @returns {{start: number, text: string}} start = -1 表示找不到块作用域（顶层）
+ * `/` 能不能作为正则字面量的开头。
+ * 判据是「上一个有意义字符」：标识符 / `)` / `]` / `}` 之后只可能是除法
+ * （除非那个标识符是 return / typeof 这类关键字）。
  */
-function enclosingFunctionScope(code, idx) {
-  /** 从 from 处向前跳过空白与注释，返回下一个有意义的字符的下标（找不到返回 -1） */
-  const skipBack = (from) => {
-    let i = from
-    while (i >= 0) {
-      const c = code[i]
-      if (/\s/.test(c)) { i -= 1; continue }
-      if (c === '/' && code[i - 1] === '*') {
-        const open = code.lastIndexOf('/*', i - 1)
-        if (open < 0) return -1
-        i = open - 1
-        continue
-      }
-      if (c === '/' && code[i - 1] === '/') {
-        const n = code.lastIndexOf('\n', i - 1)
-        if (n < 0) return -1
-        i = n - 1
-        continue
-      }
-      return i
+function canRegexStart(prevSig, prevWord) {
+  if (prevSig === '') return true
+  if (/[\w$]/.test(prevSig)) return REGEX_AFTER_KEYWORDS.has(String(prevWord).toLowerCase())
+  if (prevSig === ')' || prevSig === ']' || prevSig === '}') return false
+  return true
+}
+
+/** 从 from 向前找最近的非空白、且不在注释/字符串/正则内的字符下标 */
+function prevSignificant(code, from, skip) {
+  let i = Math.min(from, code.length - 1)
+  while (i >= 0) {
+    if (skip[i] || /\s/.test(code[i])) {
+      i -= 1
+      continue
+    }
+    return i
+  }
+  return -1
+}
+
+/** 读「以 p 结尾」的标识符（p 指向标识符的最后一个字符） */
+function wordEndingAt(code, p) {
+  if (p < 0) return ''
+  let b = p
+  while (b >= 0 && /[\w$]/.test(code[b])) b -= 1
+  return code.slice(b + 1, p + 1)
+}
+
+/** 从 closeIdx（指向 ')'）向前匹配出 '(' 的下标；-1 = 找不到 */
+function matchParenBack(code, closeIdx, skip) {
+  let depth = 0
+  for (let j = closeIdx; j >= 0; j -= 1) {
+    if (skip[j]) continue
+    const c = code[j]
+    if (c === ')') depth += 1
+    else if (c === '(') {
+      depth -= 1
+      if (depth === 0) return j
+    }
+  }
+  return -1
+}
+
+/**
+ * 判定一个 `{` 是不是**函数体**的开括号。
+ *
+ * 必须认出的形态（QA 逐条点名过）：
+ *   function 名() {}      function () {}        => {}（箭头体）
+ *   class / object 的方法头（含 static、async、get/set、**计算属性名 [M]()**）
+ * 必须排除的形态：if / for / while / switch / catch / with / try / else / do /
+ *   finally / class 体 / 对象字面量 / 裸块。
+ */
+function classifyBrace(code, braceIdx, skip) {
+  const p = prevSignificant(code, braceIdx - 1, skip)
+  if (p < 0) return 'block'
+  const ch = code[p]
+  if (ch === '>') {
+    // 箭头体 `=> {`；`>=` / `!=>` 之类不算
+    const before = code[p - 1]
+    const beforeThat = p - 2 >= 0 ? code[p - 2] : ''
+    if (before === '=' && !/[\w$=<>!]/.test(beforeThat)) return 'function'
+    return 'block'
+  }
+  if (ch === ')') {
+    const open = matchParenBack(code, p, skip)
+    if (open < 0) return 'block'
+    const word = wordEndingAt(code, prevSignificant(code, open - 1, skip)).toLowerCase()
+    if (CONTROL_KEYWORDS.has(word) || BLOCK_KEYWORDS.has(word)) return 'block'
+    // function f() / 方法名() / constructor() / [M]() —— 一律是函数体
+    return 'function'
+  }
+  return 'block'
+}
+
+/**
+ * 词法扫描 + 建花括号树（**一次扫描，之后全部在树上查询**）。
+ *
+ * @returns {{nodes: Array<{start:number,end:number,kind:'function'|'block',parent:number,children:number[],hasFn:boolean}>, skip: Uint8Array}}
+ *   `skip[i] === 1` ⇒ 第 i 个字符在注释 / 字符串 / 模板正文 / 正则内部，
+ *   做「找前一个有意义字符」时必须跳过 —— 这正是「一条 `// }` 注释捅出洞」的解药。
+ */
+function buildBraceTree(code) {
+  const n = code.length
+  const skip = new Uint8Array(n)
+  /** @type {Array<{start:number,end:number,kind:string,parent:number,children:number[],hasFn:boolean}>} */
+  const nodes = []
+  /** @type {Array<{t:string,i?:number}>} 'brace' | 'tmpl' | 'tmplExpr' */
+  const stack = []
+  let i = 0
+  let prevSig = ''
+  let prevWord = ''
+
+  const mark = (from, to) => {
+    for (let k = from; k < to && k < n; k += 1) skip[k] = 1
+  }
+  /** 栈顶最近的**花括号**节点下标（跳过模板层） */
+  const braceParent = () => {
+    for (let k = stack.length - 1; k >= 0; k -= 1) {
+      if (stack[k].t === 'brace') return stack[k].i
     }
     return -1
   }
 
-  /** 该 '{' 是否是**函数体**的开括号（而不是 if/for/try/普通块） */
-  const isFunctionBodyBrace = (braceIdx) => {
-    const prev = skipBack(braceIdx - 1)
-    if (prev < 0) return false
-    // 箭头函数：=> {
-    if (code[prev] === '>') {
-      const arrow = skipBack(prev - 1)
-      if (arrow >= 0 && code[arrow] === '=') return true
-      return false
-    }
-    // 参数表后：function f(...) { / 方法名(...) { / class 的 constructor(...) {
-    if (code[prev] === ')') {
-      let depth = 0
-      let j = prev
-      for (; j >= 0; j -= 1) {
-        const c = code[j]
-        if (c === ')') depth += 1
-        else if (c === '(') { depth -= 1; if (depth === 0) break }
-        else if (c === "'" || c === '"' || c === '`') {
-          const q = c
-          j -= 1
-          while (j >= 0 && code[j] !== q) {
-            if (code[j] === '\\') j -= 1
-            j -= 1
-          }
-        }
-      }
-      if (j < 0) return false
-      const kw = skipBack(j - 1)
-      if (kw < 0) return false
-      let e = kw + 1
-      let b = kw
-      while (b >= 0 && /[\w$]/.test(code[b])) b -= 1
-      const word = code.slice(b + 1, e).toLowerCase()
-      if (!word) return false
-      // 控制流关键字 ⇒ 不是函数体
-      if (['if', 'for', 'while', 'switch', 'catch', 'with'].includes(word)) return false
-      return true
-    }
-    // try { / else { / do { / finally {
-    let e = prev + 1
-    let b = prev
-    while (b >= 0 && /[\w$]/.test(code[b])) b -= 1
-    const word = code.slice(b + 1, e).toLowerCase()
-    if (['try', 'else', 'do', 'finally'].includes(word)) return false
-    return false
-  }
+  while (i < n) {
+    const top = stack.length > 0 ? stack[stack.length - 1] : null
 
-  // 从 idx 往回做花括号配对，逐层向外找出**最内层的函数体**
-  let depth = 0
-  const braces = []
-  for (let i = idx - 1; i >= 0; i -= 1) {
+    // ---- 模板字符串正文：只有 `\`、收尾反引号与 `${` 有意义
+    if (top !== null && top.t === 'tmpl') {
+      const c = code[i]
+      if (c === '\\') {
+        mark(i, i + 2)
+        i += 2
+        continue
+      }
+      if (c === '`') {
+        mark(i, i + 1)
+        stack.pop()
+        i += 1
+        prevSig = '`'
+        prevWord = ''
+        continue
+      }
+      if (c === '$' && code[i + 1] === '{') {
+        mark(i, i + 2)
+        stack.push({ t: 'tmplExpr' })
+        i += 2
+        prevSig = '{'
+        prevWord = ''
+        continue
+      }
+      skip[i] = 1
+      i += 1
+      continue
+    }
+
     const c = code[i]
-    if (c === "'" || c === '"' || c === '`') {
-      const quote = c
-      i -= 1
-      while (i >= 0 && code[i] !== quote) {
-        if (code[i] === '\\') i -= 1
-        i -= 1
+    if (c === ' ' || c === '\t' || c === '\n' || c === '\r' || c === '\f' || c === '\v') {
+      i += 1
+      continue
+    }
+    if (c === '/' && code[i + 1] === '/') {
+      const nl = code.indexOf('\n', i)
+      const end = nl < 0 ? n : nl
+      mark(i, end)
+      i = end
+      continue
+    }
+    if (c === '/' && code[i + 1] === '*') {
+      const close = code.indexOf('*/', i + 2)
+      const end = close < 0 ? n : close + 2
+      mark(i, end)
+      i = end
+      continue
+    }
+    if (c === '/' && canRegexStart(prevSig, prevWord)) {
+      let j = i + 1
+      let inClass = false
+      while (j < n) {
+        const ch = code[j]
+        if (ch === '\\') {
+          j += 2
+          continue
+        }
+        if (ch === '[') {
+          inClass = true
+          j += 1
+          continue
+        }
+        if (ch === ']') {
+          inClass = false
+          j += 1
+          continue
+        }
+        if ((ch === '/' && !inClass) || ch === '\n') break
+        j += 1
       }
+      const stop = Math.min(j + 1, n)
+      mark(i, stop)
+      i = stop
+      prevSig = '/'
+      prevWord = ''
       continue
     }
-    if (c === '/' && code[i - 1] === '*') {
-      const open = code.lastIndexOf('/*', i - 1)
-      if (open < 0) break
-      i = open - 1
+    if (c === "'" || c === '"') {
+      const q = c
+      let j = i + 1
+      while (j < n && code[j] !== q) {
+        if (code[j] === '\\') j += 1
+        j += 1
+      }
+      mark(i, Math.min(j + 1, n))
+      i = Math.min(j + 1, n)
+      prevSig = q
+      prevWord = ''
       continue
     }
-    if (c === '/' && code[i - 1] === '/') {
-      const n = code.lastIndexOf('\n', i - 1)
-      if (n < 0) break
-      i = n - 1
+    if (c === '`') {
+      mark(i, i + 1)
+      stack.push({ t: 'tmpl' })
+      i += 1
+      prevSig = '`'
+      prevWord = ''
       continue
     }
-    // ⚠️ 反向扫描时 depth 的语义是「**已找到的、包含 idx 的块**的个数」，只会单调增加：
-//   遇`{` ⇒ 进入一个包含 idx 的块 ⇒ depth += 1 并记录（**总是**记录）；
-//   遇 `}` ⇒ 说明我们刚退出了某个块 ⇒ depth -= 1。
-// 我第一版把这两个写反了（`}` 时+1、`{` 时判depth===0 才记），
-// 结果只收集到最内层那个块、且层数在 0/1 之间来回跳 ⇒
-// 外层函数体永远进不了候选 ⇒ index.ts 的合法写法被误报。
-if (c === '}') depth -= 1
-    else if (c === '{') {
-      depth += 1
-      braces.push(i)
+    if (c === '{') {
+      const parent = braceParent()
+      nodes.push({
+        start: i, end: n, kind: 'block', parent, children: [], hasFn: false,
+      })
+      const idx = nodes.length - 1
+      if (parent >= 0) nodes[parent].children.push(idx)
+      stack.push({ t: 'brace', i: idx })
+      i += 1
+      prevSig = '{'
+      prevWord = ''
+      continue
     }
+    if (c === '}') {
+      if (top !== null && top.t === 'tmplExpr') {
+        stack.pop()
+        i += 1
+        prevSig = '}'
+        prevWord = ''
+        continue
+      }
+      if (top !== null && top.t === 'brace') {
+        nodes[top.i].end = i
+        stack.pop()
+        i += 1
+        prevSig = '}'
+        prevWord = ''
+        continue
+      }
+      i += 1
+      continue
+    }
+    if (/[A-Za-z_$]/.test(c)) {
+      let j = i
+      while (j < n && /[\w$]/.test(code[j])) j += 1
+      prevWord = code.slice(i, j)
+      i = j
+      prevSig = prevWord[prevWord.length - 1]
+      continue
+    }
+    prevSig = c
+    prevWord = ''
+    i += 1
   }
 
-  // 最内层的函数体优先；找不到函数体则退回最内层普通块；
-  // 连块都没有 ⇒ 模块顶层（语句按序执行，顺序即保证）。
-  const fnBrace = braces.find((b) => isFunctionBodyBrace(b))
-  const chosen = fnBrace !== undefined ? fnBrace : braces[0]
-  if (chosen === undefined) {
-    return { start: 0, text: code.slice(0, idx), kind: 'top' }
+  for (const nd of nodes) nd.kind = classifyBrace(code, nd.start, skip)
+  // hasFn：子树里是否存在函数体（自底向上累积，子节点下标一定大于父节点）
+  for (let k = nodes.length - 1; k >= 0; k -= 1) {
+    if (nodes[k].kind === 'function') nodes[k].hasFn = true
+    if (nodes[k].hasFn && nodes[k].parent >= 0) nodes[nodes[k].parent].hasFn = true
   }
-  return {
-    start: chosen + 1,
-    text: code.slice(chosen + 1, idx),
-    kind: fnBrace !== undefined ? 'function' : 'block',
+  return { nodes, skip }
+}
+
+/** 包含 idx 的**最内层**节点（null = 模块顶层，不在任何 `{}` 里） */
+function innermostNode(tree, idx) {
+  let best = null
+  for (const nd of tree.nodes) {
+    if (nd.start < idx && idx < nd.end) {
+      if (best === null || nd.start > best.start) best = nd
+    }
   }
+  return best
+}
+
+/** 包含 idx 的**最内层函数体**节点（null = 不在任何函数体内） */
+function nearestFnBody(tree, idx) {
+  let best = null
+  for (const nd of tree.nodes) {
+    if (nd.kind === 'function' && nd.start < idx && idx < nd.end) {
+      if (best === null || nd.start > best.start) best = nd
+    }
+  }
+  return best
+}
+
+/** a 是否为 b 的（严格）祖先节点 */
+function isAncestorNode(tree, a, b) {
+  if (a === null || b === null) return false
+  let cur = b
+  while (cur.parent >= 0) {
+    cur = tree.nodes[cur.parent]
+    if (cur === a) return true
+  }
+  return false
+}
+
+/**
+ * 判定「位于 gIdx 的那次归属校验」能不能为「位于 wIdx 的那次写入」提供担保。
+ *
+ * 四条（全部在花括号树上做查询，不再反向扫文本）：
+ *   ① **同一个函数体**：写入点的最内层函数体祖先，必须也是校验点的那个。
+ *      ⇒ 跨函数 / 跨方法 / 跨 IIFE / 校验在未调用函数里，一律不担保（S4/S5/S6/X1–X4）。
+ *   ② **校验在写入之前**（同一函数体内文本更靠前）。
+ *   ③ 校验所在的最内层块，必须是写入所在块的**祖先或自身**
+ *      ⇒ index.ts「校验在 if (stationId) 里、写入在它的 else 分支里」成立，
+ *        而「校验在兄弟分支里」不成立。
+ *   ④ ③不成立时（兄弟块）：若该兄弟块内部还嵌套了函数体（S7 形态），
+ *      说明它是一段**独立逻辑单元**，本门禁无法用文本判据确认它与写入点的关系
+ *      ⇒ **fail closed 判红**；否则按已知边界放行（见 SELFTEST_KNOWN_GAP）。
+ *
+ * @param {ReturnType<typeof buildBraceTree>} tree
+ */
+function guardCovers(tree, gIdx, wIdx) {
+  if (!(gIdx < wIdx)) return false
+  const wFn = nearestFnBody(tree, wIdx)
+  const gFn = nearestFnBody(tree, gIdx)
+  if (wFn !== gFn) return false
+  const gBlock = innermostNode(tree, gIdx)
+  const wBlock = innermostNode(tree, wIdx)
+  // 模块顶层：语句按序执行，顺序即保证
+  if (gBlock === null) return true
+  if (gBlock === wBlock) return true
+  if (isAncestorNode(tree, gBlock, wBlock)) return true
+  // 兄弟 / 堂兄弟块：默认是「不感知控制流」的已知边界；块内嵌函数体则 fail closed
+  return !gBlock.hasFn
+}
+
+/**
+ * 写入点的作用域起点（= 其最内层函数体祖先的开括号之后；模块顶层为 0）。
+ * @returns {number}
+ */
+function writeScopeStart(tree, wIdx) {
+  const fn = nearestFnBody(tree, wIdx)
+  return fn === null ? 0 : fn.start + 1
 }
 /**
  * 取出写入行 payload 的对象文本。
@@ -788,7 +1131,16 @@ function payloadValue(payload, col) {
  */
 function judgeCode(code, relPath, schema) {
   const uidExprs = collectUidExpressions(code)
+  const bindings = collectBindings(code)
   const lineOf = (idx) => code.slice(0, idx).split('\n').length
+
+  // 花括号树：整份文件只建一次（词法扫描 O(n)），之后所有作用域问题都在树上查询。
+  // 惰性构建 —— 自检里有些样本根本不涉及写入，不必付这个代价。
+  let treeCache = null
+  const treeOf = () => {
+    if (treeCache === null) treeCache = buildBraceTree(code)
+    return treeCache
+  }
 
   // 客户端变量 → 权限类别。扫所有 createClient 调用点，**不筛变量名**。
   // 赋值形态要覆盖两种：
@@ -826,7 +1178,8 @@ function judgeCode(code, relPath, schema) {
   const violations = []
 
   // ---- R1 / R2：遍历所有 .from('<table>') 链
-  for (const m of code.matchAll(/\.\s*from\s*\(\s*['"](\w+)['"]\s*\)/g)) {
+  // 表名允许单引号 / 双引号 / **反引号**（QA E8：模板字符串做名字是合法写法）
+  for (const m of code.matchAll(/\.\s*from\s*\(\s*['"`](\w+)['"`]\s*\)/g)) {
     const table = m[1]
     const receiver = receiverBeforeIdx(m.index)
     if (!receiverIsService(receiver)) continue
@@ -891,29 +1244,34 @@ function judgeCode(code, relPath, schema) {
         if (!fkValue) continue
         const fkNorm = normExpr(fkValue)
 
-        // ⚠️ 只在**同一个块作用域**内找前置的归属校验（花括号配对，不靠猜语法）
-        //    scope.start === -1 ⇒ 写入在顶层，找不到块作用域 ⇒ fail closed
-        const scope = enclosingFunctionScope(code, m.index)
-        const priorCode = scope.text
+        // ⚠️ 只在**写入点所在的函数体内**找前置的归属校验（花括号树查询，不反向猜文本）
+        const tree = treeOf()
+        const scopeStart = writeScopeStart(tree, m.index)
+        const priorCode = code.slice(scopeStart, m.index)
         let guarded = false
         for (const fm of priorCode.matchAll(
-          new RegExp(`\\.\\s*from\\(\\s*['"]${refTable}['"]\\s*\\)`, 'g'),
+          new RegExp(`\\.\\s*from\\(\\s*['"\`]${refTable}['"\`]\\s*\\)`, 'g'),
         )) {
+          // priorCode 是子串：换算回 code 的绝对下标，才能在树上查询
+          const gIdx = scopeStart + fm.index
+          if (!guardCovers(tree, gIdx, m.index)) continue
           const qChain = readChain(priorCode, fm.index + fm[0].length)
           if (!qChain.methods.includes('select')) continue
           // ★ owner 列匹配：查了父表还不够，必须**按 owner 列过滤** ——
           //   只按主键查（`.eq('id', X)`）根本不是归属校验。
           //   （这条判据原先没有自检样本覆盖，属于「可静默腐化」的盲区，已补。）
+          //   列名允许反引号（QA E8）+ 大小写不敏感（QA E9），由 `i` 标志与反引号类提供。
           let ownerMatched = false
           for (const oc of refGuardCols) {
-            const eqRe = new RegExp(`\\.\\s*eq\\(\\s*['"]${oc}['"]\\s*,\\s*([^)]*)\\)`, 'gi')
+            const eqRe = new RegExp(`\\.\\s*eq\\(\\s*['"\`]${oc}['"\`]\\s*,\\s*([^)]*)\\)`, 'gi')
             for (const em of qChain.text.matchAll(eqRe)) {
               ownerMatched = true
-              // ★ 请求来源表达式不可信：body.* / req.* / params.* / event.* /
-              //   formData / searchParams / payload.* 的值来自 HTTP 请求，
-              //   本文件里看不到任何约束 ⇒ 不能当作「已证明的 uid」。
+              // ★ 请求来源表达式不可信：**否决式**判定 ——
+              //   只要该值的根标识命中「调用方提供」名单（含经解构 / 局部变量中转），
+              //   它证明的就不是「这是当前用户的 uid」，而是「调用方说这是某个 uid」
+              //   ⇒ 不给它发放豁免（QA E2/E5/E6/E7）。
               const gExpr = normExpr(em[1])
-              if (!isRequestSourceExpr(em[1], code)) guardUidExprs.add(gExpr)
+              if (!isRequestDerived(em[1], bindings)) guardUidExprs.add(gExpr)
             }
           }
           // ★ 必须用**同一个外键值**过滤 —— 比较 .eq() 的**第二个实参表达式**
@@ -921,7 +1279,7 @@ function judgeCode(code, relPath, schema) {
           //   裸子串会把「写入变量名恰好是链文本的子串」（如 `id` 之于
           //   `.eq('id', …)`）误判成同一个值 ⇒ 「验 A 站、写 B 站」漏过。
           const fkEqRe = new RegExp(
-            `\\.\\s*eq\\(\\s*['"]${ref.col}['"]\\s*,\\s*([^)]*)\\)`,
+            `\\.\\s*eq\\(\\s*['"\`]${ref.col}['"\`]\\s*,\\s*([^)]*)\\)`,
             'gi',
           )
           const fkMatched = [...qChain.text.matchAll(fkEqRe)].some(
@@ -961,10 +1319,8 @@ function judgeCode(code, relPath, schema) {
     if (ownerOk) {
       for (const col of guardCols) {
         const value = payloadValue(payload, col)
-        const norm = String(value ?? '')
-          .trim()
-          .replace(/\s+/g, '')
-          .toLowerCase()
+        // 与 guardUidExprs 用同一个归一化口径（去空白 / 尾逗号，**不**转小写）
+        const norm = normExpr(value)
         if (!isUidExpression(value, uidExprs) && !guardUidExprs.has(norm)) {
           ownerOk = false
           break
