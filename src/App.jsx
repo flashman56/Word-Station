@@ -138,7 +138,7 @@ function TopBar({ auth, stations, sync, view, setView, stats, sessionMode, learn
             <line x1="4" y1="18" x2="20" y2="18" />
           </svg>
         </button>
-        <span className="hidden sm:inline text-sm font-semibold text-slate-700 mr-2">词根词缀单词云</span>
+        <span className="hidden md:inline text-sm font-semibold text-slate-700 mr-2">词根词缀单词云</span>
         <div className="flex-1 min-w-0 flex items-center gap-2 overflow-x-auto">
           {tabs.map(([key, label]) => (
             <button
@@ -155,7 +155,7 @@ function TopBar({ auth, stations, sync, view, setView, stats, sessionMode, learn
         <div className="ml-auto flex items-center gap-2 shrink-0">
           {/* 口径与左栏「可见单词」一致（都按 word.id 去重）；保持纯文本 div 便于回归测试断言 */}
           {stats && (
-            <div className="text-xs text-slate-400">
+            <div className="hidden sm:block text-xs text-slate-400">
               {`词群 ${stats.morphCount} · 单词 ${stats.uniqueWords ?? stats.wordCount}`}
             </div>
           )}

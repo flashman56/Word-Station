@@ -89,7 +89,7 @@ export default function AuthPanel({
     return (
       <div className="flex items-center gap-2 text-xs">
         <span
-          className="px-2 py-1 rounded bg-emerald-50 text-emerald-700 border border-emerald-200"
+          className="hidden sm:inline px-2 py-1 rounded bg-emerald-50 text-emerald-700 border border-emerald-200"
           title={u3Note ? `登出提示：${u3Note}` : undefined}
         >
           {auth.email}
@@ -109,7 +109,7 @@ export default function AuthPanel({
   if (!open) {
     return (
       <div className="flex items-center gap-2 text-xs">
-        <span className="text-slate-400">游客模式（进度仅存本机）</span>
+        <span className="hidden sm:inline text-slate-400">游客模式（进度仅存本机）</span>
         <button
           onClick={() => setOpen(true)}
           className="px-2.5 py-1 rounded bg-blue-600 text-white hover:bg-blue-700"

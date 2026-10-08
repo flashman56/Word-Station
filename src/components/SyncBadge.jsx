@@ -88,7 +88,7 @@ export default function SyncBadge({ sync, ownerId, learn = null }) {
         cls="border-red-300 bg-red-50 text-red-700"
         title={`上传失败：${msg}（${lastError.code || 'no code'}）`}
         onClick={retry}
-        text={`上传失败：${truncate(msg, 18)} · 点此重试`}
+        text={responsiveText(`上传失败：${truncate(msg, 18)} · 点此重试`, '上传失败')}
       />
     )
   }
@@ -100,7 +100,7 @@ export default function SyncBadge({ sync, ownerId, learn = null }) {
         cls="border-amber-300 bg-amber-50 text-amber-700"
         title={offline ? '当前离线，恢复网络后会自动补传' : `${pending} 条草稿待补传`}
         onClick={retry}
-        text={stuckText(offline, pending, stuck)}
+        text={responsiveText(stuckText(offline, pending, stuck), offline ? `离线 ${pending}` : `${pending} 条`)}
       />
     )
   }
@@ -112,7 +112,7 @@ export default function SyncBadge({ sync, ownerId, learn = null }) {
         cls="border-amber-300 bg-amber-50 text-amber-700"
         title={STUCK_TITLE}
         onClick={() => confirmClearStuck(learn, stuck)}
-        text={stuckText(false, 0, stuck)}
+        text={responsiveText(stuckText(false, 0, stuck), `${stuck} 条`)}
       />
     )
   }
@@ -124,7 +124,7 @@ export default function SyncBadge({ sync, ownerId, learn = null }) {
         cls="border-slate-300 bg-slate-50 text-slate-500"
         title="正在与云端对齐学习记录"
         disabled
-        text="同步中…"
+        text={responsiveText('同步中…', '同步中')}
       />
     )
   }
@@ -135,7 +135,7 @@ export default function SyncBadge({ sync, ownerId, learn = null }) {
       cls="border-emerald-300 bg-emerald-50 text-emerald-700"
       title={lastSyncAt ? `上次同步：${lastSyncAt}` : '尚未同步过'}
       onClick={retry}
-      text={lastSyncAt ? `已同步 ${lastSyncAt.slice(11, 16)}` : '已同步'}
+      text={responsiveText(lastSyncAt ? `已同步 ${lastSyncAt.slice(11, 16)}` : '已同步', '已同步')}
     />
   )
 }
@@ -205,6 +205,19 @@ function confirmClearStuck(learn, stuck) {
 function truncate(text, max) {
   const s = String(text ?? '')
   return s.length > max ? `${s.slice(0, max)}…` : s
+}
+
+/**
+ * 移动端显示短文案，桌面端显示完整文案。
+ * 顶部栏在手机上横向空间极紧，把徽标压短才能让 小站/学习/总览/聚焦/列表 五个 tab 显出来。
+ */
+function responsiveText(full, short) {
+  return (
+    <>
+      <span className="sm:hidden">{short}</span>
+      <span className="hidden sm:inline">{full}</span>
+    </>
+  )
 }
 
 /** 统一样式的按钮 / 静态标签 */
