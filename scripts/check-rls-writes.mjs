@@ -1259,7 +1259,7 @@ function judgeCode(code, relPath, schema) {
     //     把 A2 改成「命中即足以放行整个写入」，结果 A2 成了万能钥匙 ——
     //     `owner_id: body.owner_id` 这种攻击者可控的写法也能白拿 A2 而被放行）。
     //     现在 payload 的 owner 列**仍须独立满足 A1**。
-    //   ★ A2 必须与写入**在同一函数体内**（QA 构造的真漏洞，见 enclosingFunctionScope）。
+    //   ★ A2 必须与写入**在同一个函数体内**（QA 构造的真漏洞，见 guardCovers）。
     //
     //   A2 命中时会把「它证明过归属的那个 uid 表达式」记进 guardUidExprs：
     //   若 payload 的 owner 列正好写的是这个表达式，则 A1 也算满足 ——
