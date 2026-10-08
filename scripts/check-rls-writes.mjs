@@ -81,6 +81,32 @@
  * ① npm run test:cloud（开发者入口）
  * ② scripts/deploy-generate-fn.mjs 的预检第 1b 步（**部署入口**，exit 1 即 BLOCKED）
  * ②才是真入口：改完服务端代码直接部署的人，不一定会记得先跑测试套件。
+ *
+ * ============================== 演进方向（尚未做） ==============================
+ * ⚠️ **当前 A2 是「文本推断」，不是「声明」。** 它靠「同一函数体内 + 查过父表
+ *   + 按 owner 列过滤 + 用同一个外键值」这几个**文本特征**推断「归属已校验」。
+ *
+ *   【残留洞（已实测，零侵入前提下关不掉）】
+ *   下面这个形态与「uid 由函数入参传入」的**合法**写法结构上**完全同形**，
+ *   静态推断无法区分 —— 只能靠「uid 的可信来源」才能分辨：
+ *
+ *     const { data: owned } = await admin.from('stations')
+ *       .select('id').eq('id', sId).eq('owner_id', body.ownerId).maybeSingle()  // ← 攻击者可控
+ *     if (owned) await admin.from('station_words')
+ *       .upsert({ station_id: sId, owner_id: body.ownerId, ... })
+ *
+ *   此处 owner_id 与归属校验里过滤的值是**同一个** body.ownerId ⇒ A1② 与 A2 都成立。
+ *   要抓它，只能要求「归属校验里过滤的 owner 值」本身可溯源到 auth.getUser ——
+ *   但那会把「uid 从入参传入」这类**合法**写法全部误报（正是本轮修掉的 5 类）。
+ *   ⇒ 这是文本推断的**固有边界**，不是调参能消掉的问题。
+ *
+ * 【终局形态：声明式归属断言】
+ *   引入显式函数（如 `assertOwnership('stations', stationId, uid)`），由它统一
+ *   「取 uid + 查父表 + 过滤 owner 列 + 不匹配即抛」，门禁只认这一个出口 ⇒
+ *   上述残留洞与跨函数洞一并消失。本轮**不做**：它要改 index.ts 与镜像的真实代码
+ *   （行为改动），与「零侵入」原则冲突，留待专门一轮。
+ *   ⚠️ 采纳时注意：引入命名的单一出口 = 给「统一改名」留了后路，
+ *   纪律 §9.1 的教训仍适用 —— 出口本身要被门禁检查，不能只靠约定。
  * ================================================================
  */
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
@@ -481,7 +507,32 @@ function isUidExpression(expr, uidExprs) {
 // ---------------------------------------------------------------- 写入行对象
 
 /**
- * 取写入 payload 的对象文本。
+ * 取「包含 idx 的那个函数」的代码切片 —— A2 归属校验**必须在同一函数体内**。
+ *
+ * 🔴 为什么必须限定函数（QA 构造出的真漏洞）：
+ *   原来用 `code.slice(0, idx)`，只看「文本上更靠前」。于是可以在文件更早处
+ *   放一段正当的归属校验，再**追加一个新函数**、沿用同一个变量名、
+ *   自己不做任何校验 ⇒ 白拿 A2 豁免，门禁放行。
+ *   唯一防线是「换个变量名」—— 纯约定，编译器不管、也没人提醒。
+ *
+ * 做法：从 idx 往前找最近一个「函数起点」标记（function 声明 / 箭头函数 /
+ * 方法定义），从那里切到 idx。找不到就说明写入在顶层（如 Edge Function 的
+ * 模块级代码），此时用整段文件的前半部分 —— 与旧行为一致。
+ *
+ * @returns {{start: number, text: string}} start 是该函数起点在 code 中的绝对下标
+ */
+function enclosingFunctionScope(code, idx) {
+  const before = code.slice(0, idx)
+  // 函数起点标记：function 声明、箭头函数、async 方法定义
+  const marks = [...before.matchAll(/(?:^|[\s;{}()])(?:export\s+)?(?:async\s+)?function\s*\*?\s*[A-Za-z_$][\w$]*|=>\s*\{/g)]
+  if (marks.length === 0) return { start: 0, text: before }
+  const last = marks[marks.length - 1]
+  const start = last.index + (last[0].length - (last[0].trimStart().length))
+  return { start, text: code.slice(start, idx) }
+}
+
+/**
+ * 取出写入行 payload 的对象文本。
  * upsert(row, ...) 里 row 可能是变量 ⇒ 回溯它的 `const row = {` 声明。
  *
  * @param {string} expr payload 表达式文本（首参）
@@ -595,30 +646,34 @@ function judgeCode(code, relPath, schema) {
     const payloadExpr = argsText === null ? '' : splitTopLevel(argsText)[0]
     const payload = resolvePayloadObject(payloadExpr, code, openIdx + 1)
 
-    // 豁免 A1：写入行把 owner 列钉到**本文件内可溯源到 auth.getUser 的** uid。
+    // 豁免 A1：写入行的 owner 列必须钉到「已鉴权的 uid」。
     //
-    //   ⚠️ 溯源是**文件内**的（collectUidExpressions）。所以当 uid 是函数入参、
-    //   或 client 来自别的模块时，本文件里追不到它 ⇒ A1 不成立。
-    //   这不是 bug，而是 A1 的**适用边界**：它只覆盖「uid 在本文件内可见」的场景。
-    //   那种场景由 A2兜住（见下），所以不会产生误报。
-    let selfScoped = payload !== null
-    if (selfScoped) {
-      for (const col of guardCols) {
-        const value = payloadValue(payload, col)
-        if (!isUidExpression(value, uidExprs)) {
-          selfScoped = false
-          break
-        }
-      }
-    }
+    //   判定来源有两处（见下面 ownerOk）：
+    //     ① uid 表达式可在本文件内溯源到 auth.getUser（collectUidExpressions）；
+    //     ② 或等于「写入前那次归属校验所过滤的 owner 值」（guardUidExprs）。
+    //
+    //   ⚠️ 溯源①是**文件内**的。所以当 uid 是函数入参、或 client 来自别的模块时，
+    //   ①不成立 —— 那正是②存在的理由：**不是放宽 A1，而是承认「归属校验已经
+    //   证明过这个表达式就是当前用户的 uid」**。攻击者可控的值（如 body.owner_id）
+    //   不会成为归属校验里被过滤的那个表达式，所以②不会给它开门。
+    //   A1 与 A2 是**独立**的两项：A2 只抵消「父表归属」，不抵消 owner 列。
 
     // 豁免 A2：行里有指向另一个 owner 保护表的外键 ⇒ 必须先验父资源归属。
-    //   A2 命中即**足以放行**整个写入（不需要再叠加 A1）：
-    //   既然写入前已确认「该父资源属于当前用户」，这次写入就不可能越界到别人身上。
-    //   这一点很重要 —— 它让「uid 从入参传入 / client 跨模块」这类同样安全的写法
-    //   不会被误报（实测：那类写法若只认 A1 就是假绿/假红两选一）。
+    //
+    //   ★ A2 **只抵消「父表归属」这一项**，不再放行整个写入（QA 指出过拟合的
+    //     副作用：上一轮为了让「uid/client 不在本文件内可溯源」的合法写法通过，
+    //     把 A2 改成「命中即足以放行整个写入」，结果 A2 成了万能钥匙 ——
+    //     `owner_id: body.owner_id` 这种攻击者可控的写法也能白拿 A2 而被放行）。
+    //     现在 payload 的 owner 列**仍须独立满足 A1**。
+    //   ★ A2 必须与写入**在同一函数体内**（QA 构造的真漏洞，见 enclosingFunctionScope）。
+    //
+    //   A2 命中时会把「它证明过归属的那个 uid 表达式」记进 guardUidExprs：
+    //   若 payload 的 owner 列正好写的是这个表达式，则 A1 也算满足 ——
+    //   这就是「uid 从入参传入 / client 跨模块」那几类**合法**写法不被误报的原因，
+    //   而它们并不需要放宽 A1 本身的判据。
     let parentOk = false
     let parentViolation = null
+    const guardUidExprs = new Set()
     const tableFks = payload === null ? null : schema.fks.get(table)
     if (tableFks) {
       for (const [col, refTable] of tableFks) {
@@ -627,17 +682,27 @@ function judgeCode(code, relPath, schema) {
         const fkValue = payloadValue(payload, col)
         if (!fkValue) continue
 
-        // 父表必须在本次写入**之前**被查过归属，且用的是同一个外键值
-        const priorCode = code.slice(0, m.index)
+        // ⚠️ 只在**同一函数体内**找前置的归属校验
+        const scope = enclosingFunctionScope(code, m.index)
+        const priorCode = scope.text
         let guarded = false
         for (const fm of priorCode.matchAll(
           new RegExp(`\\.\\s*from\\(\\s*['"]${refTable}['"]\\s*\\)`, 'g'),
         )) {
           const qChain = readChain(priorCode, fm.index + fm[0].length)
           if (!qChain.methods.includes('select')) continue
-          const ownerMatched = [...refGuardCols].some((oc) =>
-            new RegExp(`\\.\\s*eq\\(\\s*['"]${oc}['"]\\s*,`, 'i').test(qChain.text),
-          )
+          // ★ owner 列匹配：查了父表还不够，必须**按 owner 列过滤** ——
+          //   只按主键查（`.eq('id', X)`）根本不是归属校验。
+          //   （这条判据原先没有自检样本覆盖，属于「可静默腐化」的盲区，已补。）
+          let ownerMatched = false
+          for (const oc of refGuardCols) {
+            const eqRe = new RegExp(`\\.\\s*eq\\(\\s*['"]${oc}['"]\\s*,\\s*([^)]*)\\)`, 'gi')
+            for (const em of qChain.text.matchAll(eqRe)) {
+              ownerMatched = true
+              guardUidExprs.add(String(em[1]).trim().replace(/\s+/g, '').toLowerCase())
+            }
+          }
+          // 且必须用**同一个外键值**过滤 —— 否则「验的是 A 站、写的是 B 站」拦不住
           if (ownerMatched && qChain.text.includes(fkValue)) {
             guarded = true
             break
@@ -652,11 +717,12 @@ function judgeCode(code, relPath, schema) {
             lineNo: lineOf(m.index),
             text: `${table}.${col} → ${refTable}`,
             hint:
-              `写 ${table} 时 ${col} 指向 owner 保护表 ${refTable}，但本次写入之前没有对 ${refTable} 做归属校验。` +
-              `service_role 绕过 RLS（铁证：dict_cache 零策略仍可被它全表读出 64559 行），` +
-              `所以「数据库会挡住」是错的假设 —— 调用方可传任意他人的 ${col}，把数据写进别人的资源。` +
+              `写 ${table} 时 ${col} 指向 owner 保护表 ${refTable}，但**在同一个函数体内**` +
+              `没有对 ${refTable} 做归属校验。service_role 绕过 RLS（铁证：dict_cache 零策略` +
+              `仍可被它全表读出 64559 行），所以「数据库会挡住」是错的假设 —— ` +
+              `调用方可传任意他人的 ${col}，把数据写进别人的资源。` +
               `（注意：光把 owner_id 钉成自己的 uid 不够 —— 那次真实越权的 payload 里也写了 owner_id: uid。）` +
-              `修法：写入前先查 ${refTable} 并同时过滤主键与 owner 列` +
+              `修法：在写入前查 ${refTable} 并**同时**过滤主键与 owner 列` +
               `（如 .eq('id', <${col}>).eq('${[...refGuardCols][0]}', uid)），不匹配则拒绝写入。`,
           }
           break
@@ -666,18 +732,35 @@ function judgeCode(code, relPath, schema) {
 
     if (parentViolation) violations.push(parentViolation)
 
-    // A2 已确认父资源归属 ⇒ 整个写入放行，不再要求 A1
-    if (!selfScoped && !parentOk) {
+    // A1 独立判定：owner 列必须钉到「已鉴权 uid」，或钉到「A2 刚证明过归属的那个表达式」
+    let ownerOk = payload !== null
+    if (ownerOk) {
+      for (const col of guardCols) {
+        const value = payloadValue(payload, col)
+        const norm = String(value ?? '')
+          .trim()
+          .replace(/\s+/g, '')
+          .toLowerCase()
+        if (!isUidExpression(value, uidExprs) && !guardUidExprs.has(norm)) {
+          ownerOk = false
+          break
+        }
+      }
+    }
+
+    // A2 已确认父资源归属 ⇒ 父表这一项无需再报；但 owner 列仍由 A1 独立把关
+    if (!ownerOk) {
       violations.push({
         rule: 'R2',
         file: relPath,
         lineNo: lineOf(m.index),
         text: `${table}（owner 列：${[...guardCols].join(', ')}）`,
         hint:
-          `service_role 客户端写 owner 保护表 ${table}，但这次写入既没有把 owner 列钉到已鉴权 uid，` +
-          `也没有在写入前校验父资源归属。service_role 绕过 RLS，写进去的行不再受 owner 策略约束。` +
-          `修法（二选一）：①把 owner 列钉到 auth.getUser(token) 拿到的 uid；` +
-          `②写入前显式查父表并过滤 owner 列，确认归属后再写。`,
+          `service_role 客户端写 owner 保护表 ${table}，但写入行的 owner 列没有钉到「已鉴权的 uid」` +
+          `（已鉴权 uid 来自 auth.getUser(token) 的返回值；写入前那次归属校验所证明的表达式也算）。` +
+          `${parentOk ? '父表归属已校验，但 owner 列本身仍须钉住 —— 否则 owner_id 可能是调用方传来的任意值。' : ''}` +
+          `service_role 绕过 RLS，写进去的行不再受 owner 策略约束。` +
+          `修法：把 owner 列钉到已鉴权 uid。`,
       })
     }
   }
@@ -975,6 +1058,49 @@ await admin.from('learn_records').upsert({ word_key: kw, status: 'known' })`,
   return admin.from('station_words').upsert({ station_id: stationId, owner_id: uid, word_key: kw })
 }`,
     { rule: 'R2', text: 'station_words.station_id → stations' },
+  ],
+  // ---- 下面 3 条覆盖「A2 自身」的两个盲区（QA 用变异测试证明过它们此前无样本）----
+  //
+  // ① M15：`.eq('id', X)` 但**不带** `.eq('owner_id', …)` ——
+  //    只按主键查父表根本不构成归属校验（验的是别人的站也照样「查到了」）。
+  //    QA 的变异测试证明：拆掉 owner 列匹配，自检仍然全绿 ⇒ 该判据可静默腐化。
+  [
+    'M15：只按主键查父表、没按 owner 过滤 ⇒ 不构成归属校验（必须红）',
+    `const { data: userData } = await anon.auth.getUser(token)
+const uid = userData.user.id
+const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'))
+const { data: st } = await admin.from('stations').select('id').eq('id', victimStationId).maybeSingle()
+if (!st) throw new Error('STATION_NOT_FOUND')
+await admin.from('station_words').upsert({ station_id: victimStationId, owner_id: uid, word_key: kw })`,
+    { rule: 'R2', text: 'station_words.station_id → stations' },
+  ],
+  // ② 跨函数白拿 A2（QA 构造的真漏洞）：在文件更早处放一段正当的归属校验，
+  //    再追加一个新函数、沿用**同名变量**、自己不做任何校验。
+  //    原实现只看「文本上更靠前」（code.slice(0, idx)）⇒ 白拿豁免被放行。
+  [
+    '跨函数白拿 A2：更早处有合法校验，新函数沿用同名变量却不校验（必须红）',
+    `const { data: userData } = await anon.auth.getUser(token)
+const uid = userData.user.id
+const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'))
+const { data: owned } = await admin.from('stations').select('id').eq('id', stationId).eq('owner_id', uid).maybeSingle()
+if (!owned) throw new Error('STATION_FORBIDDEN')
+
+export async function escalated(stationId, uid, wordKey) {
+  const admin2 = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'))
+  await admin2.from('station_words').upsert({ station_id: stationId, owner_id: uid, word_key: wordKey })
+}`,
+    { rule: 'R2', text: 'station_words.station_id → stations' },
+  ],
+  // ③ A2 不得成为万能钥匙：owner_id 攻击者可控时，A2 命中也必须被 A1 独立抓住。
+  [
+    'A2 不是万能钥匙：父表校验过了，但 owner_id 取自请求体（必须红）',
+    `const { data: userData } = await anon.auth.getUser(token)
+const uid = userData.user.id
+const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'))
+const { data: owned } = await admin.from('stations').select('id').eq('id', stationId).eq('owner_id', uid).maybeSingle()
+if (!owned) throw new Error('STATION_FORBIDDEN')
+await admin.from('station_words').upsert({ station_id: stationId, owner_id: body.owner_id, word_key: kw })`,
+    { rule: 'R2', text: 'station_words（owner 列：owner_id）' },
   ],
 ]
 
