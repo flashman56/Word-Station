@@ -1027,10 +1027,18 @@ function buildBraceTree(code) {
   }
 
   for (const nd of nodes) nd.kind = classifyBrace(code, nd.start, skip)
-  // hasFn：子树里是否存在函数体（自底向上累积，子节点下标一定大于父节点）
+  // hasFn：**子树里是否嵌套了别的函数体**（不含节点自身）。
+  //
+  // ⚠️ 语义必须是「**嵌套**的函数体」，不能是「自己是不是函数体」：
+  //    若把自己算进去，那么任何一个函数体节点的 hasFn 恒为 true，
+  //    guardCovers 的最后一道 fallback 就会顺手把「校验在**别的**函数里」也判红 ——
+  //    表面上看结果对了，实际上是**两条判据互相冒充**：删掉「同一个函数体」那条
+  //    判据，样本也不会翻转（变异测试证明过：M1 删掉后 X1–X4 仍红，
+  //    即那条判据是死代码，可被静默腐化）。
+  //    子节点下标一定大于父节点 ⇒ 逆序扫一遍即可自底向上累积。
   for (let k = nodes.length - 1; k >= 0; k -= 1) {
-    if (nodes[k].kind === 'function') nodes[k].hasFn = true
-    if (nodes[k].hasFn && nodes[k].parent >= 0) nodes[nodes[k].parent].hasFn = true
+    const nd = nodes[k]
+    nd.hasFn = nd.children.some((c) => nodes[c].kind === 'function' || nodes[c].hasFn)
   }
   return { nodes, skip }
 }
@@ -1743,6 +1751,66 @@ export async function saveWords(sid, bodyOwnerId, wordKey) {
   const { data: owned } = await admin.from('stations').select('id').eq('id', sid).eq('owner_id', bodyOwnerId).maybeSingle()
   if (!owned) throw new Error('STATION_FORBIDDEN')
   await admin.from('station_words').upsert({ station_id: sid, owner_id: bodyOwnerId, word_key: wordKey })
+}`,
+  ],
+  [
+    'index.ts 的真实形态：校验在 if (stationId) 块里、写入在它的 else 分支里（不得误报）',
+    `const { data: userData } = await anon.auth.getUser(token)
+const uid = userData.user.id
+const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'))
+export default async function handler(req) {
+  const stationId = req.body.station_id
+  if (stationId) {
+    const { data: owned } = await admin.from('stations').select('id').eq('id', stationId).eq('owner_id', uid).maybeSingle()
+    if (!owned) {
+      throw new Error('STATION_FORBIDDEN')
+    } else {
+      await admin.from('station_words').upsert({ station_id: stationId, owner_id: uid, word_key: req.body.word_key })
+    }
+  }
+}`,
+  ],
+  [
+    '作用域③判据的载荷样本：校验在**外层块**、写入在它嵌套的子块里，且该外层块内还有箭头函数',
+    `const { data: userData } = await anon.auth.getUser(token)
+const uid = userData.user.id
+const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'))
+export async function saveWords(req) {
+  const stationId = req.body.station_id
+  const norm = (s) => {
+    return String(s ?? '').trim()
+  }
+  const { data: owned } = await admin.from('stations').select('id').eq('id', stationId).eq('owner_id', uid).maybeSingle()
+  if (!owned) throw new Error('STATION_FORBIDDEN')
+  if (req.body.batch) {
+    await admin.from('station_words').upsert({ station_id: stationId, owner_id: uid, word_key: norm(req.body.word_key) })
+  }
+}`,
+  ],
+  [
+    '词法扫描①：**注释**里的花括号不得被当成作用域边界（`/* } */`）',
+    `const { data: userData } = await anon.auth.getUser(token)
+const uid = userData.user.id
+const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'))
+export async function saveWords(req) {
+  const stationId = req.body.station_id
+  const { data: owned } = await admin.from('stations').select('id').eq('id', stationId).eq('owner_id', uid).maybeSingle()
+  if (!owned) throw new Error('STATION_FORBIDDEN')
+  /* }  ← 这个花括号在注释里，旧实现的反向文本扫描会把它当成作用域收尾 */
+  await admin.from('station_words').upsert({ station_id: stationId, owner_id: uid, word_key: req.body.word_key })
+}`,
+  ],
+  [
+    '词法扫描②：**字符串**里的花括号不得被当成作用域边界（const label = 「}」）',
+    `const { data: userData } = await anon.auth.getUser(token)
+const uid = userData.user.id
+const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'))
+export async function saveWords(req) {
+  const stationId = req.body.station_id
+  const { data: owned } = await admin.from('stations').select('id').eq('id', stationId).eq('owner_id', uid).maybeSingle()
+  if (!owned) throw new Error('STATION_FORBIDDEN')
+  const label = '} ← 这个花括号在字符串里'
+  await admin.from('station_words').upsert({ station_id: stationId, owner_id: uid, word_key: req.body.word_key, label })
 }`,
   ],
   [
