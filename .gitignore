@@ -43,3 +43,8 @@ scripts/.qa2-*.bundle.mjs
 
 # vite 构建/开发时生成的临时产物（可达上百 MB）
 vite.config.js.timestamp-*.mjs
+
+# QA 探针临时文件（脚本自身会清空复用，不入库）
+scripts/dev-zz*
+scripts/dev-station-mirror.mjs
+supabase/.temp/
