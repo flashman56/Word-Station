@@ -5,6 +5,7 @@ import { phoneticsOfAsync } from '../lib/dict.js'
 import { shouldShowPhoneticPending } from '../lib/phoneticDisplay.js'
 import { useSpeech } from '../hooks/useSpeech.js'
 import SpeakerButton from './SpeakerButton.jsx'
+import UsageSupplement from './UsageSupplement.jsx'
 
 /**
  * 单张学习 / 复习卡片。
@@ -180,6 +181,9 @@ export default function StudyCard({
               <p className="text-slate-600 text-sm leading-relaxed">{usage}</p>
             </div>
           )}
+
+          {/* 用法补充：固定搭配 / 背景 / 用法（按需异步加载，无条目则无渲染） */}
+          <UsageSupplement form={word.form} />
 
           <div className="mt-4">
             <p className="text-xs font-semibold text-slate-500 mb-1.5">构词拆解</p>
