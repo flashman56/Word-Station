@@ -7,6 +7,7 @@ import { hasDecomposition, morphlessKindLabel } from '../lib/derive.js'
 import { useSpeech } from '../hooks/useSpeech.js'
 import SpeakerButton from './SpeakerButton.jsx'
 import UsageSupplement from './UsageSupplement.jsx'
+import WordForms from './WordForms.jsx'
 
 /**
  * 单张学习 / 复习卡片。
@@ -24,6 +25,7 @@ import UsageSupplement from './UsageSupplement.jsx'
  *   onNext      () => void
  *   record      可选，当前学习记录（用于进度展示）
  *   onViewInCloud 可选 (word) => void，提供时显示「在词云中查看」入口
+ *   relatedOf   可选 (word) => { forms, derivatives }，提供时展示「常见变形 / 派生词」
  */
 export default function StudyCard({
   word,
@@ -34,6 +36,7 @@ export default function StudyCard({
   record,
   onViewInCloud,
   autoSpeak = false,
+  relatedOf,
 }) {
   const [answered, setAnswered] = useState(false)
   const [result, setResult] = useState(null) // 'correct' | 'incorrect' | 'known'
@@ -211,6 +214,10 @@ export default function StudyCard({
               </div>
             )}
           </div>
+
+          {/* 常见变形 / 派生词：与词详情（App.jsx WordDetail）**同一组件、同一顺序**，
+              两个 UI 面共用一份渲染，文案与排序不会漂移。无内容则整体不渲染。 */}
+          <WordForms word={word} relatedOf={relatedOf} />
 
           <div className="mt-8 flex justify-end">
             <button

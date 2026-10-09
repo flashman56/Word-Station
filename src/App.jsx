@@ -15,6 +15,7 @@ import {
 } from './lib/derive.js'
 import { buildRelations, pairKey, relationsOf } from './lib/relations.js'
 import { buildStemIndex, familyOf } from './lib/stemFamily.js'
+import { buildWordForms } from './lib/wordForms.js'
 import { phoneticsOfAsync } from './lib/dict.js'
 import { shouldShowPhoneticPending } from './lib/phoneticDisplay.js'
 import { estimateVocabulary } from './lib/vocab.js'
@@ -35,6 +36,7 @@ import WordRow from './components/WordRow.jsx'
 import SpeakerButton from './components/SpeakerButton.jsx'
 import EtymologyPanel from './components/EtymologyPanel.jsx'
 import UsageSupplement from './components/UsageSupplement.jsx'
+import WordForms from './components/WordForms.jsx'
 import BulkActionBar from './components/BulkActionBar.jsx'
 import AddToStationMenu from './components/AddToStationMenu.jsx'
 import AuthPanel from './components/AuthPanel.jsx'
@@ -275,6 +277,10 @@ function AppShell({ words, auth, stations, sync }) {
   // ★ 同族词反查索引：无拆解词没有词素锚点，只能按词形找同族 ★
   //   一次建好、整个会话复用；WordDetail 只查表，绝不在渲染期遍历词库。
   const stemIndex = useMemo(() => buildStemIndex(words), [words])
+  // ★ 常见变形 / 派生词 反查模型（Step-1/2 折叠关系 + 词素派生）★
+  //   以 words 引用缓存；WordForms / StudyCard / WordDetail 只做 O(1) 查表，
+  //   绝不在渲染期重建索引，也绝不把词库数据 import 进 UI（见 lib/wordForms.js 约束）。
+  const wordForms = useMemo(() => buildWordForms(words, index, stemIndex), [words, index, stemIndex])
 
   const maxRank = useMemo(
     () =>
@@ -695,6 +701,7 @@ function AppShell({ words, auth, stations, sync }) {
                 onExit={exitSession}
                 onViewInCloud={openWordFromStudy}
                 autoSpeak={filters.autoSpeak === true}
+                relatedOf={wordForms.relatedFor}
               />
             </div>
           )}
@@ -807,6 +814,7 @@ function AppShell({ words, auth, stations, sync }) {
             index={index}
             stemIndex={stemIndex}
             relationIndex={relationIndex}
+            relatedOf={wordForms.relatedFor}
             onSelectRelated={openRelatedWord}
             onJump={openMorph}
             onBack={() => setSelectedWord(null)}
@@ -970,6 +978,7 @@ function WordDetail({
   index,
   stemIndex,
   relationIndex,
+  relatedOf,
   onSelectRelated,
   onJump,
   onBack,
@@ -1231,6 +1240,17 @@ function WordDetail({
           )}
         </>
       )}
+
+      {/* 常见变形 / 派生词：与学习卡（StudyCard）**同一组件、同一顺序**，
+          两处共用一份渲染 → 文案与排序永不漂移。
+          ★ showDerivatives：无拆解词在上方已有「同族词」区块（同一批按词形反查的
+            结果），这里不再重复列一遍派生词；「常见变形」不受影响、照常展示。 */}
+      <WordForms
+        word={word}
+        relatedOf={relatedOf}
+        onSelect={onSelectRelated}
+        showDerivatives={hasDecomposition(word)}
+      />
 
       <h3 className="text-xs font-semibold text-slate-500 mt-4 mb-1.5">所属词群</h3>
       <div className="flex flex-wrap gap-1">

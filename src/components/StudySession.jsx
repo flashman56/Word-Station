@@ -15,6 +15,7 @@ import StudyCard from './StudyCard.jsx'
  *   markKnown   (wordId) => void
  *   onExit      () => void  返回学习首页
  *   onViewInCloud (word) => void  在词云中查看当前词（会话暂停但进度保留）
+ *   relatedOf   (word) => { forms, derivatives }  常见变形 / 派生词反查（透传给 StudyCard）
  */
 export default function StudySession({
   mode = 'learn',
@@ -24,6 +25,7 @@ export default function StudySession({
   onExit,
   onViewInCloud,
   autoSpeak = false,
+  relatedOf,
 }) {
   const [round] = useState(() => (Array.isArray(queue) ? queue.slice() : []))
   const [index, setIndex] = useState(0)
@@ -85,6 +87,7 @@ export default function StudySession({
         onNext={goNext}
         onViewInCloud={onViewInCloud}
         autoSpeak={autoSpeak}
+        relatedOf={relatedOf}
       />
     </div>
   )
