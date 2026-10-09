@@ -21,12 +21,17 @@ import wordsMonoExtra from './words-mono-extra.js'
 import wordsMonoSeed from './words-mono-seed.js'
 import phonetics, { phoneticsOf } from './phonetics.js'
 import wordsRemorph from './words-remorph.js'
+import wordsLemma, { LEMMA_BY_ID } from './words-lemma.js'
 
 export const WORD_FILES = [wordsLatin, wordsGreek, wordsAffix, wordsExtra, wordsMono, wordsMonoExtra, wordsMonoSeed]
 
 /**
- * 与 src/data/words-entry.js 保持完全一致的再切分补丁合并逻辑，
- * 让离线脚本（validate / test:*）看到的 morphs 与线上运行时一致。
+ * 与 src/data/words-entry.js 保持完全一致的补丁合并逻辑，
+ * 让离线脚本（validate / test:*）看到的 morphs / lemma 与线上运行时一致。
+ *
+ * ★ 两份文件必须逐字同款（既有明写契约）★
+ *   ① words-remorph：命中词条追加 morphHints 与 chain（只做加法）；
+ *   ② words-lemma ：命中词条附 `.lemma`（= 代表形 id），供 lib/lemmaFold.js 读时折叠。
  */
 const REMORPH = new Map(wordsRemorph.map((p) => [p.id, p]))
 const MORPH_IDS = new Set(morphemes.map((m) => m.id))
@@ -34,10 +39,12 @@ const MORPH_IDS = new Set(morphemes.map((m) => m.id))
 const rawWords = WORD_FILES.flat()
 export const words = rawWords.map((w) => {
   const patch = REMORPH.get(w.id)
-  if (!patch) return w
-  const hints = patch.morphHints.filter((mid) => MORPH_IDS.has(mid))
-  if (hints.length === 0) return w
-  return { ...w, morphs: [...(w.morphs || []), ...hints], chain: patch.chain }
+  const lemma = LEMMA_BY_ID.get(w.id)
+  const hints = patch ? patch.morphHints.filter((mid) => MORPH_IDS.has(mid)) : []
+  if (hints.length === 0 && !lemma) return w
+  const out = hints.length === 0 ? { ...w } : { ...w, morphs: [...(w.morphs || []), ...hints], chain: patch.chain }
+  if (lemma) out.lemma = lemma
+  return out
 })
 
 export { morphemes, phonetics, phoneticsOf }

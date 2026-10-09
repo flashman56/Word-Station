@@ -17,6 +17,7 @@ import assert from 'node:assert/strict'
 import { buildLearnQueue, buildReviewQueue, countByStatus } from '../src/lib/learning.js'
 import { MAX_VOCAB_PRIVATE_WORDS } from '../src/lib/derive.js'
 import { toUserWordView } from '../src/lib/wordView.js'
+import { buildFoldView } from '../src/lib/lemmaFold.js'
 
 let passed = 0
 let failed = 0
@@ -72,13 +73,21 @@ const PRIVATE = ['quixotic', 'obviate', 'perfunctory', 'sanguine', 'unctuous'].m
 
 /**
  * ★ 复刻 useLearn 的接缝（本次改动的全部要点）★
- * statWords = 公共 ∪ 私有 → 喂 countByStatus / buildReviewQueue
- * learnPool = bandFilter(公共) → 喂 buildLearnQueue（私有词结构上被排除）
+ *   foldUnits   = buildFoldView(list, records).units（Step-2：屈折归并后的代表形集合）
+ *   statWords   = foldUnits ∪ 私有词 → 喂 countByStatus / buildReviewQueue
+ *   learnPool   = bandFilter(foldUnits) → 喂 buildLearnQueue（私有词结构上被排除）
+ *   foldRecords = buildFoldView(list, records).records → 折叠后的读时记录视图
+ *
+ * ★ 为什么把 buildFoldView 纳入复刻 ★
+ *   线上 useLearn 的 statWords/learnPool/统计/队列**全部**经过折叠视图；若复刻不折叠，
+ *   私有词接缝的测试就会与实际运行口径漂移。这里的 PUBLIC 夹具没有 .lemma（未折叠），
+ *   故 foldUnits === list、foldRecords 保真，既有断言逐条仍成立（无需放宽）。
  */
-function derive(list, privateWords, band = 'all') {
-  const statWords = privateWords.length ? [...list, ...privateWords] : list
-  const learnPool = band === 'all' ? list : list.filter((w) => typeof w.freqRank === 'number')
-  return { statWords, learnPool }
+function derive(list, privateWords, records = {}, band = 'all') {
+  const { units: foldUnits, records: foldRecords } = buildFoldView(list, records)
+  const statWords = privateWords.length ? [...foldUnits, ...privateWords] : foldUnits
+  const learnPool = band === 'all' ? foldUnits : foldUnits.filter((w) => typeof w.freqRank === 'number')
+  return { statWords, learnPool, foldRecords }
 }
 
 // ---------------------------------------------------------------- toUserWordView
@@ -159,8 +168,8 @@ test('B-3：5 个私有词全标已掌握 → 已掌握数 = 公共 + 5，total 
   PRIVATE.forEach((w) => {
     records[w.id] = { status: 'known', consecutiveCorrect: 2, statusSource: 'manual-known' }
   })
-  const { statWords } = derive(PUBLIC, PRIVATE)
-  const s = countByStatus(statWords, records)
+  const { statWords, foldRecords } = derive(PUBLIC, PRIVATE, records)
+  const s = countByStatus(statWords, foldRecords)
   assert.equal(s.known, 5, '私有词的已掌握被计入')
   assert.equal(s.total, PUBLIC.length + PRIVATE.length, '★ total 含私有词')
 })
@@ -183,8 +192,8 @@ test('B-4：私有词到期后出现在复习队列里', () => {
       statusSource: 'learning',
     },
   }
-  const { statWords } = derive(PUBLIC, PRIVATE)
-  const q = buildReviewQueue(statWords, records, 10, NOW)
+  const { statWords, foldRecords } = derive(PUBLIC, PRIVATE, records)
+  const q = buildReviewQueue(statWords, foldRecords, 10, NOW)
   assert.ok(q.some((w) => w.id === 'u.quixotic'), '★ 到期的私有词必须在复习队列里')
 })
 
@@ -193,8 +202,8 @@ test('B-4：私有词未到期则不出现在复习队列', () => {
   const records = {
     'u.quixotic': { status: 'review', consecutiveCorrect: 0, nextDueAt: future, statusSource: 'learning' },
   }
-  const { statWords } = derive(PUBLIC, PRIVATE)
-  const q = buildReviewQueue(statWords, records, 10, NOW)
+  const { statWords, foldRecords } = derive(PUBLIC, PRIVATE, records)
+  const q = buildReviewQueue(statWords, foldRecords, 10, NOW)
   assert.equal(q.some((w) => w.id === 'u.quixotic'), false, '未到期不该被排进复习')
 })
 
@@ -202,8 +211,8 @@ test('B-4：私有词未到期则不出现在复习队列', () => {
 
 test('Q4：私有词**不出现在**新学队列里（结构上排除，不是加判据）', () => {
   const records = {} // 全部 unknown
-  const { learnPool } = derive(PUBLIC, PRIVATE)
-  const q = buildLearnQueue(learnPool, records, 10)
+  const { learnPool, foldRecords } = derive(PUBLIC, PRIVATE, records)
+  const q = buildLearnQueue(learnPool, foldRecords, 10)
   assert.equal(q.length, PUBLIC.length, '队列长度 = 公共词数')
   q.forEach((w) => {
     assert.ok(!String(w.id).startsWith('u.'), `新学队列里不该有私有词：${w.id}`)
@@ -220,16 +229,16 @@ test('Q4：★ 对拍 —— 即使把私有词硬塞进队列，也几乎抽不
     '私有词确实全排在最后 —— 这正是必须「结构上排除」而不是「塞进去再过滤」的原因',
   )
   // 结构性方案（learnPool）比事后过滤更干净：零运行时判据、不会打乱难度序
-  const structural = buildLearnQueue(derive(PUBLIC, PRIVATE).learnPool, records, 10)
+  const structural = buildLearnQueue(derive(PUBLIC, PRIVATE, records).learnPool, records, 10)
   assert.equal(structural.length, PUBLIC.length)
 })
 
 test('Q4：私有词为 unknown 时也不会被抽进新学队列', () => {
   const records = {}
-  const { learnPool, statWords } = derive(PUBLIC, PRIVATE)
+  const { learnPool, statWords, foldRecords } = derive(PUBLIC, PRIVATE, records)
   // 统计里它是 unknown（可见），但新学队列里没有它（Q4）
-  assert.equal(countByStatus(statWords, records).unknown, PUBLIC.length + PRIVATE.length)
-  assert.equal(buildLearnQueue(learnPool, records, 10).some((w) => w.id === 'u.quixotic'), false)
+  assert.equal(countByStatus(statWords, foldRecords).unknown, PUBLIC.length + PRIVATE.length)
+  assert.equal(buildLearnQueue(learnPool, foldRecords, 10).some((w) => w.id === 'u.quixotic'), false)
 })
 
 // ---------------------------------------------------------------- B-8 护栏
@@ -249,13 +258,13 @@ test('B-8：护栏只作用于词汇量输入，不影响统计与复习队列',
   many.forEach((w) => {
     records[w.id] = { status: 'review', consecutiveCorrect: 0, nextDueAt: PAST, statusSource: 'learning' }
   })
-  const { statWords, learnPool } = derive(PUBLIC, many)
+  const { statWords, learnPool, foldRecords } = derive(PUBLIC, many, records)
   // 统计仍然含全部 600 个私有词
-  assert.equal(countByStatus(statWords, records).review, 600)
+  assert.equal(countByStatus(statWords, foldRecords).review, 600)
   // 复习队列仍含到期私有词
-  assert.equal(buildReviewQueue(statWords, records, 1000, NOW).length >= 600, true)
+  assert.equal(buildReviewQueue(statWords, foldRecords, 1000, NOW).length >= 600, true)
   // 新学队列仍只有公共词
-  assert.equal(buildLearnQueue(learnPool, records, 10).length, PUBLIC.length)
+  assert.equal(buildLearnQueue(learnPool, foldRecords, 10).length, PUBLIC.length)
 })
 
 test('B-8：阈值本身不暴露给用户（文案里不含 500）', () => {
@@ -263,6 +272,27 @@ test('B-8：阈值本身不暴露给用户（文案里不含 500）', () => {
   const note = '私有词较多，词汇量估算暂不含私有词'
   assert.ok(!note.includes('500'), '文案不得出现阈值')
   assert.ok(note.includes('暂不含'), '文案要说清是「暂」时不含')
+})
+
+// ---------------------------------------------------------------- 屈折归并 × 私有词
+
+test('归并：被折叠形不进单元集、记录并入代表形；私有词记录不被折叠吞掉', () => {
+  const pub = [
+    { id: 'w.honor', form: 'honor', freqRank: 100, cefr: 'A2' },
+    { id: 'w.honored', form: 'honored', freqRank: 400, cefr: 'B1', lemma: 'w.honor' },
+  ]
+  const priv = [toUserWordView(userRow('quixotic'), null)]
+  const records = {
+    'w.honored': { status: 'known', consecutiveCorrect: 2, statusSource: 'manual-known' },
+    'u.quixotic': { status: 'review', consecutiveCorrect: 0, nextDueAt: PAST, statusSource: 'learning' },
+  }
+  const { statWords, learnPool, foldRecords } = derive(pub, priv, records)
+  assert.equal(statWords.some((w) => w.id === 'w.honored'), false, '★ 被折叠形不在学习单元集')
+  assert.equal(statWords.some((w) => w.id === 'w.honor'), true, '代表形在')
+  assert.equal(countByStatus(statWords, foldRecords).known, 1, '代表形继承子形的 known')
+  assert.equal(foldRecords['u.quixotic'].status, 'review', '★ 私有词记录不被折叠吞掉')
+  assert.equal(countByStatus(statWords, foldRecords).total, 2, '单元 honor + 私有 quixotic = 2')
+  assert.equal(learnPool.length, 1, '新学池只剩代表形（被折叠形已移除）')
 })
 
 // ---------------------------------------------------------------- 回归：接入前后的闸门一致
