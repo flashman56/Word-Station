@@ -45,6 +45,7 @@ import StatusPill, { StatusLegend } from './StatusPill.jsx'
  *   pending     离线草稿投影行（默认 []）
  *   onRetrySync 立即重试补传（→ learn.flush()）
  *   onRefresh   小站词条刷新回调
+ *   excludeProper 是否排除专有名词（与学习页同一个全局设置；默认 false）
  */
 export default function StationLearn({
   words,
@@ -61,6 +62,7 @@ export default function StationLearn({
   pending = EMPTY_PENDING,
   onRetrySync,
   onRefresh,
+  excludeProper = false,
 }) {
   const [band, setBand] = useState('all')
   const [groupByFamily, setGroupByFamily] = useState(true)
@@ -134,13 +136,25 @@ export default function StationLearn({
       ),
     [list],
   )
+  /**
+   * 抽词池 / 统计的基准词表：与学习页同一个 excludeProper 过滤。
+   *
+   * ★ 只作用于「出什么题」，不作用于「列什么词」★
+   *   下方词条列表仍渲染 `list`（它是浏览视图，用户要能看见并编辑自己加进去的词）；
+   *   被排除的词只是不进统计与队列 —— 这正是「学习队列设置」而不是「筛选」的语义。
+   */
+  const baseList = useMemo(
+    () => (excludeProper ? list.filter((w) => w && w.kind !== 'proper') : list),
+    [list, excludeProper],
+  )
+
   const bands = useMemo(() => buildBands(maxRank), [maxRank])
   const bandCounts = useMemo(() => {
-    const counts = { all: list.length }
+    const counts = { all: baseList.length }
     bands.forEach((b) => {
       if (b.id !== 'all') counts[b.id] = 0
     })
-    list.forEach((w) => {
+    baseList.forEach((w) => {
       const r = w.freqRank
       if (typeof r !== 'number' || !Number.isFinite(r)) return
       for (let i = 1; i < bands.length; i += 1) {
@@ -151,10 +165,10 @@ export default function StationLearn({
       }
     })
     return counts
-  }, [list, bands])
+  }, [baseList, bands])
 
-  const stats = useMemo(() => countByStatus(list, recs), [list, recs])
-  const learnPool = useMemo(() => bandFilter(list, activeBand), [list, activeBand])
+  const stats = useMemo(() => countByStatus(baseList, recs), [baseList, recs])
+  const learnPool = useMemo(() => bandFilter(baseList, activeBand), [baseList, activeBand])
   const morphTypes = useMemo(() => {
     const map = new Map()
     ;(morphemes || []).forEach((m) => {
@@ -171,8 +185,8 @@ export default function StationLearn({
     [learnPool, recs, groupByFamily, familyKeyOf],
   )
   const reviewQueue = useMemo(
-    () => buildReviewQueue(list, recs, DEFAULT_ROUND_SIZE, new Date().toISOString()),
-    [list, recs],
+    () => buildReviewQueue(baseList, recs, DEFAULT_ROUND_SIZE, new Date().toISOString()),
+    [baseList, recs],
   )
 
   if (editing) {
