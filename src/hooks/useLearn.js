@@ -39,6 +39,7 @@ import {
   writeLearn,
   writePrefs,
 } from '../lib/migrate.js'
+import { countScheduled } from '../lib/scheduled.js'
 
 /**
  * 难度分档常量（区间语义）：
@@ -524,7 +525,34 @@ export function useLearn(
     [baseList, privateList],
   )
 
-  const stats = useMemo(() => countByStatus(statWords, records), [statWords, records])
+  /**
+   * 三态统计 + 「已排期」。
+   *
+   * ★★ 为什么 `scheduled` 挂在 stats 对象里，而不是单独 return 一个字段 ★★
+   *   records 只存在于这个 hook 内；Sidebar / LearnHome 拿到的都是 `learn.stats`。
+   *   若把 scheduled 作为**独立 prop** 下发，就必须由 App.jsx 显式透传 ——
+   *   而 App.jsx 正由另一位工程师并行修改，红线是不碰的，那条 prop 永远传不过来，
+   *   组件里恒为默认 0，功能就成了永不显示的死代码。
+   *   放进 stats 则随既有对象自动抵达两处，**不需要动 App.jsx**。
+   *
+   * ★★ 口径：它是 review 的**子集**，不是并列的一栏 ★★
+   *   countByStatus 只按 record.status 分桶，**不看** nextDueAt —— 所以
+   *   「明天到期」的词本来就计入待复习卡片。这两个数字不是并列关系，
+   *   组件里必须写成「其中 N 个已排期」，否则用户会以为待复习之外
+   *   还多出 N 个词，数字对不上账。
+   *
+   * ★★ 为什么没有改 countByStatus 让它一并返回 ★★
+   *   learning.js 自初始提交起零改动是本项目的硬红线；且该函数是纯状态机语义，
+   *   「已排期」纯属展示层派生，混进去会让红线文件凭空多出一个非语义的字段。
+   *   与 countByStatus 共用同一个 statWords 数组，保证两者口径一致（子集关系）。
+   *
+   * 成本：比原先多一遍 6 万词的遍历，但与 stats 共用同一组依赖
+   * （statWords / records），只在二者变化时重算，不进渲染热路径。
+   */
+  const stats = useMemo(
+    () => ({ ...countByStatus(statWords, records), scheduled: countScheduled(statWords, records) }),
+    [statWords, records],
+  )
   // 难度分档只收窄学习抽词池；复习队列仍取全库（选档不影响已加入待复习的词）
   const learnPool = useMemo(() => bandFilter(baseList, band), [baseList, band])
   // 词素 id → type 映射：词族键优先取词根（r.*），与词云的「词根为干、单词为叶」口径一致
