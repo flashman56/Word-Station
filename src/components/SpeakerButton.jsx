@@ -1,7 +1,7 @@
 /**
  * SpeakerButton —— 通用「点喇叭朗读」按钮
  * ------------------------------------------------------------------
- * 三态：可用 / 播放中（图标变化）/ 不可用（disabled + title）。
+ * 三态：可用 / 播放中（图标变化）/ 不可用或 voice 加载中（disabled + title）。
  * 4 个展示位置（WordDetail 词头 / WordRow 列表行 / StudyCard 学习卡 / MorphDetail 词群行）
  * 共用同一实现，底层都走 useSpeech()（模块级共享 voice 缓存 + 单例监听）。
  *
@@ -12,7 +12,7 @@
  * props:
  *   text             要朗读的文本（通常 word.form）—— 必填
  *   size             'xs' | 'sm' | 'md'，默认 'sm'
- *   rate             语速，默认 0.9
+ *   rate             语速，默认 0.85
  *   lang             语言，默认 'en-US'
  *   stopPropagation  是否阻止冒泡，默认 true（列表行内用）
  *   className        追加类名
@@ -69,18 +69,19 @@ function SpeakerIcon({ speaking, px }) {
 export default function SpeakerButton({
   text,
   size = 'sm',
-  rate = 0.9,
+  rate = 0.85,
   lang = 'en-US',
   stopPropagation = true,
   className = '',
   title,
 }) {
-  const { supported, speaking, speak } = useSpeech()
+  const { supported, voicesReady, speaking, speak } = useSpeech()
   const label = String(text == null ? '' : text)
+  const enabled = supported && (voicesReady || speaking)
 
   const handleClick = (e) => {
     if (stopPropagation) e.stopPropagation()
-    if (!supported) return
+    if (!enabled) return
     speak(label, { lang, rate })
   }
 
@@ -88,7 +89,9 @@ export default function SpeakerButton({
     ? '当前环境不支持语音朗读'
     : speaking
       ? `停止朗读「${label}」`
-      : title || `朗读「${label}」`
+      : !voicesReady
+        ? '英语语音引擎正在加载，请稍候'
+        : title || `朗读「${label}」`
 
   const sizeClass = SIZE_CLASS[size] || SIZE_CLASS.sm
   const px = ICON_SIZE[size] || ICON_SIZE.sm
@@ -97,11 +100,11 @@ export default function SpeakerButton({
     <button
       type="button"
       onClick={handleClick}
-      disabled={!supported}
+      disabled={!enabled}
       title={tip}
       aria-label={tip}
       className={`inline-flex items-center justify-center rounded shrink-0 align-middle ${sizeClass} ${
-        supported
+        enabled
           ? 'text-slate-400 hover:text-blue-600 hover:bg-blue-50'
           : 'text-slate-300 cursor-not-allowed'
       } ${speaking ? 'text-blue-600 bg-blue-50' : ''} ${className}`}
