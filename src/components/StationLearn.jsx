@@ -7,6 +7,7 @@ import {
   defaultFamilyKeyOf,
 } from '../lib/learning.js'
 import { buildBands, normalizeBand, bandFilter } from '../hooks/useLearn.js'
+import { buildFoldView } from '../lib/lemmaFold.js'
 import { STATUS } from '../lib/derive.js'
 import LearnHome from './LearnHome.jsx'
 import StudySession from './StudySession.jsx'
@@ -148,13 +149,25 @@ export default function StationLearn({
     [list, excludeProper],
   )
 
+  /**
+   * ★ 屈折归并（Step-2）：站内与学习页**同口径** ★
+   *   foldUnits   = 站内未被折叠的词条（代表形）= 出题单元（保持原顺序）。
+   *   foldRecords = 被折叠形记录并入代表形后的读时视图。
+   *   观察项：站内若含被折词、而代表词不在站内，该词仍被折叠移除（与学习页统一口径）——
+   *   否则「同一份记录、两处口径」会让站内复习与学习页复习打架。
+   *   列表渲染仍用 `list`（浏览视图），折叠只作用于统计与出题。
+   */
+  const fold = useMemo(() => buildFoldView(baseList, recs), [baseList, recs])
+  const foldUnits = fold.units
+  const foldRecords = fold.records
+
   const bands = useMemo(() => buildBands(maxRank), [maxRank])
   const bandCounts = useMemo(() => {
-    const counts = { all: baseList.length }
+    const counts = { all: foldUnits.length }
     bands.forEach((b) => {
       if (b.id !== 'all') counts[b.id] = 0
     })
-    baseList.forEach((w) => {
+    foldUnits.forEach((w) => {
       const r = w.freqRank
       if (typeof r !== 'number' || !Number.isFinite(r)) return
       for (let i = 1; i < bands.length; i += 1) {
@@ -165,10 +178,10 @@ export default function StationLearn({
       }
     })
     return counts
-  }, [baseList, bands])
+  }, [foldUnits, bands])
 
-  const stats = useMemo(() => countByStatus(baseList, recs), [baseList, recs])
-  const learnPool = useMemo(() => bandFilter(baseList, activeBand), [baseList, activeBand])
+  const stats = useMemo(() => countByStatus(foldUnits, foldRecords), [foldUnits, foldRecords])
+  const learnPool = useMemo(() => bandFilter(foldUnits, activeBand), [foldUnits, activeBand])
   const morphTypes = useMemo(() => {
     const map = new Map()
     ;(morphemes || []).forEach((m) => {
@@ -181,12 +194,12 @@ export default function StationLearn({
     [morphTypes],
   )
   const learnQueue = useMemo(
-    () => buildLearnQueue(learnPool, recs, DEFAULT_ROUND_SIZE, { groupByFamily, familyKeyOf }),
-    [learnPool, recs, groupByFamily, familyKeyOf],
+    () => buildLearnQueue(learnPool, foldRecords, DEFAULT_ROUND_SIZE, { groupByFamily, familyKeyOf }),
+    [learnPool, foldRecords, groupByFamily, familyKeyOf],
   )
   const reviewQueue = useMemo(
-    () => buildReviewQueue(baseList, recs, DEFAULT_ROUND_SIZE, new Date().toISOString()),
-    [baseList, recs],
+    () => buildReviewQueue(foldUnits, foldRecords, DEFAULT_ROUND_SIZE, new Date().toISOString()),
+    [foldUnits, foldRecords],
   )
 
   if (editing) {

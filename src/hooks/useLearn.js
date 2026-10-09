@@ -40,6 +40,7 @@ import {
   writePrefs,
 } from '../lib/migrate.js'
 import { countScheduled } from '../lib/scheduled.js'
+import { buildFoldView } from '../lib/lemmaFold.js'
 
 /**
  * 难度分档常量（区间语义）：
@@ -508,11 +509,22 @@ export function useLearn(
 
   // ---------------------------------------------------------------- 派生
   //
+  // ★ 屈折归并（Step-2）★
+  //   学习单元收敛到词族：被折叠形（w.lemma 有值）不再单列，其学习记录按
+  //   known > review > unknown 的优先级并入代表形（详见 lib/lemmaFold.js）。
+  //   「折叠只作用于学习 / 复习队列与统计」——词条仍在词库、仍可浏览（UI 阶段另做）。
+  //
+  //   statWords 拆成两份，切勿混用：
+  //     · statWords     —— **未折叠**（公共 ∪ 私有）：对外返回，供 App 做词汇量估算
+  //                         输入（vocab.js 冻结域，样本口径不动，见 reports/lemma/step2-spec.md §6）。
+  //     · foldStatWords —— **折叠后**（foldUnits ∪ 私有）：供 countByStatus /
+  //                         countScheduled / buildReviewQueue 使用，分母随之收缩到单元数。
+  //
   // statWords = 公共词库 ∪ 私有词：私有词的 word_key 口径与公共词完全一致，
   //   所以统计（countByStatus）、复习队列（buildReviewQueue）、词汇量预测都该看它，
   //   否则私有词在三个地方同时隐形。
   // learnPool 仍只用公共词：私有词 freqRank 多为 null（排到最后一档再被 take 砍掉），
-  //   放进新学队列不但打乱难度序，还几乎必然抽不到（Q4）。
+  //   放进新学队列不但打乱难度序，还几乎必然抽不到（Q4）。私有词不参与折叠。
   //
   // ★ 两者都以 `baseList`（已按 excludeProper 过滤）为准 ★
   //   专有名词开关一旦开启，被排除的词必须在「统计 / 复习 / 新学」三处同时消失；
@@ -523,6 +535,22 @@ export function useLearn(
   const statWords = useMemo(
     () => (privateList.length ? [...baseList, ...privateList] : baseList),
     [baseList, privateList],
+  )
+
+  /**
+   * 折叠视图（读时合并，不改原对象 / 不落盘）：
+   *   · foldUnits   —— 代表形集合（words 中未被折叠者，保持原顺序）= 学习单元。
+   *   · foldRecords —— 被折叠形的记录按最优并入代表形后的记录视图
+   *                    （不在 baseList 里的键，如私有词，原样保留）。
+   * 依赖 baseList（而非 list）以与 excludeProper 口径一致；迁移与存储路径不受影响。
+   */
+  const fold = useMemo(() => buildFoldView(baseList, records), [baseList, records])
+  const foldUnits = fold.units
+  const foldRecords = fold.records
+  // 折叠后的统计词表（私有词不入折叠域，原样并入）
+  const foldStatWords = useMemo(
+    () => (privateList.length ? [...foldUnits, ...privateList] : foldUnits),
+    [foldUnits, privateList],
   )
 
   /**
@@ -544,17 +572,22 @@ export function useLearn(
    * ★★ 为什么没有改 countByStatus 让它一并返回 ★★
    *   learning.js 自初始提交起零改动是本项目的硬红线；且该函数是纯状态机语义，
    *   「已排期」纯属展示层派生，混进去会让红线文件凭空多出一个非语义的字段。
-   *   与 countByStatus 共用同一个 statWords 数组，保证两者口径一致（子集关系）。
+   *   与 countByStatus 共用同一个 foldStatWords 数组与 foldRecords，保证两者口径一致（子集关系）。
+   *
+   * ★★ 为什么走折叠视图（Step-2）★★
+   *   折叠后 total 自然收缩到「学习单元数」，学习页进度条分母（stats.total）随之变小；
+   *   STATS_SCOPE 常量保持「词库总量」语义，仅作空态兜底（见 derive.js 注释）。
    *
    * 成本：比原先多一遍 6 万词的遍历，但与 stats 共用同一组依赖
-   * （statWords / records），只在二者变化时重算，不进渲染热路径。
+   * （foldStatWords / foldRecords），只在二者变化时重算，不进渲染热路径。
    */
   const stats = useMemo(
-    () => ({ ...countByStatus(statWords, records), scheduled: countScheduled(statWords, records) }),
-    [statWords, records],
+    () => ({ ...countByStatus(foldStatWords, foldRecords), scheduled: countScheduled(foldStatWords, foldRecords) }),
+    [foldStatWords, foldRecords],
   )
-  // 难度分档只收窄学习抽词池；复习队列仍取全库（选档不影响已加入待复习的词）
-  const learnPool = useMemo(() => bandFilter(baseList, band), [baseList, band])
+  // 难度分档只收窄学习抽词池；复习队列仍取全库（选档不影响已加入待复习的词）。
+  // ★ 两者都走折叠视图：队列单元即代表形，与统计口径一致。
+  const learnPool = useMemo(() => bandFilter(foldUnits, band), [foldUnits, band])
   // 词素 id → type 映射：词族键优先取词根（r.*），与词云的「词根为干、单词为叶」口径一致
   const morphTypes = useMemo(() => {
     const map = new Map()
@@ -568,14 +601,16 @@ export function useLearn(
     [morphTypes],
   )
   const learnQueue = useMemo(
-    () => buildLearnQueue(learnPool, records, roundSize, { groupByFamily, familyKeyOf }),
-    [learnPool, records, roundSize, groupByFamily, familyKeyOf],
+    () => buildLearnQueue(learnPool, foldRecords, roundSize, { groupByFamily, familyKeyOf }),
+    [learnPool, foldRecords, roundSize, groupByFamily, familyKeyOf],
   )
   // 复习队列：只排已到期词（nextDueAt 为空 / 已过期；未到期不排，答错 +1 天）
   const reviewQueue = useMemo(
-    () => buildReviewQueue(statWords, records, roundSize, new Date().toISOString()),
-    [statWords, records, roundSize],
+    () => buildReviewQueue(foldStatWords, foldRecords, roundSize, new Date().toISOString()),
+    [foldStatWords, foldRecords, roundSize],
   )
+  // ★ recordOf 对外仍走**未折叠** records（与 learn.records 同口径）★
+  //   卡片展示的是代表形自身记录；跨词形的合并进度只体现在队列与统计里。
   const recordOf = useCallback((wordId) => getRecord(records, wordId), [records])
 
   return {

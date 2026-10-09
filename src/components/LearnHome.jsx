@@ -55,6 +55,7 @@ export default function LearnHome({
 }) {
   // 当前选中档位 id（'all' 或 'lo-hi'），用于高亮按钮
   const activeBandId = band === 'all' || band == null ? 'all' : band.id
+  // 分母 = 折叠后的学习单元数（stats.total，动态）；STATS_SCOPE 仅空态兜底，见 derive.js
   const total = stats.total || STATS_SCOPE
   const knownPct = total > 0 ? Math.round((stats.known / total) * 100) : 0
 

@@ -21,6 +21,7 @@ import { estimateVocabulary } from './lib/vocab.js'
 import { MAX_VOCAB_PRIVATE_WORDS } from './lib/derive.js'
 import { useSettings } from './hooks/useSettings.js'
 import { buildBands, normalizeBand } from './hooks/useLearn.js'
+import { isFolded } from './lib/lemmaFold.js'
 import { useAuth } from './hooks/useAuth.js'
 import { useStations } from './hooks/useStations.js'
 import { useSync } from './hooks/useSync.js'
@@ -308,6 +309,10 @@ function AppShell({ words, auth, stations, sync }) {
       //   否则「0~3000 · 3000 词」写的仍是未过滤的口径，用户照着分档选完，
       //   实际开出来的队列却少几千 —— 计数与真实队列对不上是最难自查的一类 bug。
       if (excludeProper && w.kind === 'proper') return
+      // ★ 屈折归并（Step-2）：被折叠形不构成独立学习单元，须与 learnPool 同口径剔除 ★
+      //   learnPool 已按 isFolded 折叠（见 useLearn 的 buildFoldView），这里少剔一次
+      //   就会让每个分档都虚高几千 —— 正是上面注释警告的那类「计数与队列对不上」。
+      if (isFolded(w)) return
       counts.all += 1
       const r = w.freqRank
       if (typeof r !== 'number' || !Number.isFinite(r)) return
