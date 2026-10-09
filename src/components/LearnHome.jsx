@@ -1,5 +1,6 @@
 import React from 'react'
 import { STATUS, STATS_SCOPE } from '../lib/derive.js'
+import { describeMigrationReport } from '../lib/migrationCopy.js'
 import VocabCard from './VocabCard.jsx'
 
 /**
@@ -60,6 +61,13 @@ export default function LearnHome({
   const hasReview = reviewQueue.length > 0
   const hasLearn = learnQueue.length > 0
   const isEmpty = !hasReview && !hasLearn
+
+  /* 迁移提示：措辞由 lib/migrationCopy.js 统一产出（Sidebar 共用同一份）。
+     ★ 判据不是「有没有 report」，而是「有没有值得说的话」——
+       inheritFreqKnown 关掉且无旧版数据时返回 null，此时整块不渲染，
+       而不是渲染出「已从旧版保留 0 个已掌握、0 个待复习…」这种既无信息
+       量又同样误导的话。 */
+  const migrationNote = describeMigrationReport(migrationReport)
 
   const cards = [
     { key: 'unknown', value: stats.unknown },
@@ -264,10 +272,9 @@ export default function LearnHome({
       </div>
 
       {/* 迁移提示 */}
-      {migrationReport && (
+      {migrationNote && (
         <p className="mt-4 text-xs text-slate-400 text-center">
-          已从旧版保留 {migrationReport.known} 个已掌握、{migrationReport.review} 个待复习、
-          {migrationReport.unknown} 个未知。
+          {migrationNote.text}
         </p>
       )}
     </div>
