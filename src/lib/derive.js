@@ -58,13 +58,20 @@ export const AUTO_KNOWN_RANK = 2500
  * 词库扩容时改这一个数字即可（scripts/split-data.mjs 的输出里有准确词数）。
  * 需要精确值时可用可注入版本：setStatsScope(n)。
  *
- * 变更记录：64825 → 64723。清理了 102 条「自认错词」的垃圾词条
- * （evemhing / iong / ieast / ge / ieft / lnspector / ofhere / ionger /
- * commited 等，释义里写着「拼写有误」「疑为 X」）。这些条目原本像正常单词一样
- * 计入学习队列与统计分母，现已从 src/data/words-mono-seed.js 移除。
+ * 变更记录：
+ *   64825 → 64723：清理了 102 条「自认错词」的垃圾词条
+ *     （evemhing / iong / ieast / ge / ieft / lnspector / ofhere / ionger /
+ *     commited 等，释义里写着「拼写有误」「疑为 X」）。
+ *   64723 → 64699：清理 24 条高置信垃圾词条（保守策略，绝不误删 ECDICT 已收录词）：
+ *     3 条 AI 杜撰占位/乱凑词（words-extra.js：extraviv / chronologyof / misterr）；
+ *     21 条清晰错拼且正确词已在库内的词条（words-mono-seed.js：carefull / wory /
+ *     arert / iive / faii / iooked / beeplng / lnternet / riend / beastiality /
+ *     voyuer / masterbating / masterbation / lmagine / iife / rember / couid /
+ *     lnternational / embarassing / colord / ioved）。同时从 synants-mono-seed.js
+ *     移除 10 对引用了已删错拼词的近/反义对。
  * 精确值校验：scripts/test-learning.mjs 断言 STATS_SCOPE === 全库唯一 id 数。
  */
-export const STATS_SCOPE = 64723
+export const STATS_SCOPE = 64699
 
 /**
  * 词汇量预测纳入私有词的上限（B-8 护栏）。
