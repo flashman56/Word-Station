@@ -157,9 +157,12 @@ export function buildIndex(morphemes, words) {
   const wordsByMorph = new Map()
   morphemes.forEach((m) => wordsByMorph.set(m.id, []))
   words.forEach((w) => {
+    if (!Array.isArray(w.morphs)) return
     w.morphs.forEach((mid) => {
       const bucket = wordsByMorph.get(mid)
-      if (bucket) bucket.push(w)
+      // 防御：出现未知/悬挂词素 id 时跳过，绝不抛错（合并补丁已按词素表过滤）
+      if (!bucket) return
+      bucket.push(w)
     })
   })
 
