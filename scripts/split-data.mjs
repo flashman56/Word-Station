@@ -6,19 +6,25 @@
  *   public/data/v1/words-index.json      formSlug -> [shardIdx, idx, freqRank, cefrIdx]
  *   public/data/v1/words/w-<n>.json      完整词条，1500 条/片
  *   public/data/v1/phon/p-<a..z|_>.json  音标/例句/用法，按首字母分片
+ *   public/data/v1/usage/u-<bucket>.json 用法补充（固定搭配/背景/用法），按两字母前缀分片
  *
  * 用法：npm run split:data
  *
  * 红线：
  *   - 只做「读 → 切 → 写」，不修改任何词条内容（音标严禁生成，这里更不会动）。
  *   - 切分必须稳定：同一输入产出同一批文件（分片顺序按 words 数组原顺序）。
+ *   - usage-extra 字段只有 c/b/u，绝不在这里引入任何音标字段。
  */
 import { mkdirSync, writeFileSync, rmSync, existsSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { words, phonetics } from '../src/data/index.js'
+// 用法补充数据源（26,983 条，12.4MB）。只读取，不改写。
+import { usageExtra } from '../src/data/usage-extra.js'
 // slug 口径与前端 wordKey.js 共用一份实现，避免两侧漂移
 import { slug as slugForm } from '../src/lib/wordKey.js'
+// 桶键口径与前端 usageSupplement.js 共用一份实现，避免两侧漂移
+import { usageBucketOf, usageShardFileName } from '../src/lib/usageShardKey.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(__dirname, '..')
@@ -46,6 +52,7 @@ function main() {
   if (existsSync(OUT_DIR)) rmSync(OUT_DIR, { recursive: true, force: true })
   ensureDir(resolve(OUT_DIR, 'words'))
   ensureDir(resolve(OUT_DIR, 'phon'))
+  ensureDir(resolve(OUT_DIR, 'usage'))
 
   // ---------------------------------------------------------------- 词条分片
   const index = {}
@@ -99,6 +106,49 @@ function main() {
     )
   })
 
+  // ---------------------------------------------------------------- 用法补充分片
+  // usageExtra: { [form小写]: { c, b, u } }；按「两字母前缀」分片。
+  //
+  // 为什么不是首字母：usage-extra 有 12.4MB / 26,983 条，首字母最大片 1.26MB；
+  // 两字母前缀最大片 455KB，且查一个词永远只命中 1 片。
+  // 桶键口径由 src/lib/usageShardKey.js 独占定义，运行时复用同一份实现。
+  const USAGE_ALLOWED_FIELDS = new Set(['c', 'b', 'u'])
+  const usageGroups = new Map()
+  const usageKeys = Object.keys(usageExtra || {})
+  usageKeys.forEach((form) => {
+    const entry = usageExtra[form]
+    if (!entry || typeof entry !== 'object') return
+    // 音标红线守卫：usage-extra 只允许 c/b/u，出现音标类字段立即让构建失败。
+    Object.keys(entry).forEach((field) => {
+      if (!USAGE_ALLOWED_FIELDS.has(field)) {
+        throw new Error(
+          `usage-extra.js 的 "${form}" 含非法字段 "${field}"；只允许 c/b/u（音标红线）`,
+        )
+      }
+    })
+    const bucket = usageBucketOf(form)
+    if (!usageGroups.has(bucket)) usageGroups.set(bucket, {})
+    usageGroups.get(bucket)[form] = entry
+  })
+
+  const usageShards = {}
+  let usageShardCount = 0
+  let usageBytes = 0
+  let usageLargestBucket = ''
+  ;[...usageGroups.keys()].sort().forEach((bucket) => {
+    const payload = JSON.stringify(usageGroups.get(bucket))
+    usageBytes += Buffer.byteLength(payload, 'utf8')
+    if (payload.length > usageLargestBucket.length) usageLargestBucket = bucket
+    const file = `data/${VERSION}/usage/${usageShardFileName(bucket)}`
+    usageShards[bucket] = file
+    writeFileSync(
+      resolve(OUT_DIR, 'usage', usageShardFileName(bucket)),
+      payload,
+      'utf8',
+    )
+    usageShardCount += 1
+  })
+
   // ---------------------------------------------------------------- manifest
   const manifest = {
     version: VERSION,
@@ -110,6 +160,11 @@ function main() {
     wordShardPrefix: `data/${VERSION}/words/w-`,
     wordShardSuffix: '.json',
     phonShards,
+    // generatedAt 变 → 运行时 IndexedDB 缓存键变 → 旧分片缓存自动失效并被清理。
+    usageShards,
+    usageShardPrefix: `data/${VERSION}/usage/u-`,
+    usageShardSuffix: '.json',
+    usageCount: usageKeys.length,
     cefrLegend: CEFR_LIST,
   }
   writeFileSync(resolve(OUT_DIR, 'manifest.json'), JSON.stringify(manifest), 'utf8')
@@ -121,6 +176,10 @@ function main() {
   console.log(`  词条        ${written} / ${words.length}`)
   console.log(`  词条分片    ${shardCount} 片 × ${SHARD_SIZE} 条`)
   console.log(`  音标分片    ${Object.keys(phonShards).length} 片（${phonKeys.length} 条）`)
+  console.log(
+    `  用法分片    ${usageShardCount} 片（${usageKeys.length} 条，` +
+      `${(usageBytes / 1024 / 1024).toFixed(2)} MB，最大片 "${usageLargestBucket}"）`,
+  )
   console.log(`  索引体积    ${(indexBytes / 1024 / 1024).toFixed(2)} MB（未压缩）`)
   console.log(`  输出目录    public/data/${VERSION}/`)
   /* eslint-enable no-console */
