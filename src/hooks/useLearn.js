@@ -158,6 +158,9 @@ export const BULK_SELECT_CAP = 2000
  * @param {(keys: string[]) => void} [opts.onDirty] 写操作回调（云端同步据此标记 dirty，纯函数层不受影响）
  * @param {(err: {code: string, message: string}|null) => void} [opts.onStorageError] 写盘失败回调（A-12）
  * @param {boolean} [opts.stampUpdatedAt] 是否给写出的记录打 updatedAt（默认 true）
+ * @param {boolean} [opts.excludeProper] 开启后把专有名词（kind === 'proper'）排除在
+ *   学习 / 复习队列与统计之外（默认关）。过滤发生在**传给 learning.js 之前**：
+ *   buildLearnQueue / buildReviewQueue 只接收数组、永远不知道 kind。
  */
 export function useLearn(
   words,
@@ -171,9 +174,23 @@ export function useLearn(
     onDirty = null,
     onStorageError = null,
     stampUpdatedAt = true,
+    excludeProper = false,
   } = {},
 ) {
   const list = words || []
+
+  /**
+   * 学习 / 复习 / 统计的基准词表：按 excludeProper 过滤掉专有名词。
+   *
+   * ★ 迁移必须用 `list` 而不是 `baseList` ★
+   *   runMigration 的继承语义是「按全库高频词继承已知状态」，若用过滤后的
+   *   baseList 跑，用户翻一下 excludeProper 开关再重跑迁移，就会静默改掉
+   *   约 1.4 万个专有名词的继承状态（数据事故，且无任何提示）。
+   */
+  const baseList = useMemo(
+    () => (excludeProper ? list.filter((w) => w && w.kind !== 'proper') : list),
+    [list, excludeProper],
+  )
 
   // onDirty 放进 ref：回调变化不应引起下面的 useCallback 重建（否则队列会重算）
   const onDirtyRef = useRef(onDirty)
@@ -495,15 +512,21 @@ export function useLearn(
   //   否则私有词在三个地方同时隐形。
   // learnPool 仍只用公共词：私有词 freqRank 多为 null（排到最后一档再被 take 砍掉），
   //   放进新学队列不但打乱难度序，还几乎必然抽不到（Q4）。
+  //
+  // ★ 两者都以 `baseList`（已按 excludeProper 过滤）为准 ★
+  //   专有名词开关一旦开启，被排除的词必须在「统计 / 复习 / 新学」三处同时消失；
+  //   只过滤 learnPool 而不过滤 statWords 会出现：某个专有名词明明背过、
+  //   却仍每天出现在复习队列里 —— 用户会认为开关坏了。
+  //   迁移（runMigration）是唯一例外，仍用未过滤的 list，见 baseList 处注释。
   const privateList = privateWords || []
   const statWords = useMemo(
-    () => (privateList.length ? [...list, ...privateList] : list),
-    [list, privateList],
+    () => (privateList.length ? [...baseList, ...privateList] : baseList),
+    [baseList, privateList],
   )
 
   const stats = useMemo(() => countByStatus(statWords, records), [statWords, records])
   // 难度分档只收窄学习抽词池；复习队列仍取全库（选档不影响已加入待复习的词）
-  const learnPool = useMemo(() => bandFilter(list, band), [list, band])
+  const learnPool = useMemo(() => bandFilter(baseList, band), [baseList, band])
   // 词素 id → type 映射：词族键优先取词根（r.*），与词云的「词根为干、单词为叶」口径一致
   const morphTypes = useMemo(() => {
     const map = new Map()

@@ -56,6 +56,11 @@ const DEFAULT_FILTERS = {
   groupByFamily: true,
   // 增量：学习卡进入新词时自动朗读单词（默认关，仅朗读单词、不读例句）
   autoSpeak: false,
+  // 专有名词开关：**默认必须关** —— 全库约 1.4 万个（占 21%），
+  // 默认开启会让绝大多数用户莫名其妙地「少了一批常见词」。
+  // 判定只用 word.kind === 'proper'（不按 origin / 首字母大写：sandwich、boycott
+  // 这类 eponym 是普通词）。读老 settings 用 === true 兜底（老用户该字段 undefined）。
+  excludeProper: false,
 }
 
 /** WordDetail 的 addToStationProps 缺省值：空对象 = 按钮不渲染（默认行为不变） */
@@ -180,6 +185,8 @@ function TopBar({ auth, stations, sync, view, setView, stats, sessionMode, learn
 function AppShell({ words, auth, stations, sync }) {
   const [filters, setFilters] = useSettings(DEFAULT_FILTERS)
   const activeBand = useMemo(() => normalizeBand(filters.learnBand), [filters.learnBand])
+  // 防御式读取：settings v2 是整对象写入，老用户没有这个字段（undefined）→ 关
+  const excludeProper = filters.excludeProper === true
 
   // T05：私有词并入统计 / 复习队列 / 词汇量预测（B-3 / B-4 / Q4）
   const userWords = useUserWords(auth.userId)
@@ -192,6 +199,7 @@ function AppShell({ words, auth, stations, sync }) {
       band: activeBand,
       groupByFamily: filters.groupByFamily !== false,
       morphemes,
+      excludeProper,
     },
   })
 
@@ -283,6 +291,10 @@ function AppShell({ words, auth, stations, sync }) {
     words.forEach((w) => {
       if (!w || seen.has(w.id)) return
       seen.add(w.id)
+      // ★ 与 learnPool 同一个过滤条件 ★
+      //   否则「0~3000 · 3000 词」写的仍是未过滤的口径，用户照着分档选完，
+      //   实际开出来的队列却少几千 —— 计数与真实队列对不上是最难自查的一类 bug。
+      if (excludeProper && w.kind === 'proper') return
       counts.all += 1
       const r = w.freqRank
       if (typeof r !== 'number' || !Number.isFinite(r)) return
@@ -294,7 +306,7 @@ function AppShell({ words, auth, stations, sync }) {
       }
     })
     return counts
-  }, [words, bands])
+  }, [words, bands, excludeProper])
 
   const query = (filters.query || '').trim()
 
@@ -596,6 +608,10 @@ function AppShell({ words, auth, stations, sync }) {
                 words={stationWords.words}
                 morphemes={morphemes}
                 records={learn.records}
+                /* 小站背词遵守同一个专有名词开关（学习队列设置是全局的，
+                   不是某一页的视图筛选）—— 不传的话小站会把学习页排除掉的词
+                   照常出给用户，等于开关只生效一半。 */
+                excludeProper={excludeProper}
                 answer={learn.answer}
                 markKnown={learn.markKnown}
                 setReview={learn.setReview}
@@ -637,6 +653,10 @@ function AppShell({ words, auth, stations, sync }) {
                 groupByFamily={filters.groupByFamily !== false}
                 onToggleGroupByFamily={() =>
                   setFilters((prev) => ({ ...prev, groupByFamily: prev.groupByFamily === false }))
+                }
+                excludeProper={excludeProper}
+                onToggleExcludeProper={() =>
+                  setFilters((prev) => ({ ...prev, excludeProper: prev.excludeProper !== true }))
                 }
                 vocab={vocab}
                 showSharedNote
