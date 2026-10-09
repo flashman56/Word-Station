@@ -30,6 +30,7 @@ import StudySession from './components/StudySession.jsx'
 import WordRow from './components/WordRow.jsx'
 import SpeakerButton from './components/SpeakerButton.jsx'
 import EtymologyPanel from './components/EtymologyPanel.jsx'
+import UsageSupplement from './components/UsageSupplement.jsx'
 import BulkActionBar from './components/BulkActionBar.jsx'
 import AddToStationMenu from './components/AddToStationMenu.jsx'
 import AuthPanel from './components/AuthPanel.jsx'
@@ -1049,6 +1050,9 @@ function WordDetail({
           {usage}
         </div>
       )}
+
+      {/* 用法补充：固定搭配 / 背景 / 用法（按需异步加载，无条目则无渲染） */}
+      <UsageSupplement form={word.form} />
 
       {related.synonyms.length > 0 && (
         <section className="mt-3">
