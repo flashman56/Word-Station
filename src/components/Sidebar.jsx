@@ -1,5 +1,6 @@
 import React from 'react'
 import { CEFR, ORIGINS, STATUS, TYPES, AUTO_KNOWN_RANK } from '../lib/derive.js'
+import { describeMigrationReport } from '../lib/migrationCopy.js'
 import VocabCard from './VocabCard.jsx'
 
 function Section({ title, children }) {
@@ -51,6 +52,11 @@ export default function Sidebar({
 }) {
   const patch = (p) => setFilters((f) => ({ ...f, ...p }))
 
+  /* 迁移提示：与 LearnHome 共用 lib/migrationCopy.js 的同一份措辞。
+     两处曾各写一遍「已从旧版保留…」，于是新访客（实际是按词频自动继承、
+     根本没有旧版数据）在两处同时被误导。单一数据源消除这个重复。 */
+  const migrationNote = describeMigrationReport(migrationReport)
+
   const toggleIn = (key, value) =>
     setFilters((f) => {
       const list = f[key] || []
@@ -79,10 +85,9 @@ export default function Sidebar({
         <p className="text-xs text-slate-400 mt-0.5">词素为干，单词为叶</p>
       </div>
 
-      {migrationReport && (
+      {migrationNote && (
         <div className="mb-4 rounded-md bg-blue-50 border border-blue-100 px-2.5 py-2 text-xs text-blue-700 leading-relaxed">
-          已从旧版保留 {migrationReport.known} 个已掌握、{migrationReport.review} 个待复习、
-          {migrationReport.unknown} 个未知。
+          {migrationNote.text}
         </div>
       )}
 
