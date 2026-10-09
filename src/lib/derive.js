@@ -154,6 +154,27 @@ export function recordOf(word, records = {}) {
 // ---------------------------------------------------------------- 索引构建
 
 /**
+ * 「这个词有没有构词拆解」——**全站唯一判据**。
+ * ------------------------------------------------------------------
+ * ★ 为什么不能用 `word.morphless` ★
+ *   `morphless: true` 是**数据层的「我承认没拆解」声明**，不是 UI 的显示开关。
+ *   remorph 补丁（scripts/resegment-morphs.mjs）给 morphless 词补上了 morphs/chain，
+ *   但为了不破坏 validate-data.mjs 的硬约束（morphs 为空必须显式标记 morphless:true）
+ *   必须**保留** morphless:true —— 于是数据说「有拆解」、标记说「无拆解」，
+ *   而 UI 判的是标记，结果 2244 条补丁一条都没生效（点开全是空面板）。
+ *   判据改成「chain 是否有内容」后，数据与 UI 才自洽。
+ *
+ * 全量实测（64699 词）：`chain.length > 0` ⟺ `morphs` 非空且非 x.unk 占位，
+ * 两种写法零分歧，所以这里取语义更直接的 chain。
+ *
+ * @param {object} word 词条（公共词或私有词视图对象）
+ * @returns {boolean} 有可展示的构词拆解
+ */
+export function hasDecomposition(word) {
+  return Boolean(word && Array.isArray(word.chain) && word.chain.length > 0)
+}
+
+/**
  * 建索引：词素 id -> 词素；词素 id -> 其下单词数组；单词 id -> 单词。
  * 一个单词可以挂在多个词素下（网状结构的关键）。
  */

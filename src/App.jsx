@@ -8,10 +8,12 @@ import {
   applyFilters,
   buildIndex,
   freqBand,
+  hasDecomposition,
   recordOf,
   search,
 } from './lib/derive.js'
 import { buildRelations, pairKey, relationsOf } from './lib/relations.js'
+import { buildStemIndex, familyOf } from './lib/stemFamily.js'
 import { phoneticsOfAsync } from './lib/dict.js'
 import { shouldShowPhoneticPending } from './lib/phoneticDisplay.js'
 import { estimateVocabulary } from './lib/vocab.js'
@@ -262,7 +264,15 @@ function AppShell({ words, auth, stations, sync }) {
     () => buildRelations(words, { synonyms: SYNONYMS, antonyms: ANTONYMS }),
     [words],
   )
-  const orphanWords = useMemo(() => words.filter((word) => word.morphless === true), [words])
+  // ★ 无拆解词（「无词素」组）的唯一判据是「chain 里没有内容」★
+  //   原来按 `word.morphless === true` 过滤，而 remorph 补丁给 2244 个 morphless 词
+  //   补了 morphs/chain 却保留了 morphless:true（validate 的硬约束要求保留）——
+  //   于是这 2244 个词同时出现在「词素岛屿」和「无词素孤儿组」里，
+  //   数据与 UI 自相矛盾：岛屿里能点开看到拆解，孤儿组里却标着「无词素」。
+  const orphanWords = useMemo(() => words.filter((word) => !hasDecomposition(word)), [words])
+  // ★ 同族词反查索引：无拆解词没有词素锚点，只能按词形找同族 ★
+  //   一次建好、整个会话复用；WordDetail 只查表，绝不在渲染期遍历词库。
+  const stemIndex = useMemo(() => buildStemIndex(words), [words])
 
   const maxRank = useMemo(
     () =>
@@ -789,6 +799,7 @@ function AppShell({ words, auth, stations, sync }) {
             word={selectedWord}
             records={learn.records}
             index={index}
+            stemIndex={stemIndex}
             relationIndex={relationIndex}
             onSelectRelated={openRelatedWord}
             onJump={openMorph}
@@ -951,6 +962,7 @@ function WordDetail({
   word,
   records,
   index,
+  stemIndex,
   relationIndex,
   onSelectRelated,
   onJump,
@@ -989,6 +1001,12 @@ function WordDetail({
   const usage = word.usage || (phon && phon.usage) || null
   const progress = `${Math.min(rec.consecutiveCorrect || 0, 2)}/2`
   const related = relationsOf(relationIndex, word.id)
+  // 同族词：只有「无拆解」的词才需要（它是空面板时的救命出口）。
+  // 查表 O(桶大小)，索引在 AppShell 建一次，这里不做任何全表扫描。
+  const stemFamily = useMemo(
+    () => (hasDecomposition(word) ? [] : familyOf(stemIndex, word)),
+    [stemIndex, word],
+  )
   const conflictPairs = new Set((relationIndex?.conflicts || []).map((item) => item.pairKey))
   const gradeStars = (grade) => `${'★'.repeat(4 - grade)}${'☆'.repeat(grade - 1)}`
 
@@ -1133,10 +1151,38 @@ function WordDetail({
       </div>
 
       <h3 className="text-xs font-semibold text-slate-500 mt-4 mb-1.5">构词拆解</h3>
-      {word.morphless ? (
-        <div className="px-2 py-1.5 rounded border border-amber-200 bg-amber-50 text-xs text-amber-700">
-          无词素 · {word.kind === 'mono' ? '单纯词' : word.kind === 'loan' ? '外来词' : word.kind === 'proper' ? '专有名词' : '固定搭配'}
-        </div>
+      {/* ★ 判据是「chain 里有没有内容」，不是 word.morphless ★
+          remorph 补丁给 2244 个 morphless 词补了 morphs/chain，但必须保留
+          morphless:true（validate-data.mjs 的硬约束），判标记会让这 2244 条补丁
+          一条都不显示 —— 用户点开全是空面板。判 chain 后补丁全部生效。 */}
+      {!hasDecomposition(word) ? (
+        <>
+          <div className="px-2 py-1.5 rounded border border-amber-200 bg-amber-50 text-xs text-amber-700">
+            无词素 · {word.kind === 'mono' ? '单纯词' : word.kind === 'loan' ? '外来词' : word.kind === 'proper' ? '专有名词' : '固定搭配'}
+          </div>
+          {/* ★ 同族词互链 ★
+              无拆解词没有词素锚点，点不出任何内容 —— 这是「空面板」的第二层原因。
+              这里按词形反查同族词（索引在 AppShell 建好），给的每个 chip 都是
+              「有真实拆解」的词，点进去能看到构词拆解，不会又撞回空面板。
+              只有确实找不到同族词时，才只剩上面那行 amber 提示。 */}
+          {stemFamily.length > 0 && (
+            <div className="mt-2">
+              <div className="text-xs text-slate-500 mb-1">该词无词根拆解，但同族词：</div>
+              <div className="flex flex-wrap gap-1">
+                {stemFamily.map((fam) => (
+                  <button
+                    key={fam.id}
+                    type="button"
+                    onClick={() => onSelectRelated(fam.id)}
+                    className="px-2 py-1 rounded-full border border-blue-200 bg-blue-50 text-xs text-blue-700 hover:bg-blue-100"
+                  >
+                    {fam.form}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
       ) : (
         <>
           <div className="flex items-center flex-wrap gap-1">

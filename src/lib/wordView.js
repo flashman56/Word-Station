@@ -11,6 +11,12 @@
  *   只要 id 等于 wordKey，同一份 records 才能同时服务小站与学习页。
  */
 
+// ★ 判据统一 ★
+//   这里以前自己写了一套「morphs 为空 或 morphs[0]==='x.unk'」，与公共词的
+//   UI 判据语义不一致 —— 同一个词在两条路径下可能一个显示拆解、一个显示「无词素」。
+//   现在统一走 derive.hasDecomposition（判 chain 是否有内容），私有词与公共词同义。
+import { hasDecomposition } from './derive.js'
+
 /**
  * 把一行私有词记录转成学习侧视图对象。
  *
@@ -23,6 +29,7 @@
  */
 export function toUserWordView(row, note = null) {
   const morphs = Array.isArray(row?.morphs) ? row.morphs : []
+  const chain = Array.isArray(row?.chain) ? row.chain : []
   return {
     // id 必须等于 wordKey —— 学习记录就是按这个键存的
     id: row.wordKey,
@@ -31,15 +38,15 @@ export function toUserWordView(row, note = null) {
     pos: row.pos,
     gloss: row.gloss,
     morphs,
-    chain: Array.isArray(row?.chain) ? row.chain : [],
+    chain,
     cefr: row.cefr,
     freqRank: row.freqRank,
     phoneticBr: row.phoneticBr,
     phoneticStatus: row.phoneticStatus || 'pending',
     example: row.example,
     usage: row.usage,
-    // 供 WordDetail 复用：没有词素（或只有占位 x.unk）时按「无词素」展示
-    morphless: morphs.length === 0 || morphs[0] === 'x.unk',
+    // 供 WordDetail / 列表分组复用：判据与公共词完全一致（判 chain，不判 morphless 标记）
+    morphless: !hasDecomposition({ chain }),
     kind: 'user',
     source: 'user',
     note: note ?? null,

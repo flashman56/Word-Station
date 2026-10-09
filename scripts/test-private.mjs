@@ -104,10 +104,36 @@ test('toUserWordView：形状与 useStationWords 原内联映射逐字段一致'
   assert.equal(v.generationStatus, 'ready')
 })
 
-test('toUserWordView：morphless 判定与原实现一致（空数组或 x.unk 占位）', () => {
+test('toUserWordView：morphless 判据 = chain 是否为空（与公共词统一，不再判 x.unk 占位）', () => {
+  // ★ 判据已从「morphs 为空 或 morphs[0]==='x.unk'」改为「chain 里没有内容」★
+  //   原因：旧判据下 morphs:['r.1'] + chain:[] 会判 morphless=false，
+  //   于是走「正常拆解」分支去渲染一个空数组 —— 渲染出来就是一个空盒子，
+  //   正是本次要修的「空面板」在私有词路径上的同款 bug。
+  //   现在统一走 derive.hasDecomposition，私有词与公共词同义。
   assert.equal(toUserWordView(userRow('a', { morphs: [] }), null).morphless, true)
   assert.equal(toUserWordView(userRow('b', { morphs: ['x.unk'] }), null).morphless, true)
-  assert.equal(toUserWordView(userRow('c', { morphs: ['r.1'] }), null).morphless, false)
+  // 有真实拆解（chain 非空）→ 判为「有拆解」，正常渲染构词拆解
+  assert.equal(
+    toUserWordView(
+      userRow('c', { morphs: ['r.1'], chain: [{ morph: 'r.1', form: 'c', gloss: '词根' }] }),
+      null,
+    ).morphless,
+    false,
+  )
+  // ★ 打了 remorph 式补丁的私有词：morphs 非空 + chain 非空 → 必须判为「有拆解」
+  assert.equal(
+    toUserWordView(
+      userRow('d', {
+        morphs: ['r.1', 's.2'],
+        chain: [
+          { morph: 'r.1', form: 'c', gloss: '词根' },
+          { morph: 's.2', form: 'd', gloss: '后缀' },
+        ],
+      }),
+      null,
+    ).morphless,
+    false,
+  )
 })
 
 test('toUserWordView：morphs / chain 缺失时兜底为空数组，不返回 undefined', () => {
