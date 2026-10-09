@@ -9,6 +9,7 @@ import {
   buildIndex,
   freqBand,
   hasDecomposition,
+  morphlessKindLabel,
   recordOf,
   search,
 } from './lib/derive.js'
@@ -1158,7 +1159,7 @@ function WordDetail({
       {!hasDecomposition(word) ? (
         <>
           <div className="px-2 py-1.5 rounded border border-amber-200 bg-amber-50 text-xs text-amber-700">
-            无词素 · {word.kind === 'mono' ? '单纯词' : word.kind === 'loan' ? '外来词' : word.kind === 'proper' ? '专有名词' : '固定搭配'}
+            无词素 · {morphlessKindLabel(word)}
           </div>
           {/* ★ 同族词互链 ★
               无拆解词没有词素锚点，点不出任何内容 —— 这是「空面板」的第二层原因。

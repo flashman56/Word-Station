@@ -3,6 +3,7 @@ import { MASTER_THRESHOLD, statusLabel } from '../lib/learning.js'
 // 红线：音标只查表（public/data/v1/phon/*.json，源头是 ECDICT），严禁模型生成
 import { phoneticsOfAsync } from '../lib/dict.js'
 import { shouldShowPhoneticPending } from '../lib/phoneticDisplay.js'
+import { hasDecomposition, morphlessKindLabel } from '../lib/derive.js'
 import { useSpeech } from '../hooks/useSpeech.js'
 import SpeakerButton from './SpeakerButton.jsx'
 import UsageSupplement from './UsageSupplement.jsx'
@@ -187,17 +188,28 @@ export default function StudyCard({
 
           <div className="mt-4">
             <p className="text-xs font-semibold text-slate-500 mb-1.5">构词拆解</p>
-            <div className="flex items-center flex-wrap gap-1.5">
-              {word.chain.map((step, i) => (
-                <React.Fragment key={i}>
-                  {i > 0 && <span className="text-slate-300">+</span>}
-                  <span className="px-2 py-1 rounded border border-slate-200 text-xs">
-                    <span className="font-medium text-slate-700">{step.form}</span>
-                    <span className="text-slate-400 ml-1">{step.gloss}</span>
-                  </span>
-                </React.Fragment>
-              ))}
-            </div>
+            {/* ★ 判据是「chain 里有没有内容」(derive.hasDecomposition)，不是 word.morphless ★
+                remorph 补丁给 2244 个 morphless 词补了 morphs/chain，但必须保留
+                morphless:true（validate-data.mjs 的硬约束），判标记会让这 2244 条补丁
+                一条都不显示 —— 这正是用户看到「标题在、面板空」的根因。判 chain 后
+                补丁全部生效。文案与 WordDetail（App.jsx）同源同字符串，防止两个 UI 面漂移。 */}
+            {hasDecomposition(word) ? (
+              <div className="flex items-center flex-wrap gap-1.5">
+                {word.chain.map((step, i) => (
+                  <React.Fragment key={i}>
+                    {i > 0 && <span className="text-slate-300">+</span>}
+                    <span className="px-2 py-1 rounded border border-slate-200 text-xs">
+                      <span className="font-medium text-slate-700">{step.form}</span>
+                      <span className="text-slate-400 ml-1">{step.gloss}</span>
+                    </span>
+                  </React.Fragment>
+                ))}
+              </div>
+            ) : (
+              <div className="px-2 py-1.5 rounded border border-amber-200 bg-amber-50 text-xs text-amber-700">
+                无词素 · {morphlessKindLabel(word)}
+              </div>
+            )}
           </div>
 
           <div className="mt-8 flex justify-end">

@@ -175,6 +175,33 @@ export function hasDecomposition(word) {
 }
 
 /**
+ * 「无词素」词条的类型标签 —— **只读展示**，供 UI 在无拆解时补一行说明。
+ * ------------------------------------------------------------------
+ * ★ 与 hasDecomposition **同源** ★
+ *   二者共同构成「无词素」语义的两半：hasDecomposition 回答「有没有拆解」，
+ *   本函数回答「既然没有，它属于哪类词」。任何需要「无词素 · X」文案的 UI
+ *   面（WordDetail、StudyCard …）都必须调用本函数，不得各自内联三元 ——
+ *   两个 UI 面各写一份映射迟早漂移（一处改了词另一处没改），用户就会在
+ *   学习卡和词云里看到同一个词被叫成两种类型。收敛到一处正是为此。
+ *
+ * ★ 映射口径（与 WordDetail 原内联三元逐字符串一致，纯提取、零行为变更）★
+ *   mono   → '单纯词'   （单语素，无词缀可拆）
+ *   loan   → '外来词'   （整体借入，内部无构词层级）
+ *   proper → '专有名词' （地名/人名等，不作构词切分）
+ *   其余   → '固定搭配' （含 phrase / user / 历史 undefined 等一切兜底）
+ *
+ * @param {object} word 词条（公共词或私有词视图对象）
+ * @returns {string} 无词素词的类型标签
+ */
+export function morphlessKindLabel(word) {
+  const kind = word && word.kind
+  if (kind === 'mono') return '单纯词'
+  if (kind === 'loan') return '外来词'
+  if (kind === 'proper') return '专有名词'
+  return '固定搭配'
+}
+
+/**
  * 建索引：词素 id -> 词素；词素 id -> 其下单词数组；单词 id -> 单词。
  * 一个单词可以挂在多个词素下（网状结构的关键）。
  */
