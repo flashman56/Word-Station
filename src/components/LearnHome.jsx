@@ -98,6 +98,25 @@ export default function LearnHome({
         })}
       </div>
 
+      {/* 「已排期」：待复习里今天还没到期的部分（明天起陆续到期）。
+          ★ 措辞用「其中」而非并列一栏 ★
+            countByStatus 只按 status 分桶、不看 nextDueAt，所以「明天到期」的词
+            本来就含在上面的「待复习」卡片里 —— 两者是子集关系。若写成并列的
+            「已排期 N」，用户会以为待复习之外还多出 N 个词，数字对不上账。
+          ★ 为什么放在这里 ★
+            学习首页是唯一能回答「明天要复习几个」的地方 —— 三张卡片只给出
+            「待复习」的总数，排期中的词就那样消失在总数里，用户看不到盼头。
+          ★ 读的是 stats.scheduled（useLearn 随 stats 一起下发），不是独立 prop ★
+            独立 prop 需要 App.jsx 透传，而那个文件正被并行修改、不在本任务红线内，
+            那样这条 prop 永远传不过来，功能会变成永不显示的死代码。
+            StationLearn 复用本组件时它自己算 stats、不带该字段 → ?? 0 → 不渲染。
+          N=0 时不渲染：显示「已排期 0」只是噪声（「待复习 0」已说明没有）。 */}
+      {(stats.scheduled ?? 0) > 0 && (
+        <p className="mt-2 text-xs text-slate-400 text-center">
+          其中 {stats.scheduled} 个已排期，明天起陆续到期。
+        </p>
+      )}
+
       {/* 预测词汇量（显著位）：无 vocab 传入（如 StationLearn）则不渲染 */}
       {vocab && (
         <div className="mt-5">

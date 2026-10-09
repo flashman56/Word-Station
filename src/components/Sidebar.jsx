@@ -290,6 +290,18 @@ export default function Sidebar({
               <dd>{learnStats.total ?? 0}</dd>
             </div>
           )}
+          {/* 「已排期」：待复习里今天还没到期的部分（明天起陆续到期）。
+              ★ 措辞用「其中」而非并列一栏 ★
+                countByStatus 只按 status 分桶、不看 nextDueAt，所以「明天到期」
+                的词本来就含在上面的「待复习」里 —— 两者是子集关系。
+                写成并列的「已排期 N」会让用户以为待复习之外还多出 N 个词。
+              N=0 时不渲染：显示「已排期 0」只是噪声（「待复习 0」已经说明没有）。 */}
+          {learnStats && (learnStats.scheduled ?? 0) > 0 && (
+            <div className="flex justify-between text-slate-400">
+              <dt>其中已排期</dt>
+              <dd>{learnStats.scheduled}</dd>
+            </div>
+          )}
         </dl>
       </Section>
 
