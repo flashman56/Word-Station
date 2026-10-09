@@ -4,8 +4,10 @@ import { getUsageSupplement } from '../lib/usageSupplement.js'
 /**
  * 用法补充区块：固定搭配 / 背景 / 用法。
  *
- * 数据按需从 src/data/usage-extra.js 动态加载（该文件约 124KB，不进主 chunk）。
- * 任意词无条目、词形非法、模块缺失或加载失败 → 渲染 null（不占位、不报错），
+ * 数据按需从构建期分片 public/data/v1/usage/u-<bucket>.json 加载
+ * （源文件 src/data/usage-extra.js 有 12.4MB / 26,983 条，绝不能整包进 bundle）。
+ * 查一个词只拉它所属的那一片（约 40~470KB），由 lib/usageSupplement.js 负责。
+ * 任意词无条目、词形非法、分片缺失或加载失败 → 渲染 null（不占位、不报错），
  * 与词详情面板 / 学习卡既有内容视觉一致（中性 slate 风格，不引入花哨 UI）。
  *
  * props:

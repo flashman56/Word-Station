@@ -88,12 +88,17 @@ async function fetchJson(url) {
 
 /**
  * 读分片：先 IndexedDB → 再 fetch。内存缓存由各调用方按分片类型维护。
+ *
+ * 导出给 src/lib/usageSupplement.js 复用，让用法补充分片与词条/音标分片
+ * 共用同一个 CACHE_PREFIX —— 于是 cleanupStaleCacheVersions 会把过期的
+ * usage 分片缓存一并清掉，不会留下孤儿键。
+ *
  * @param {string} url
  * @param {string} cacheKey
  * @param {{generatedAt?: string}} manifest
  * @returns {Promise<any>}
  */
-async function loadWithCache(url, cacheKey, manifest) {
+export async function loadCachedJson(url, cacheKey, manifest) {
   const key = buildDictCacheKey(manifest, cacheKey)
   try {
     const cached = await idbGet(key)
@@ -138,7 +143,7 @@ export async function loadManifest() {
 export async function loadIndex() {
   if (indexCache) return indexCache
   const manifest = await loadManifest()
-  const raw = await loadWithCache(manifest.indexFile, 'words-index', manifest)
+  const raw = await loadCachedJson(manifest.indexFile, 'words-index', manifest)
   indexCache = new Map(Object.entries(raw))
   return indexCache
 }
@@ -245,7 +250,7 @@ export async function loadShard(shardIdx, manifest = null) {
   if (shardCache.has(shardIdx)) return shardCache.get(shardIdx)
   const mf = manifest || (await loadManifest())
   const url = `${mf.wordShardPrefix}${shardIdx}${mf.wordShardSuffix}`
-  const data = await loadWithCache(url, `words-${shardIdx}`, mf)
+  const data = await loadCachedJson(url, `words-${shardIdx}`, mf)
   shardCache.set(shardIdx, data)
   return data
 }
@@ -266,7 +271,7 @@ export async function phoneticsOfAsync(form) {
 
   let table = phonCache.get(bucket)
   if (!table) {
-    table = await loadWithCache(file, `phon-${bucket}`, manifest)
+    table = await loadCachedJson(file, `phon-${bucket}`, manifest)
     phonCache.set(bucket, table)
   }
   const entry = table?.[key]
