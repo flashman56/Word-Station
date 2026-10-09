@@ -1,7 +1,7 @@
 /**
  * 词表种子标注词条的近义/反义关系（端点均已在词库中解析）
  * 由 scripts/gen-mono-seed.mjs 生成，请勿手工修改。
- * 近义对: 7818　反义对: 2583
+ * 近义对: 7812　反义对: 2579
  */
 export const MONO_SEED_SYNONYMS = [
   { a: "that", b: "this", grade: 3, note: "AI 扩充（gen-mono-seed）" },
@@ -2199,7 +2199,6 @@ export const MONO_SEED_SYNONYMS = [
   { a: "birdie", b: "bird", grade: 3, note: "AI 扩充（gen-mono-seed）" },
   { a: "volcanic", b: "eruptive", grade: 3, note: "AI 扩充（gen-mono-seed）" },
   { a: "boob", b: "breast", grade: 3, note: "AI 扩充（gen-mono-seed）" },
-  { a: "iife", b: "life", grade: 3, note: "AI 扩充（gen-mono-seed）" },
   { a: "conceal", b: "hide", grade: 3, note: "AI 扩充（gen-mono-seed）" },
   { a: "holler", b: "shout", grade: 3, note: "AI 扩充（gen-mono-seed）" },
   { a: "holler", b: "yell", grade: 3, note: "AI 扩充（gen-mono-seed）" },
@@ -4978,7 +4977,6 @@ export const MONO_SEED_SYNONYMS = [
   { a: "skedaddle", b: "flee", grade: 3, note: "AI 扩充（gen-mono-seed）" },
   { a: "skedaddle", b: "run", grade: 3, note: "AI 扩充（gen-mono-seed）" },
   { a: "shopper", b: "buyer", grade: 3, note: "AI 扩充（gen-mono-seed）" },
-  { a: "wory", b: "anxious", grade: 3, note: "AI 扩充（gen-mono-seed）" },
   { a: "za", b: "pizza", grade: 3, note: "AI 扩充（gen-mono-seed）" },
   { a: "pop-up", b: "window", grade: 3, note: "AI 扩充（gen-mono-seed）" },
   { a: "peacekeeper", b: "mediator", grade: 3, note: "AI 扩充（gen-mono-seed）" },
@@ -6637,7 +6635,6 @@ export const MONO_SEED_SYNONYMS = [
   { a: "drudgery", b: "grind", grade: 3, note: "AI 扩充（gen-mono-seed）" },
   { a: "unassuming", b: "humble", grade: 3, note: "AI 扩充（gen-mono-seed）" },
   { a: "unaccompanied", b: "solo", grade: 3, note: "AI 扩充（gen-mono-seed）" },
-  { a: "arert", b: "alert", grade: 3, note: "AI 扩充（gen-mono-seed）" },
   { a: "sustainability", b: "viability", grade: 3, note: "AI 扩充（gen-mono-seed）" },
   { a: "tattle", b: "tell", grade: 3, note: "AI 扩充（gen-mono-seed）" },
   { a: "preparatory", b: "preliminary", grade: 3, note: "AI 扩充（gen-mono-seed）" },
@@ -7092,8 +7089,6 @@ export const MONO_SEED_SYNONYMS = [
   { a: "nightstick", b: "baton", grade: 3, note: "AI 扩充（gen-mono-seed）" },
   { a: "versatility", b: "flexibility", grade: 3, note: "AI 扩充（gen-mono-seed）" },
   { a: "roti", b: "bread", grade: 3, note: "AI 扩充（gen-mono-seed）" },
-  { a: "lnternet", b: "net", grade: 3, note: "AI 扩充（gen-mono-seed）" },
-  { a: "lnternet", b: "web", grade: 3, note: "AI 扩充（gen-mono-seed）" },
   { a: "adulteress", b: "paramour", grade: 3, note: "AI 扩充（gen-mono-seed）" },
   { a: "mercado", b: "market", grade: 3, note: "AI 扩充（gen-mono-seed）" },
   { a: "chocolat", b: "chocolate", grade: 3, note: "AI 扩充（gen-mono-seed）" },
@@ -7374,7 +7369,6 @@ export const MONO_SEED_SYNONYMS = [
   { a: "sated", b: "full", grade: 3, note: "AI 扩充（gen-mono-seed）" },
   { a: "tweaker", b: "addict", grade: 3, note: "AI 扩充（gen-mono-seed）" },
   { a: "uneasiness", b: "disquiet", grade: 3, note: "AI 扩充（gen-mono-seed）" },
-  { a: "riend", b: "friend", grade: 3, note: "AI 扩充（gen-mono-seed）" },
   { a: "outpouring", b: "outburst", grade: 3, note: "AI 扩充（gen-mono-seed）" },
   { a: "thunderbolts", b: "lightning", grade: 3, note: "AI 扩充（gen-mono-seed）" },
   { a: "touchstone", b: "criterion", grade: 3, note: "AI 扩充（gen-mono-seed）" },
@@ -9525,7 +9519,6 @@ export const MONO_SEED_ANTONYMS = [
   { a: "obscured", b: "clear", grade: 3, note: "AI 扩充（gen-mono-seed）" },
   { a: "unselfish", b: "selfish", grade: 3, note: "AI 扩充（gen-mono-seed）" },
   { a: "shopper", b: "seller", grade: 3, note: "AI 扩充（gen-mono-seed）" },
-  { a: "wory", b: "calm", grade: 3, note: "AI 扩充（gen-mono-seed）" },
   { a: "follies", b: "wisdom", grade: 3, note: "AI 扩充（gen-mono-seed）" },
   { a: "enhancement", b: "reduction", grade: 3, note: "AI 扩充（gen-mono-seed）" },
   { a: "constipation", b: "diarrhea", grade: 3, note: "AI 扩充（gen-mono-seed）" },
@@ -9832,7 +9825,6 @@ export const MONO_SEED_ANTONYMS = [
   { a: "rumoured", b: "confirmed", grade: 3, note: "AI 扩充（gen-mono-seed）" },
   { a: "wide-open", b: "closed", grade: 3, note: "AI 扩充（gen-mono-seed）" },
   { a: "indecency", b: "propriety", grade: 3, note: "AI 扩充（gen-mono-seed）" },
-  { a: "rember", b: "forget", grade: 3, note: "AI 扩充（gen-mono-seed）" },
   { a: "stubby", b: "long", grade: 3, note: "AI 扩充（gen-mono-seed）" },
   { a: "ewe", b: "ram", grade: 3, note: "AI 扩充（gen-mono-seed）" },
   { a: "asinine", b: "wise", grade: 3, note: "AI 扩充（gen-mono-seed）" },
@@ -9923,7 +9915,6 @@ export const MONO_SEED_ANTONYMS = [
   { a: "guerre", b: "peace", grade: 3, note: "AI 扩充（gen-mono-seed）" },
   { a: "distortions", b: "accuracy", grade: 3, note: "AI 扩充（gen-mono-seed）" },
   { a: "justices", b: "injustice", grade: 3, note: "AI 扩充（gen-mono-seed）" },
-  { a: "embarassing", b: "comfortable", grade: 3, note: "AI 扩充（gen-mono-seed）" },
   { a: "corroded", b: "polished", grade: 3, note: "AI 扩充（gen-mono-seed）" },
   { a: "cryogenic", b: "hot", grade: 3, note: "AI 扩充（gen-mono-seed）" },
   { a: "barbarism", b: "civilization", grade: 3, note: "AI 扩充（gen-mono-seed）" },
@@ -10002,7 +9993,6 @@ export const MONO_SEED_ANTONYMS = [
   { a: "weariness", b: "vigor", grade: 3, note: "AI 扩充（gen-mono-seed）" },
   { a: "demolishing", b: "building", grade: 3, note: "AI 扩充（gen-mono-seed）" },
   { a: "grown-ass", b: "childish", grade: 3, note: "AI 扩充（gen-mono-seed）" },
-  { a: "carefull", b: "careless", grade: 3, note: "AI 扩充（gen-mono-seed）" },
   { a: "paupers", b: "rich", grade: 3, note: "AI 扩充（gen-mono-seed）" },
   { a: "hot-headed", b: "calm", grade: 3, note: "AI 扩充（gen-mono-seed）" },
   { a: "adulterous", b: "faithful", grade: 3, note: "AI 扩充（gen-mono-seed）" },
