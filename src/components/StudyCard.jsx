@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { MASTER_THRESHOLD, statusLabel } from '../lib/learning.js'
 // 红线：音标只查表（public/data/v1/phon/*.json，源头是 ECDICT），严禁模型生成
 import { phoneticsOfAsync } from '../lib/dict.js'
+import { shouldShowPhoneticPending } from '../lib/phoneticDisplay.js'
 import { useSpeech } from '../hooks/useSpeech.js'
 import SpeakerButton from './SpeakerButton.jsx'
 
@@ -43,7 +44,7 @@ export default function StudyCard({
   // StudyCard 在 StudySession 中以 key=index 挂载，故换卡即重挂 → 每次只读新词一次。
   useEffect(() => {
     if (!autoSpeak) return
-    speak(word.form, { lang: 'en-US', rate: 0.9 })
+    speak(word.form, { lang: 'en-US', rate: 0.85 })
   }, [word.form, autoSpeak, speak])
 
   const handleAnswer = (r) => {
@@ -96,9 +97,9 @@ export default function StudyCard({
         <SpeakerButton text={word.form} size="md" className="mb-1" />
         {phonetic ? (
           <span className="text-lg text-slate-400">/{phonetic.replace(/^\/|\/$/g, '')}/</span>
-        ) : (
+        ) : shouldShowPhoneticPending(word, phonetic) ? (
           <span className="text-xs text-amber-600">音标待补</span>
-        )}
+        ) : null}
         {word.pos && (
           <span className="px-2 py-0.5 rounded text-xs bg-slate-100 text-slate-600">
             {word.pos}

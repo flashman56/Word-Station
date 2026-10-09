@@ -13,6 +13,7 @@ import {
 } from './lib/derive.js'
 import { buildRelations, pairKey, relationsOf } from './lib/relations.js'
 import { phoneticsOfAsync } from './lib/dict.js'
+import { shouldShowPhoneticPending } from './lib/phoneticDisplay.js'
 import { estimateVocabulary } from './lib/vocab.js'
 import { MAX_VOCAB_PRIVATE_WORDS } from './lib/derive.js'
 import { useSettings } from './hooks/useSettings.js'
@@ -965,7 +966,7 @@ function WordDetail({
   // 构词拆解：点词素 chip 内联展开其词源故事
   const [expandedMorphId, setExpandedMorphId] = useState(null)
   const expandedMorph = expandedMorphId ? index.morphById.get(expandedMorphId) || null : null
-  // 音标 / 例句 / 用法：异步查表（红线：严禁生成，查不到显示「音标待补」）
+  // 音标 / 例句 / 用法：异步查表（红线：严禁生成；单词查不到显示「音标待补」）
   const [phon, setPhon] = useState(null)
   useEffect(() => {
     let alive = true
@@ -984,7 +985,7 @@ function WordDetail({
 
   const phonetic = word.phoneticBr || (phon && phon.phonetic) || null
   const example = word.example || (phon && phon.example) || null
-  const usage = (phon && phon.usage) || null
+  const usage = word.usage || (phon && phon.usage) || null
   const progress = `${Math.min(rec.consecutiveCorrect || 0, 2)}/2`
   const related = relationsOf(relationIndex, word.id)
   const conflictPairs = new Set((relationIndex?.conflicts || []).map((item) => item.pairKey))
@@ -1028,12 +1029,12 @@ function WordDetail({
       <p className="text-xs text-slate-400">{word.pos}</p>
       <p className="text-sm text-slate-700 mt-1">{word.gloss}</p>
 
-      {/* 音标（英式 DJ，有则显示；查不到显示「音标待补」） */}
+      {/* 音标（英式 DJ，有则显示；普通单词查不到显示「音标待补」） */}
       {phonetic ? (
         <p className="text-sm text-slate-500 mt-1 font-medium">{phonetic}</p>
-      ) : (
+      ) : shouldShowPhoneticPending(word, phonetic) ? (
         <p className="text-xs text-amber-600 mt-1">音标待补</p>
-      )}
+      ) : null}
 
       {example && example.en && example.zh && (
         <div className="mt-2 rounded-md bg-slate-50 border border-slate-100 p-2 text-xs leading-relaxed">

@@ -7,15 +7,19 @@
  *   words/w-<n>.json     词条分片（1500 条/片）
  *   phon/p-<x>.json      音标 / 例句 / 用法（按首字母分片）
  *
- * 三级缓存：内存 Map → IndexedDB（idb-keyval，key 前缀 wrc.dict.v1:）→ fetch。
+ * 三级缓存：内存 Map → IndexedDB（按 manifest.generatedAt 版本隔离）→ fetch。
+ *
+ * 重要：任何音标 / 例句 / 用法数据变更都必须同时更新 manifest.generatedAt，
+ * 否则浏览器会继续命中同版本 IndexedDB 缓存，用户看不到新数据。
  *
  * ★ 音标红线 ★
  *   音标只从 phon 分片读取（源头是 ECDICT 离线产出）。
- *   本文件不提供任何「生成音标」的能力，查不到一律返回 null，UI 显示「音标待补」。
+ *   本文件不提供任何「生成音标」的能力，查不到一律返回 null，由 UI 决定是否提示。
  */
-import { get as idbGet, set as idbSet } from 'idb-keyval'
+import { del as idbDel, get as idbGet, keys as idbKeys, set as idbSet } from 'idb-keyval'
 import { publicKey, slug } from './wordKey.js'
 
+// 保留设备级词典缓存命名空间；真正的数据版本由 manifest.generatedAt 追加在其后。
 const CACHE_PREFIX = 'wrc.dict.v1:'
 const MANIFEST_URL = 'data/v1/manifest.json'
 
@@ -30,20 +34,67 @@ const phonCache = new Map()
 /** 已发起但未完成的请求，避免并发重复 fetch */
 const inflight = new Map()
 
+/** 已清理旧 IndexedDB 版本，避免同一页面重复枚举全部键 */
+let cleanedCacheVersion = null
+
+/**
+ * 由 manifest 生成稳定的 IndexedDB 键。同一 generatedAt 幂等，不同值自然失效。
+ *
+ * 改音标数据必须更新 generatedAt，否则用户端永远读到旧缓存。
+ *
+ * @param {{generatedAt?: string}|null} manifest
+ * @param {string} cacheKey
+ * @returns {string}
+ */
+export function buildDictCacheKey(manifest, cacheKey) {
+  const generatedAt = String(manifest?.generatedAt || 'unversioned').trim() || 'unversioned'
+  return `${CACHE_PREFIX}${encodeURIComponent(generatedAt)}:${cacheKey}`
+}
+
+/**
+ * 清理非当前 manifest 版本的设备级词典缓存。IndexedDB 不可用时静默降级。
+ * @param {{generatedAt?: string}|null} manifest
+ * @returns {Promise<void>}
+ */
+async function cleanupStaleCacheVersions(manifest) {
+  const currentPrefix = buildDictCacheKey(manifest, '')
+  if (cleanedCacheVersion === currentPrefix) return
+  cleanedCacheVersion = currentPrefix
+  try {
+    const allKeys = await idbKeys()
+    const staleKeys = allKeys.filter(
+      (key) => typeof key === 'string' && key.startsWith(CACHE_PREFIX) && !key.startsWith(currentPrefix),
+    )
+    await Promise.all(
+      staleKeys.map(async (key) => {
+        try {
+          await idbDel(key)
+        } catch {
+          /* 单条删除失败不影响查表，也不阻止清理其他旧记录 */
+        }
+      }),
+    )
+  } catch {
+    /* IndexedDB 不可用（如隐私模式）时不缓存，但查表功能仍可用 */
+  }
+}
+
 async function fetchJson(url) {
-  const res = await fetch(url, { cache: 'force-cache' })
+  // reload 同时绕过浏览器 HTTP 缓存，避免已发布的新分片被旧响应遮住。
+  const res = await fetch(url, { cache: 'reload' })
   if (!res.ok) throw new Error(`加载 ${url} 失败：HTTP ${res.status}`)
   return res.json()
 }
 
 /**
- * 读分片：先内存 → 再 IndexedDB → 最后 fetch。
+ * 读分片：先 IndexedDB → 再 fetch。内存缓存由各调用方按分片类型维护。
  * @param {string} url
  * @param {string} cacheKey
+ * @param {{generatedAt?: string}} manifest
  * @returns {Promise<any>}
  */
-async function loadWithCache(url, cacheKey) {
-  const key = CACHE_PREFIX + cacheKey
+async function loadWithCache(url, cacheKey, manifest) {
+  const key = buildDictCacheKey(manifest, cacheKey)
   try {
     const cached = await idbGet(key)
     if (cached != null) return cached
@@ -51,18 +102,21 @@ async function loadWithCache(url, cacheKey) {
     /* IndexedDB 不可用（隐私模式）时直接走网络 */
   }
   if (inflight.has(key)) return inflight.get(key)
-  const p = (async () => {
-    const data = await fetchJson(url)
+  const request = (async () => {
     try {
-      await idbSet(key, data)
-    } catch {
-      /* 缓存写失败不影响功能 */
+      const data = await fetchJson(url)
+      try {
+        await idbSet(key, data)
+      } catch {
+        /* 缓存写失败不影响功能 */
+      }
+      return data
+    } finally {
+      inflight.delete(key)
     }
-    inflight.delete(key)
-    return data
   })()
-  inflight.set(key, p)
-  return p
+  inflight.set(key, request)
+  return request
 }
 
 /**
@@ -71,7 +125,9 @@ async function loadWithCache(url, cacheKey) {
  */
 export async function loadManifest() {
   if (manifestCache) return manifestCache
-  manifestCache = await loadWithCache(MANIFEST_URL, 'manifest')
+  // manifest 决定缓存版本，不能再放进自身控制的 IndexedDB 缓存。
+  manifestCache = await fetchJson(MANIFEST_URL)
+  await cleanupStaleCacheVersions(manifestCache)
   return manifestCache
 }
 
@@ -82,7 +138,7 @@ export async function loadManifest() {
 export async function loadIndex() {
   if (indexCache) return indexCache
   const manifest = await loadManifest()
-  const raw = await loadWithCache(manifest.indexFile, 'words-index')
+  const raw = await loadWithCache(manifest.indexFile, 'words-index', manifest)
   indexCache = new Map(Object.entries(raw))
   return indexCache
 }
@@ -189,7 +245,7 @@ export async function loadShard(shardIdx, manifest = null) {
   if (shardCache.has(shardIdx)) return shardCache.get(shardIdx)
   const mf = manifest || (await loadManifest())
   const url = `${mf.wordShardPrefix}${shardIdx}${mf.wordShardSuffix}`
-  const data = await loadWithCache(url, `words-${shardIdx}`)
+  const data = await loadWithCache(url, `words-${shardIdx}`, mf)
   shardCache.set(shardIdx, data)
   return data
 }
@@ -210,7 +266,7 @@ export async function phoneticsOfAsync(form) {
 
   let table = phonCache.get(bucket)
   if (!table) {
-    table = await loadWithCache(file, `phon-${bucket}`)
+    table = await loadWithCache(file, `phon-${bucket}`, manifest)
     phonCache.set(bucket, table)
   }
   const entry = table?.[key]
@@ -232,4 +288,5 @@ export function __resetDictMemory() {
   shardCache.clear()
   phonCache.clear()
   inflight.clear()
+  cleanedCacheVersion = null
 }
