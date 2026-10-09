@@ -20,6 +20,12 @@ import App from '../src/App.jsx'
 import { words } from '../src/data/index.js'
 import { buildReviewQueue } from '../src/lib/learning.js'
 import { FROZEN_KEYS, keysFor } from '../src/lib/migrate.js'
+// ★ QA 追加（e98bb93 验收）：用与产品同一套反查模型，判定「学习卡该不该出变形/派生词块」，
+//   从而对**真实 App 链路**（App→StudySession→StudyCard）新增一条 DOM 断言。
+import morphemes from '../src/data/morphemes.js'
+import { buildIndex } from '../src/lib/derive.js'
+import { buildStemIndex } from '../src/lib/stemFamily.js'
+import { buildWordForms } from '../src/lib/wordForms.js'
 
 const { document, window } = globalThis
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
@@ -186,7 +192,16 @@ export async function run() {
     JSON.stringify({ 'w.inspect': 'review', 'w.transport': 'known' }),
   )
   mount()
-  await flush(200)
+  // ★ QA：原为固定 `flush(200)` —— 负载下 App 首次挂载（动态载 14MB 词库 + 跑迁移）可能 >200ms，
+  //   导致迁移记录尚未落盘就读 → 假红（5×负载连跑实测 1/5）。改为**轮询等待**两词迁移就位。
+  {
+    const dl = Date.now() + 4000
+    while (Date.now() < dl) {
+      const m = learnMap()
+      if (m['w.inspect'] && m['w.transport']) break
+      await flush(50)
+    }
+  }
 
   const migMap = learnMap()
   ok(
@@ -276,7 +291,15 @@ export async function run() {
   ok(barText.includes('取消选择'), '有「取消选择」按钮')
 
   click(byText('button', '我会了'))
-  await flush(150)
+  // ★ QA 修复（e98bb93 验收，P2）：原为 click 后固定 `sleep 150ms` 再查 flash —— 与 React 提交
+  //   存在时序竞态（4× CPU 负载下曾稳定假红 2/2）。改为**轮询等待** flash 出现（上限 2000ms）：
+  //   既消除假红，又保留「flash 真没出现 → 超时后断言失败」的真缺陷检出能力。
+  const flashDeadline = Date.now() + 2000
+  let flash = null
+  while (!flash && Date.now() < flashDeadline) {
+    flash = q('span').find((s) => (s.textContent || '').includes('已标记'))
+    if (!flash) await flush(25)
+  }
 
   const after = stats()
   log(`  操作后统计：${JSON.stringify(after)}`)
@@ -286,7 +309,6 @@ export async function run() {
   // ★ A-14：flash 文案已按动作区分（原来三处共用「已更新 N 个」，
   //   加了「加入小站」后它就成了歧义 —— 用户会以为小站里有了）。
   //   「我会了」的文案现在是「已标记 N 个已掌握」。
-  const flash = q('span').find((s) => (s.textContent || '').includes('已标记'))
   ok(
     flash && flash.textContent.trim() === '已标记 2 个已掌握',
     `条内 flash 反馈 = "${flash ? flash.textContent.trim() : null}"（「我会了」专用文案，不是含糊的「已更新」）`,
@@ -733,6 +755,32 @@ export async function run() {
     `点「记得」后 ${form1} 立即变已掌握（实际 ${cardWord1 && learnMap()[cardWord1.id] && learnMap()[cardWord1.id].status}）`,
   )
   ok(document.body.textContent.includes('记得，已掌握'), '卡片反馈出现「记得，已掌握」')
+
+  // ---------------------------------------------------- 附加 H-2：真实 App 链路渲染「常见变形 / 派生词」
+  //
+  // ★ QA 追加（e98bb93 验收）：此前没有任何测试渲染**真实 App** 并断言 relatedOf 传到了
+  //   StudyCard（工程师的 test-word-forms-ui 只在 StudySession 层单独 mount，抓不到
+  //   「App.jsx 漏传 prop」这类缺陷）。这里在真链路上补一条。
+  //   ⚠ 用轮询而非固定 sleep：固定 sleep 与 React 提交存在竞态（本单已实测同类的 flash
+  //     断言在负载下偶发失败），轮询才能把「代码 bug」与「时序抖动」分开。
+  {
+    const model = buildWordForms(words, buildIndex(morphemes, words), buildStemIndex(words))
+    const r = cardWord1 ? model.relatedFor(cardWord1) : { forms: [], derivatives: [] }
+    const expectBlock = r.forms.length > 0 || r.derivatives.length > 0
+    if (expectBlock) {
+      let found = false
+      for (let i = 0; i < 60 && !found; i += 1) {
+        found = q('p').some((p) => ['常见变形', '派生词'].includes((p.textContent || '').trim()))
+        if (!found) await sleep(25)
+      }
+      ok(
+        found,
+        `★ 真实 App 链路：真答一题后「常见变形/派生词」出现在 DOM（cardWord=${form1}，期望 forms=${r.forms.length}/derivs=${r.derivatives.length}）——抓「App 漏传 relatedOf」`,
+      )
+    } else {
+      log(`  NOTE ${form1} 既无同族变形也无派生词 → 跳过渲染断言（不 FAIL）`)
+    }
+  }
 
   click(byText('button', '下一个'))
   await flush(150)
