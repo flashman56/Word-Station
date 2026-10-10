@@ -9,8 +9,12 @@
  *
  * 本模块回答两个纯展示问题：
  *   ① 「常见变形」= 同一词族的其它词形（屈折形 / 兄弟形）。
- *      数据来源：`src/data/words-lemma.js` 生成的 `.lemma` 折叠关系
- *      （判据借用 `lemmaFold.isFolded`，**不重复实现**折叠规则）。
+ *      代表形取值 `repField(w)` —— **展示关系优先，折叠关系回退**：
+ *        · `w.formRep`（`src/data/words-forms.js`，双向印证的**全部**可靠屈折关系，
+ *          比折叠表更宽，如 determined→determine、blown→blow）
+ *        · 回退 `w.lemma`（`src/data/words-lemma.js`，Step-1 四闸门裁定的折叠关系）
+ *      ★ 展示与折叠是两件事 ★：挂了 `.formRep` 的词（determined …）**仍是独立
+ *        学习单元**（折叠表没动），只是卡面会显示它的常见变形。
  *   ② 「派生词」  = 共享**词素**的其它词（构词派生，如 abandon → abandonment）；
  *      无词素的词（`morphs` 为空）退回按词形反查（`stemFamily.familyOf`）。
  *
@@ -73,10 +77,29 @@ function firstGloss(gloss) {
 }
 
 /**
- * 防御性链式解析 `.lemma`，最多 MAX_LEMMA_HOPS 跳；成环时返回起点 id
- * （交由调用方按「未折叠」处理，绝不死循环）。
- * 与 `lemmaFold.js` 的私有实现同语义 —— 这里**只读不改**那份数据，故本轮不允许
- * 改动其导出面，于是在本模块内保留一份等价实现（数据侧目标已是终态，实际 0 跳）。
+ * **展示用**代表形取值：`formRep` 优先，`lemma` 回退。
+ * ------------------------------------------------------------------
+ * · `.formRep`（words-forms.js）：双向印证的全部可靠屈折关系，**只供展示**。
+ * · `.lemma`  （words-lemma.js）：折叠关系，决定学习单元。
+ * 两者并存时取 `.formRep`（展示口径更宽）；只有 `.lemma` 时（老数据 / 私有词视图）
+ * 按原样工作 —— 向后兼容。
+ *
+ * ★ 绝不 import 任何 words-*.js ★：数据只能从词条对象的字段上读
+ * （见本文件约束 1）。
+ *
+ * @param {object} w 词条
+ * @returns {string|null} 展示用代表形 id；无关系则 null
+ */
+function repField(w) {
+  if (w && typeof w.formRep === 'string' && w.formRep !== '' && w.formRep !== w.id) return w.formRep
+  return isFolded(w) ? w.lemma : null
+}
+
+/**
+ * 防御性链式解析代表形（沿 `repField`），最多 MAX_LEMMA_HOPS 跳；成环时返回起点 id
+ * （交由调用方按「无关系」处理，绝不死循环）。
+ * 与 `lemmaFold.js` 的私有实现同语义 —— 那里负责折叠、这里负责展示，两条链各自
+ * 独立：展示链再宽也不会让 `buildFoldView` 多折一个词。
  * @param {string} id
  * @param {Map<string, object>} byId
  * @returns {string}
@@ -86,7 +109,7 @@ function resolveRep(id, byId) {
   const seen = new Set([cur])
   for (let i = 0; i < MAX_LEMMA_HOPS; i += 1) {
     const w = byId.get(cur)
-    const next = w ? w.lemma : null
+    const next = w ? repField(w) : null
     if (!next || next === cur) break
     if (seen.has(next)) return id
     seen.add(next)
@@ -132,8 +155,9 @@ export function buildWordForms(words, index, stemIndex) {
   const families = new Map()
   for (const w of list) {
     if (!w || typeof w.id !== 'string') continue
-    if (!isFolded(w)) continue
-    const rep = resolveRep(w.lemma, byId)
+    const repRaw = repField(w)
+    if (!repRaw) continue
+    const rep = resolveRep(repRaw, byId)
     // 自环 / 成环 → 视作未折叠（不并入任何族）；目标缺失 → 跳过（宁可不给，也不给悬空引用）
     if (rep === w.id) continue
     if (!byId.has(rep)) continue
@@ -163,7 +187,8 @@ export function buildWordForms(words, index, stemIndex) {
   function formsOf(id) {
     if (typeof id !== 'string') return []
     const w = byId.get(id)
-    const rep = w && isFolded(w) ? resolveRep(w.lemma, byId) : id
+    const repRaw = w ? repField(w) : null
+    const rep = repRaw ? resolveRep(repRaw, byId) : id
     const fam = families.get(rep)
     if (!fam || fam.length === 0) return []
     return fam.filter((x) => x && x.id !== id).slice(0, FORMS_MAX)

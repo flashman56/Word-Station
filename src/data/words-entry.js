@@ -17,6 +17,7 @@ import wordsMonoSeed from './words-mono-seed.js'
 import morphemes from './morphemes.js'
 import wordsRemorph from './words-remorph.js'
 import wordsLemma, { LEMMA_BY_ID } from './words-lemma.js'
+import wordsForms, { FORMS_BY_ID } from './words-forms.js'
 
 export const WORD_FILES = [
   wordsLatin,
@@ -37,6 +38,10 @@ export const WORD_FILES = [
  *    只在末尾追加新拆出的词素 id，并**保持 morphless 标记不变**（validate 据此放行）。
  * ② words-lemma ：屈折归并补丁，命中词条附 `.lemma`（= 代表形 id），供
  *    src/lib/lemmaFold.js 的 buildFoldView 做**读时**折叠（不落盘、不删词条）。
+ * ③ words-forms ：「常见变形」展示关系补丁，命中词条附 `.formRep`（= 展示用
+ *    代表形 id），**仅供 UI 展示**，不参与折叠 —— 展示比折叠宽（收的是双向印证
+ *    的全部可靠屈折关系），但**不改变任何词条的学习单元身份**。详见
+ *    src/data/words-forms.js 头部注释与 scripts/gen-forms-patch.mjs。
  */
 const REMORPH = new Map(wordsRemorph.map((p) => [p.id, p]))
 const MORPH_IDS = new Set(morphemes.map((m) => m.id))
@@ -45,10 +50,16 @@ const rawWords = WORD_FILES.flat()
 export const words = rawWords.map((w) => {
   const patch = REMORPH.get(w.id)
   const lemma = LEMMA_BY_ID.get(w.id)
+  const formRep = FORMS_BY_ID.get(w.id)
   const hints = patch ? patch.morphHints.filter((mid) => MORPH_IDS.has(mid)) : []
-  if (hints.length === 0 && !lemma) return w
+  // ★★ formRep **必须**一起纳入早退判断 ★★
+  //    只带 formRep、不带 remorph / lemma 的词（如 determined / blown / cleared）
+  //    若漏了它，会在这一行被原样 return w，永远拿不到字段 —— 卡面也就永远不显示
+  //    它的常见变形。这是本补丁最容易漏的一处。
+  if (hints.length === 0 && !lemma && !formRep) return w
   const out = hints.length === 0 ? { ...w } : { ...w, morphs: [...(w.morphs || []), ...hints], chain: patch.chain }
   if (lemma) out.lemma = lemma
+  if (formRep) out.formRep = formRep
   return out
 })
 
