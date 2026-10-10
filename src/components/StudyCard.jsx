@@ -13,9 +13,12 @@ import WordForms from './WordForms.jsx'
  * 单张学习 / 复习卡片。
  *
  * 作答前只显示词形 / 音标 / 词性 + 两个按钮（不记得 / 记得）；
- * 作答后展开中文释义、双语例句、构词拆解与状态反馈，且只能点「下一个」。
+ * 揭开态（点过「记得」但尚未确认）展开中文释义、双语例句、构词拆解，但**输入不锁死**、
+ * 也不出现「下一个」；已落盘（answered）后追加状态反馈，且只能点「下一个」。
  *
- * 语义：点「记得」= 一次即标记为已掌握；点「不记得」= 加入待复习。
+ * 语义：点「记得」= **两步确认**。第一次只揭开释义/例句（revealed）供用户自我核对，
+ * **不落盘、不改状态**；第二次（按钮变「确实记得 →」）才调用 onMarkKnown 标记为已掌握。
+ * 点「不记得」= 立刻加入待复习；在揭开态下点它同样走这条正常答错路径（可反悔）。
  *
  * props:
  *   word        单词对象 { id, form, pos, gloss, phoneticBr?, example?, chain }
@@ -39,6 +42,7 @@ export default function StudyCard({
   relatedOf,
 }) {
   const [answered, setAnswered] = useState(false)
+  const [revealed, setRevealed] = useState(false) // 「记得」第 1 步：已揭开释义、尚未确认掌握
   const [result, setResult] = useState(null) // 'correct' | 'incorrect' | 'known'
   const [out, setOut] = useState(null) // onAnswer 的返回值，便于立刻给反馈
 
@@ -60,12 +64,27 @@ export default function StudyCard({
     setAnswered(true)
   }
 
+  // 「记得」第 1 步：只揭开释义，不调 onMarkKnown —— 自评必须先看到答案才有意义。
+  // answered 仍是 false，所以此刻「不记得」照常走 handleAnswer（可反悔）。
+  const handleReveal = () => {
+    if (answered || revealed) return
+    setRevealed(true)
+  }
+
+  // 「记得」第 2 步：自评通过，才真正标记为已掌握。
   const handleMarkKnown = () => {
     if (answered) return
+    if (!revealed) {
+      handleReveal()
+      return
+    }
     if (onMarkKnown) onMarkKnown()
     setResult('known')
     setAnswered(true)
   }
+
+  // 揭开态是「详情已展开但输入未锁死」的中间态：详情块与作答按钮都要渲染。
+  const showDetail = answered || revealed
 
   const feedback = buildFeedback(result, out, isReview)
   // 作答后优先用本次返回的新记录展示 x/2 进度
@@ -124,7 +143,7 @@ export default function StudyCard({
         )}
       </div>
 
-      {/* 作答前：两个按钮（不记得 / 记得） */}
+      {/* 未作答 / 已揭开未确认：两个按钮（不记得 / 记得 → 确实记得）。answered=true 后不再渲染 */}
       {!answered && (
         <div className="grid grid-cols-2 gap-3 mt-8">
           <button
@@ -135,36 +154,45 @@ export default function StudyCard({
           </button>
           <button
             onClick={handleMarkKnown}
+            title={revealed ? '确认记得：标记为已掌握' : '先看看释义，再决定是否真的记得'}
             className="py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-medium transition-colors"
           >
-            记得
+            {revealed ? '确实记得 →' : '记得'}
           </button>
         </div>
       )}
 
-      {/* 作答后：展开详情 */}
-      {answered && (
+      {/* 揭开态提示：释义已展开，但还没有落盘 */}
+      {revealed && !answered && (
+        <p className="mt-3 text-sm text-slate-500">释义已展开 · 对上了再点「确实记得 →」，没对上点「不记得」</p>
+      )}
+
+      {/* 详情块：answered 或 revealed 任一成立即复用同一段 markup（不复制 JSX） */}
+      {showDetail && (
         <div className="mt-6">
           <div className="flex items-center gap-2 mb-3">
-            <span
-              className="text-sm font-medium px-2.5 py-1 rounded-full"
-              style={{
-                background:
-                  feedback.tone === 'good'
-                    ? '#e4f5ee'
-                    : feedback.tone === 'known'
-                      ? '#f1f3f6'
-                      : '#fdeaea',
-                color:
-                  feedback.tone === 'good'
-                    ? '#3fa07a'
-                    : feedback.tone === 'known'
-                      ? '#9aa1ac'
-                      : '#c9484b',
-              }}
-            >
-              {feedback.text}
-            </span>
+            {/* 揭开态 result 仍为 null —— 没有结论就不渲染空药丸 */}
+            {feedback.text && (
+              <span
+                className="text-sm font-medium px-2.5 py-1 rounded-full"
+                style={{
+                  background:
+                    feedback.tone === 'good'
+                      ? '#e4f5ee'
+                      : feedback.tone === 'known'
+                        ? '#f1f3f6'
+                        : '#fdeaea',
+                  color:
+                    feedback.tone === 'good'
+                      ? '#3fa07a'
+                      : feedback.tone === 'known'
+                        ? '#9aa1ac'
+                        : '#c9484b',
+                }}
+              >
+                {feedback.text}
+              </span>
+            )}
             {displayRecord && (
               <span className="text-xs text-slate-400">{statusLabel(displayRecord)}</span>
             )}
@@ -219,14 +247,18 @@ export default function StudyCard({
               两个 UI 面共用一份渲染，文案与排序不会漂移。无内容则整体不渲染。 */}
           <WordForms word={word} relatedOf={relatedOf} />
 
-          <div className="mt-8 flex justify-end">
-            <button
-              onClick={onNext}
-              className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors"
-            >
-              下一个 →
-            </button>
-          </div>
+          {/* 下一个只在已落盘（answered）后出现：揭开态下必须先在「确实记得 / 不记得」之间做出结论，
+              否则这一词会既没写记录、也没进 results，结算页口径会漏算。 */}
+          {answered && (
+            <div className="mt-8 flex justify-end">
+              <button
+                onClick={onNext}
+                className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors"
+              >
+                下一个 →
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

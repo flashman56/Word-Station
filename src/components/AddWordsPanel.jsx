@@ -29,6 +29,15 @@ const TONE_CLASS = {
  *   stationId     当前小站 id（无小站时禁用提交）
  *   existingKeys  站内已有 wordKey 集合（用于「重复」提示）
  *   online        是否在线（离线时命中词走草稿队列）
+ *   initialText   预填文本（默认 ''）。左栏搜索零命中时，用户点「去小站生成『X』」
+ *                 由 App 传下来 —— 搜不到的东西正是这个面板的输入域。
+ *                 ★ 实现刻意是「effect 同步」而不是 useState(initialText)★
+ *                   useState(initialText) 只在**首次挂载**取值，而本面板的父级
+ *                   在 `view === 'station'` 时才渲染它：若用户本来就在小站页、
+ *                   只是搜了个没命中的词，此时面板**不会重新挂载**，
+ *                   useState 那套写法会静默吃掉这次预填（面板已开着、输入框空着、
+ *                   用户以为按钮坏了）。effect 依赖 initialText 的**值**，
+ *                   两种情形都能落地。
  *   onDone        (summary) => void 提交完成回调（触发小站词条刷新）
  *
  * ★ 草稿一律带 scope：草稿队列按账号分区，A 离线时加的词不会在 B 登录后
@@ -38,7 +47,7 @@ const TONE_CLASS = {
  * ★ 全代码库唯一的 setRaw('') 在 submit() 的收敛点上，且条件是「零失败零草稿」★
  *   见 submit() 末尾的注释 —— 这是三道防护里唯一防「数据消失」的那一道。
  */
-export default function AddWordsPanel({ ownerId, stationId, existingKeys, online = true, onDone }) {
+export default function AddWordsPanel({ ownerId, stationId, existingKeys, online = true, initialText = '', onDone }) {
   const scope = scopeOf(ownerId)
   const [raw, setRaw] = useState('')
   const [parsed, setParsed] = useState(() => parse(''))
@@ -99,6 +108,24 @@ export default function AddWordsPanel({ ownerId, stationId, existingKeys, online
     setLookup({ hit, miss })
     setChecked(new Set([...hit, ...miss].map((it) => it.formKey)))
   }, [raw, indexReady])
+
+  /* 预填文本（左栏搜索零命中 → 「去小站生成『X』」跳过来的那个词）
+   *
+   * ★ 为什么用 effect 而不是 useState(initialText)★
+   *   本组件只在 `view === 'station'` 时渲染。若用户本来就在小站页、只是搜了个
+   *   没命中的词再点按钮，面板**不会重新挂载** —— useState 那套只在首次挂载取值，
+   *   预填会被静默吃掉（面板开着、输入框空着，用户以为按钮坏了）。
+   *   effect 依赖 initialText 的**值**：两种情形（跨页跳过来 / 页内跳过来）
+   *   都会落地，且面板已打开时也能被填上。
+   *
+   * ★ 依赖 initialText（值）而不是让它自己清空★
+   *   清空由父级负责（App 侧记在 stationPrefill 里，用户切走小站或提交后清掉）。
+   *   若这里顺手把 initialText 抹掉，用户连续搜两个不存在的词时，
+   *   第二个词会填不进已被消费掉的同一个 key。
+   */
+  useEffect(() => {
+    if (initialText) setRaw(initialText)
+  }, [initialText])
 
   const existing = existingKeys instanceof Set ? existingKeys : new Set(existingKeys || [])
 

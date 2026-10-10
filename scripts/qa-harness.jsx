@@ -727,7 +727,7 @@ export async function run() {
   }
 
   // ---------------------------------------------------- 附加 H：StudyCard 两按钮语义（不记得 / 记得）
-  log('\n=== 附加 H：StudyCard 改为「不记得 / 记得」，记得一次即已掌握 ===')
+  log('\n=== 附加 H：StudyCard「不记得 / 记得」，「记得」两步确认（先揭开释义，再落盘）===')
   root.unmount()
   window.localStorage.clear()
   mount()
@@ -748,13 +748,32 @@ export async function run() {
 
   const form1 = card1 ? card1.textContent.trim() : null
   const cardWord1 = words.find((w) => w.form === form1)
+  const statusOf = (w) => (w && learnMap()[w.id] && learnMap()[w.id].status) || '(无记录)'
+
+  // ★ 第 1 步：点「记得」只揭开释义，**不得**落盘（否则又退回「盲点一下就毕业」）
   click(byExactText('button', '记得'))
   await flush(150)
   ok(
-    cardWord1 && learnMap()[cardWord1.id] && learnMap()[cardWord1.id].status === 'known',
-    `点「记得」后 ${form1} 立即变已掌握（实际 ${cardWord1 && learnMap()[cardWord1.id] && learnMap()[cardWord1.id].status}）`,
+    statusOf(cardWord1) !== 'known',
+    `★ 第 1 次点「记得」后 ${form1} 未被标记已掌握（实际 ${statusOf(cardWord1)}）—— 抓「一步到位毕业」`,
   )
-  ok(document.body.textContent.includes('记得，已掌握'), '卡片反馈出现「记得，已掌握」')
+  ok(
+    cardWord1 && document.body.textContent.includes(cardWord1.gloss),
+    `★ 第 1 次点「记得」已揭开释义（可见 gloss「${cardWord1 && cardWord1.gloss}」）`,
+  )
+  ok(!!byExactText('button', '确实记得 →'), '第 1 步后「记得」按钮变为「确实记得 →」（显式二次确认入口）')
+  ok(!document.body.textContent.includes('记得，已掌握'), '第 1 步不出现「记得，已掌握」反馈（还没结论）')
+  ok(!byText('button', '下一个'), '★ 揭开态不出现「下一个」（必须先在「确实记得 / 不记得」间做结论，否则该词不写记录、结算漏算）')
+
+  // 第 2 步：确认记得才落盘
+  click(byExactText('button', '确实记得 →'))
+  await flush(150)
+  ok(
+    cardWord1 && learnMap()[cardWord1.id] && learnMap()[cardWord1.id].status === 'known',
+    `第 2 次点「确实记得 →」后 ${form1} 才变已掌握（实际 ${statusOf(cardWord1)}）`,
+  )
+  ok(document.body.textContent.includes('记得，已掌握'), '第 2 步后卡片反馈出现「记得，已掌握」')
+  ok(!!byText('button', '下一个'), '第 2 步落盘后才出现「下一个」')
 
   // ---------------------------------------------------- 附加 H-2：真实 App 链路渲染「常见变形 / 派生词」
   //
@@ -793,6 +812,38 @@ export async function run() {
     cardWord2 && learnMap()[cardWord2.id] && learnMap()[cardWord2.id].status === 'review',
     `点「不记得」后 ${form2} 进待复习（实际 ${cardWord2 && learnMap()[cardWord2.id] && learnMap()[cardWord2.id].status}）`,
   )
+
+  // ---------------------------------------------------- 附加 H-3：揭开态可反悔
+  //
+  // ★ 为什么要单独起一轮 ★：卡在「已揭开、未落盘」的中间态时，DOM 里详情已经展开，
+  //   如果实现照旧用 answered=true 去锁输入，用户就永远改不了口 —— 而这正是本次
+  //   两步化最该守住的一条（自评必须可撤销，否则「先看答案」只是多骗一次点击）。
+  //   放在 H/H-2 之后：H-2 依赖首卡处于展开态，提前重挂会把它打空。
+  log('\n=== 附加 H-3：揭开态（已展开未落盘）仍可改口点「不记得」 ===')
+  root.unmount()
+  window.localStorage.clear()
+  mount()
+  await flush(200)
+  click(byText('button', '学习'))
+  await flush(150)
+  const entry2 = byText('button', '优先复习') || byText('button', '开始学习')
+  ok(!!entry2, '学习首页可再次进入会话（反悔用例）')
+  click(entry2)
+  await flush(200)
+  const rCard = cardOf()
+  const rForm = rCard ? rCard.textContent.trim() : null
+  const rWord = words.find((w) => w.form === rForm)
+  click(byExactText('button', '记得'))
+  await flush(150)
+  ok(!!byExactText('button', '不记得'), `★ 揭开态「不记得」按钮仍在（${rForm}）—— 输入未被锁死`)
+  ok(statusOf(rWord) !== 'known', `揭开态尚未落盘（${rForm} 实际 ${statusOf(rWord)}）`)
+  click(byExactText('button', '不记得'))
+  await flush(150)
+  ok(
+    rWord && learnMap()[rWord.id] && learnMap()[rWord.id].status === 'review',
+    `★ 揭开态点「不记得」照常进待复习（${rForm} 实际 ${statusOf(rWord)}）`,
+  )
+  ok(document.body.textContent.includes('不记得，已加入待复习'), '揭开态改口后反馈为答错文案（不是「记得，已掌握」）')
 
   // ---------------------------------------------------- 附加 I：总览群岛地图 + 查找
   log('\n=== 附加 I：总览群岛地图（一岛=一词素・三大板块）+ 查找 ===')

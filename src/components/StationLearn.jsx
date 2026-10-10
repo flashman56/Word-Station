@@ -8,6 +8,7 @@ import {
 } from '../lib/learning.js'
 import { buildBands, normalizeBand, bandFilter } from '../hooks/useLearn.js'
 import { buildFoldView } from '../lib/lemmaFold.js'
+import { countScheduled } from '../lib/scheduled.js'
 import { STATUS } from '../lib/derive.js'
 import LearnHome from './LearnHome.jsx'
 import StudySession from './StudySession.jsx'
@@ -180,7 +181,17 @@ export default function StationLearn({
     return counts
   }, [foldUnits, bands])
 
-  const stats = useMemo(() => countByStatus(foldUnits, foldRecords), [foldUnits, foldRecords])
+  /* ★ 与 useLearn.js:584-587 逐字同形：小站也要报「已排期」★
+     * LearnHome 渲染 `stats.scheduled ?? 0 > 0` 那一行（LearnHome.jsx:115），
+     * 而这里原本只给 countByStatus 的三桶 —— 没有 scheduled 键 → `?? 0` → 恒不渲染。
+     * 同一个 LearnHome 组件，小站页永远缺这一栏，而「明天要复习几个」恰恰是小站用户
+     * 最该知道的事（小站就是给自己背的一组词）。调用方无需改：补上键即可，
+     * 且 countScheduled 与 countByStatus 共用同一个 foldUnits / foldRecords，
+     * 子集关系（已排期 ⊆ 待复习）自动成立。 */
+  const stats = useMemo(
+    () => ({ ...countByStatus(foldUnits, foldRecords), scheduled: countScheduled(foldUnits, foldRecords) }),
+    [foldUnits, foldRecords],
+  )
   const learnPool = useMemo(() => bandFilter(foldUnits, activeBand), [foldUnits, activeBand])
   const morphTypes = useMemo(() => {
     const map = new Map()

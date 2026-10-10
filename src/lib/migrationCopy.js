@@ -52,16 +52,28 @@ export function describeMigrationReport(report) {
   // ★ 刻意不写「首次使用」：migratedManual === 0 只说明「无可迁移的 v1 记录」，
   //   老用户若旧键里的词全被移出词库（计入 dropped）也会落到这一支，
   //   断言他「首次使用」等于凭空编造一段他没做过的历史。
-  // ★★ 这里只列 review / unknown，不再重复列 known ★★
+  // ★★ 这里只说「按词频继承了多少」，**不列 review / unknown** ★★
   //   migratedManual === 0 ⇒ 已知词**全部**来自词频继承，known 恒等于 byFreq。
   //   两个数字都写出来就成了「自动标记了 3 个已掌握；另有 3 个已掌握」，读着像 bug。
+  //
+  // ★★★ 为什么连「待复习 N 个、未知 M 个」也不写 ★★★
+  //   report 里的 review / unknown 来自**迁移那一刻**的 countByStatus
+  //   （migrate.js），并且被写进 localStorage 的 `migration.v2:<scope>` 标记里
+  //   **持久化**。之后用户答题 / 标记 / 批量改状态都不会重算它，
+  //   setMigration 只在 mount 与 rerunMigration 时被调用 ——
+  //   而 rerunMigration 走 clearMigration()，会把学习记录一并清掉。
+  //   于是这两个数字**永远停在第 0 天**，第二天再看就是：
+  //     「按词频自动标记了 300 个高频词为已掌握；另有 0 个待复习、61917 个未知。」
+  //   一边说已掌握 300 个，一边说 61917 个未知，还跟侧栏「掌握状态」栏里
+  //   随每次作答实时变动的数字对不上 —— 一个**恒假**的横幅比没有横幅更糟。
+  //   这里只保留 byFreq：它是迁移期的真实常量（AUTO_KNOWN_RANK 决定的
+  //   高频继承），无论用户之后怎么学都不会变成假话。
+  //   活的状态数字由侧栏「统计」栏与学习首页的卡片实时承担，不该由快照复述。
   if (manual === 0) {
     if (byFreq === 0) return null
     return {
       tone: 'freq',
-      text:
-        `按词频自动标记了 ${byFreq} 个高频词为${STATUS_LABEL.known}` +
-        `（可在「已知词处理」里关闭）；另有 ${review} 个${STATUS_LABEL.review}、${unknown} 个${STATUS_LABEL.unknown}。`,
+      text: `按词频自动标记了 ${byFreq} 个高频词为${STATUS_LABEL.known}（可在「已知词处理」里关闭）。`,
     }
   }
 
