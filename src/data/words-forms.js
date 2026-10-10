@@ -11,6 +11,18 @@
  *   照样是独立学习单元，只是卡面会显示它的常见变形。
  *
  * 数据来源：scripts/.lemma-pairs.json（src === 'AB'）
+ *
+ * ★★ 代表形只走 1 跳 —— 直接用上表那条「双向印证过」的 raw target，
+ *    不做多跳串联 ★★
+ *    多跳会把「单条就不成立」的边串进来，产出用户能直接看到的错误答案：
+ *      evenings→evening→even   ⇒ "evenings" 被列成 "even" 的变形（错）
+ *      feeds   →feed   →fee    ⇒ "feeds"   被列成 "fee"  的变形（错）
+ *      numbered→number →numb   ⇒ "numbered" 被列成 "numb" 的变形（错）
+ *      beings  →being  →be     ⇒ "beings"  被列成 "be"   的变形（错）
+ *    折叠表（words-lemma.js）走多跳无妨 —— 它只影响学习队列，用户看不见；
+ *    本表是**用户直接读到的答案**，宁可关系浅一层，也不能给错。
+ *    ⚠️ 这不是遗漏，请勿"补全"成多跳 —— 详见 scripts/gen-forms-patch.mjs。
+ *
  * 用法：src/data/index.js 与 src/data/words-entry.js 在 flat() 之后调用
  *       （命中词条附 `.formRep` 字段）；运行时由 src/lib/wordForms.js 读取，
  *       用于「常见变形」区块的展示。
