@@ -21,6 +21,9 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { words as ALL_WORDS } from '../src/data/index.js'
+// 防御性读取：现有产物是权威底稿。写回前用它把「缓存里没有、产物里有」的条目补回缓存，
+// 避免缓存不完整时 writePhoneticsJs() 用残缺缓存覆盖产物 → 静默丢条目（曾实测丢 410 条）。
+import { phonetics as EXISTING_PHONETICS } from '../src/data/phonetics.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const ROOT = path.resolve(__dirname, '..')
@@ -48,6 +51,11 @@ const MATCH_ONLY = argv.includes('--match-only')
 const EXAMPLES_ONLY = argv.includes('--examples-only')
 const PILOT = argv.includes('--pilot') ? parseInt(argVal('--pilot', '20'), 10) : null
 const BATCH = Math.max(1, parseInt(argVal('--batch', '8'), 10))
+// 专有名词（人名/地名/机构名，w.kind === 'proper'）默认排除出**付费的例句/用法阶段B**：
+// 人名地名本就不需要例句与用法，为其生成纯属浪费预算。
+// ⚠️ 闸门只作用于阶段B——阶段A（音标）是本地 ECDICT 查表、免费，且专有名词的读音仍有用，
+//    故阶段A 不受影响。用 --include-proper 可强制纳入阶段B。
+const SKIP_PROPER = !argv.includes('--include-proper')
 
 // ---------------- env（阶段B才需要 key） ----------------
 function loadEnv() {
@@ -75,6 +83,8 @@ for (const w of ALL_WORDS) {
       form: w.form,
       pos: typeof w.pos === 'string' ? w.pos : '',
       gloss: typeof w.gloss === 'string' ? w.gloss : '',
+      // kind 用于 --include-proper：'proper' 表示专有名词（人名/地名/机构名等）
+      kind: typeof w.kind === 'string' ? w.kind : '',
       hasExample: Boolean(w.example && w.example.en && w.example.zh),
     })
   }
@@ -96,6 +106,31 @@ if (fs.existsSync(CACHE_PATH)) {
   }
 }
 
+// ★ 防丢数据：以现有产物为底合并进缓存（**只补不覆盖**）。
+// 缓存是 writePhoneticsJs() 的唯一数据源，一旦它比产物残缺，写回就会静默丢数据。
+// ⚠️ 必须**字段级**合并，只补 KEY 不够：实测缓存里已存在的 key 其 `p` 字段可能为空，
+//    写回时会把产物里已有的音标清掉（曾一次静默丢 6,474 条 p，而条目数一个没少——
+//    只查条目数完全看不出来）。规则：产物有、缓存无 → 补；缓存已有 → 原样保留。
+let restoredKeys = 0
+let restoredFields = 0
+for (const [k, v] of Object.entries(EXISTING_PHONETICS || {})) {
+  const cur = cache.entries[k]
+  if (!cur) {
+    cache.entries[k] = v
+    restoredKeys += 1
+    continue
+  }
+  for (const f of ['p', 'en', 'zh', 'u']) {
+    if (v && v[f] && !cur[f]) {
+      cur[f] = v[f]
+      restoredFields += 1
+    }
+  }
+}
+if (restoredKeys || restoredFields) {
+  console.log(`[phon] 从现有产物回填缓存：新增条目 ${restoredKeys} 条 / 补齐字段 ${restoredFields} 个（防丢数据）`)
+}
+
 function saveCache() {
   fs.writeFileSync(CACHE_PATH, JSON.stringify(cache))
 }
@@ -110,6 +145,8 @@ function writePhoneticsJs() {
  * ------------------------------------------------------------------
  * 数据源：
  *   - 音标 p：ECDICT 开源英汉词典（本地查表匹配，匹配不到留空，绝不编造）
+ *             + ipa-dict（open-dict-data/ipa-dict，en_US/en_UK，标准 IPA 经转写对齐 ECDICT 记法）
+ *             + kaikki.org 英文词典（标准 IPA 经转写对齐 ECDICT 记法）
  *   - 例句 en/zh、用法 u：DeepSeek 依词条 pos/gloss 生成（licensed 数据管线）
  *
  * 键：单词 form 小写；字段：p=音标主体（不带斜杠）en=英文例句 zh=中文翻译 u=用法
@@ -389,6 +426,8 @@ function missingExampleForms() {
   for (const key of ALL_FORMS) {
     const meta = byForm.get(key)
     if (meta.hasExample) continue
+    // 专有名词默认不生成例句/用法（人名地名不需要；--include-proper 可强制纳入）
+    if (SKIP_PROPER && meta.kind === 'proper') continue
     const e = cache.entries[key]
     if (e && e.en && e.zh) continue
     list.push(key)
@@ -493,6 +532,7 @@ async function generateExamples() {
   const all = missingExampleForms()
   const todo = PILOT != null ? all.slice(0, PILOT) : all
   console.log(`[phon] 缺例句词形 ${all.length} 个；本次处理 ${todo.length} 个${PILOT != null ? `（pilot=${PILOT}）` : '（全量）'}`)
+  console.log(`[phon] 专有名词排除（阶段B）：${SKIP_PROPER ? '开（默认）' : '关（--include-proper）'}`)
   let done = 0
   for (let i = 0; i < todo.length; i += BATCH) {
     const keys = todo.slice(i, i + BATCH)

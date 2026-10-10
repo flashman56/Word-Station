@@ -21,6 +21,8 @@ import morphemes from '../src/data/morphemes.js'
 import { buildIndex } from '../src/lib/derive.js'
 import { buildStemIndex } from '../src/lib/stemFamily.js'
 import { isFolded } from '../src/lib/lemmaFold.js'
+import { FORMS_BY_ID } from '../src/data/words-forms.js'
+import { LEMMA_BY_ID } from '../src/data/words-lemma.js'
 import { buildWordForms, FORMS_MAX, DERIVATIVES_MAX, firstGloss } from '../src/lib/wordForms.js'
 
 let pass = 0
@@ -59,8 +61,14 @@ const W = [
   { id: 'w.don', form: 'don', gloss: '穿上', morphs: ['m.don'], chain: [{ form: 'don', gloss: '穿上' }], freqRank: 800, cefr: 'A2' },
   { id: 'w.random', form: 'random', gloss: '随机的', morphs: ['m.rand'], chain: [{ form: 'random', gloss: '随机' }], freqRank: 1500, cefr: 'B1' },
   // 无词素：走 familyOf 按词形反查
-  { id: 'w.determined', form: 'determined', gloss: '坚决的', morphs: [], chain: [], morphless: true, kind: 'loan', freqRank: 2000, cefr: 'B1' },
+  { id: 'w.determined', form: 'determined', gloss: '坚决的', morphs: [], chain: [], morphless: true, kind: 'loan', freqRank: 2000, cefr: 'B1', formRep: 'w.determine' },
   { id: 'w.determination', form: 'determination', gloss: '决心', morphs: ['m.rand'], chain: [{ form: 'determin', gloss: '决定' }], freqRank: 2200, cefr: 'B2' },
+  // 只有 formRep、没有 lemma 的代表形（determined 的展示代表形，本身不被折叠）
+  { id: 'w.determine', form: 'determine', gloss: '决定', morphs: [], chain: [], freqRank: 1500, cefr: 'B1' },
+  // ★ 展示表与折叠表**给出不同代表形**时：展示用 formRep，折叠仍用 lemma ★
+  { id: 'w.mixed', form: 'mixed', gloss: '混合的', morphs: [], chain: [], freqRank: 1800, cefr: 'B1', lemma: 'w.mixA', formRep: 'w.mixB' },
+  { id: 'w.mixA', form: 'mixA', gloss: 'A 侧代表形', morphs: [], chain: [], freqRank: 1600, cefr: 'B1' },
+  { id: 'w.mixB', form: 'mixB', gloss: 'B 侧代表形', morphs: [], chain: [], freqRank: 1700, cefr: 'B1' },
 ]
 // 14 个折叠形 → 验证 FORMS_MAX 截断
 for (let i = 0; i < 14; i += 1) {
@@ -156,7 +164,28 @@ function caseRelatedFor() {
   ok(empty.forms.length === 0 && empty.derivatives.length === 0, 'undefined → 两段皆空（结构完整）')
 }
 
-// ================================================================ ④ 缓存
+// ================================================================ ⑤ formRep（展示表）
+
+function caseFormRep() {
+  console.log('\n— ⑤ formRep：展示表优先、折叠不动')
+
+  // 只有 formRep、没有 lemma：词照样能进族（determined → determine）
+  const fromRep = model.formsOf('w.determine')
+  ok(ids(fromRep).includes('w.determined'), `★ 只有 formRep 的词进族：formsOf(determine) 含 determined（实际 ${ids(fromRep).join(',')}）`)
+  const fromInfl = model.formsOf('w.determined')
+  ok(ids(fromInfl).includes('w.determine'), '★ 反向也能查到代表形（所有单词有的话都要做）')
+  ok(!isFolded(W.find((w) => w.id === 'w.determined')), '★ determined 的折叠身份不变（isFolded=false，仍是独立学习单元）')
+
+  // 两张表给出不同代表形时：展示跟 formRep，折叠仍跟 lemma
+  const mixed = model.formsOf('w.mixed')
+  ok(ids(mixed).join(',') === 'w.mixB', `★ formRep 优先：formsOf(mixed) = [mixB]（实际 ${ids(mixed).join(',')}）`)
+  ok(!ids(mixed).includes('w.mixA'), '★ 折叠侧的 mixA 不出现在展示族里')
+  ok(model.formsOf('w.mixA').length === 0, '★ mixA 自己没有展示族（没人指向它）')
+  const mixedWord = W.find((w) => w.id === 'w.mixed')
+  ok(isFolded(mixedWord) && mixedWord.lemma === 'w.mixA', '★ 但 mixed 的**折叠**仍指向 mixA（展示改了、折叠没改）')
+}
+
+// ================================================================ ⑥ 缓存
 
 function caseCache() {
   console.log('\n— ④ 缓存：同引用复用、索引变更即失效')
@@ -220,16 +249,57 @@ async function caseRealData() {
   const stemIndex = buildStemIndex(words)
   const real = buildWordForms(words, index, stemIndex)
 
-  // 独立推导：不调用本模块，直接数每个代表形的折叠成员
-  const famByRep = new Map()
-  let foldedCount = 0
-  for (const w of words) {
-    if (!isFolded(w)) continue
-    foldedCount += 1
-    famByRep.set(w.lemma, (famByRep.get(w.lemma) || 0) + 1)
+  // 独立推导：不调用本模块，直接读两张补丁表（FORMS_BY_ID / LEMMA_BY_ID）重算
+  // 每个展示代表形的成员数（口径与 repField 一致：formRep 优先、lemma 回退）。
+  // ★ 同时并数「仅按折叠表」的成员数，用于证明**折叠完全没变**。
+  const repRawOf = (w) => {
+    const fr = FORMS_BY_ID.get(w.id)
+    if (typeof fr === 'string' && fr && fr !== w.id) return fr
+    const l = LEMMA_BY_ID.get(w.id)
+    return typeof l === 'string' && l && l !== w.id ? l : null
   }
-  ok(foldedCount > 0, `词库含被折叠形 ${foldedCount} 个`)
-  ok(famByRep.size > 0, `涉及代表形 ${famByRep.size} 个`)
+  const rawRep = new Map()
+  for (const w of words) {
+    const r = repRawOf(w)
+    if (r) rawRep.set(w.id, r)
+  }
+  /** 沿 rawRep 解析到终态（最多 4 跳，与模块内一致） */
+  const terminal = (id) => {
+    let cur = id
+    const seen = new Set([cur])
+    for (let i = 0; i < 4; i += 1) {
+      const next = rawRep.get(cur)
+      if (!next || next === cur) break
+      if (seen.has(next)) return id
+      seen.add(next)
+      cur = next
+    }
+    return cur
+  }
+
+  const famByRep = new Map()
+  const foldByRep = new Map()
+  let foldedCount = 0
+  let displayCount = 0
+  for (const w of words) {
+    const r = repRawOf(w)
+    if (r) {
+      const t = terminal(r)
+      if (t !== w.id) famByRep.set(t, (famByRep.get(t) || 0) + 1)
+      displayCount += 1
+    }
+    if (isFolded(w)) {
+      foldedCount += 1
+      foldByRep.set(w.lemma, (foldByRep.get(w.lemma) || 0) + 1)
+    }
+  }
+  ok(foldedCount === 9888, `★ 被折叠形仍为 9888 个（折叠未因展示表而变，实际 ${foldedCount}）`)
+  ok(displayCount === FORMS_BY_ID.size, `★ 展示关系词条数 = words-forms.js 条数（${displayCount} / ${FORMS_BY_ID.size}）`)
+  ok(famByRep.size > 0, `涉及展示代表形 ${famByRep.size} 个`)
+  ok(
+    LEMMA_BY_ID.size === 9888,
+    `★ words-lemma.js 仍为 9888 条（折叠表一字未动，实际 ${LEMMA_BY_ID.size}）`,
+  )
 
   let bad = 0
   for (const [rep, cnt] of famByRep) {
@@ -237,6 +307,65 @@ async function caseRealData() {
     if (got !== Math.min(cnt, FORMS_MAX)) bad += 1
   }
   ok(bad === 0, `★ formsOf(rep).length === min(族成员数, FORMS_MAX) 全量成立（不一致 ${bad} 族 / 共 ${famByRep.size} 族）`)
+
+  // ★ 展示比折叠宽，但折叠一个都没多折 ★
+  const displayOnly = words.filter((w) => repRawOf(w) && !isFolded(w)).length
+  ok(displayOnly > 0, `★ 仅展示、不折叠的新增关系 ${displayOnly} 条（determined / blown / cleared …）`)
+  const foldNoDisplay = words.filter((w) => isFolded(w) && !repRawOf(w))
+  console.log(`    · 折叠但无展示关系的词条 ${foldNoDisplay.length} 个（显式名单剔除项，如 honored）`)
+
+  // ★ 用户点名的三个锚点：展示关系进来了，但**折叠身份没变** ★
+  for (const [baseForm, inflForm] of [
+    ['determine', 'determined'],
+    ['blow', 'blown'],
+    ['clear', 'cleared'],
+  ]) {
+    const base = words.find((w) => w.form === baseForm)
+    const infl = words.find((w) => w.form === inflForm)
+    if (!base || !infl) {
+      ok(false, `词库缺少锚点词 ${baseForm} / ${inflForm}`)
+      continue
+    }
+    ok(
+      ids(real.formsOf(base.id)).includes(infl.id),
+      `★ formsOf(${baseForm}) 现在包含 ${inflForm}（展示关系已扩充）`,
+    )
+    ok(
+      ids(real.formsOf(infl.id)).includes(base.id),
+      `★ formsOf(${inflForm}) 反查到 ${baseForm}`,
+    )
+    ok(!isFolded(infl), `★ ${inflForm} **仍未被折叠**（仍是独立学习单元，折叠表未动）`)
+  }
+
+  // ★★ 展示链只走 1 跳（不做多跳串联）★★
+  //   多跳会把 evenings→evening→even、feeds→feed→fee、numbered→number→numb、
+  //   beings→being→be 这类**单条就不成立**的边串进来 —— 展示表是用户直接读到的
+  //   答案，绝不能出现。这里逐条钉死「必须是 1 跳的 raw target、且不是 2 跳目标」。
+  const ONE_HOP = [
+    ['evenings', 'evening', 'even'],
+    ['feeds', 'feed', 'fee'],
+    ['numbered', 'number', 'numb'],
+    ['beings', 'being', 'be'],
+  ]
+  const idOfForm = (f) => {
+    const w = words.find((x) => x.form === f)
+    return w ? w.id : null
+  }
+  for (const [form, mustBe, mustNotBe] of ONE_HOP) {
+    const w = words.find((x) => x.form === form)
+    if (!w) {
+      ok(false, `词库缺少 1 跳锚点词 ${form}`)
+      continue
+    }
+    const rep = FORMS_BY_ID.get(w.id)
+    const want = idOfForm(mustBe)
+    const notWant = idOfForm(mustNotBe)
+    ok(rep === want, `★ ${form} 的 formRep = ${mustBe}（1 跳 raw target；期望 id=${want}，实际 ${rep}）`)
+    ok(rep !== notWant, `★ ${form} 的 formRep **不是** 2 跳目标 ${mustNotBe}（多跳串联已被禁用）`)
+  }
+
+  // 条数护栏：改成 1 跳后条数必须仍是 12,804（变了说明有隐藏丢弃分支被触发）
+  ok(FORMS_BY_ID.size === 12804, `★ words-forms.js 条数仍为 12804（实际 ${FORMS_BY_ID.size}）`)
 
   // relatedFor 的两段互斥 + 不含自身，抽样 300 个代表形
   let overlap = 0
@@ -276,6 +405,7 @@ console.log('[test:word-forms] 常见变形 / 派生词反查模型验证\n')
 caseForms()
 caseDerivatives()
 caseRelatedFor()
+caseFormRep()
 caseCache()
 caseSourceHygiene()
 await caseRealData()

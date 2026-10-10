@@ -89,9 +89,9 @@ const ONLY_MISSING = has('--only-missing') || has('--missing-only')
 const ONLY_U = has('--only-u')
 const FORCE = has('--force')
 const NO_WRITE = has('--no-write')
-// 排除专有名词（w.kind === 'proper'）。默认关闭，保持与历史行为完全一致。
-// 开启后不处理、不计费、不写入 proper 词，可省掉约 24.5% 的预算。
-const SKIP_PROPER = has('--skip-proper')
+// 排除专有名词（w.kind === 'proper'）。默认开启：专有名词不处理、不计费、不写入，
+// 既符合「专有名词不用」的原始需求，又可省掉约 24.5% 的预算。用 --include-proper 可强制纳入。
+const SKIP_PROPER = !has('--include-proper')
 // 只打印待办清单规模就退出（不请求 API、不写产物），用于自证过滤前后词数。
 const DRY_LIST = has('--dry-list')
 const CONCURRENCY = Math.max(1, Math.min(8, parseInt(argVal('--concurrency', '4'), 10) || 4))
@@ -144,7 +144,7 @@ const MISSING_USAGE = FORMS_BY_RANK.filter((m) => m.needsU)
 console.log(
   `[usage-extra] 词库唯一词形 ${ALL_FORMS.length} / 缺 usage ${MISSING_USAGE.length}` +
     `${BAND ? ` / band ${BAND[0]}-${BAND[1]}` : ''} / 并发 ${CONCURRENCY} / 每批 ${BATCH}` +
-    `${ONLY_MISSING ? ' / only-missing' : ''}${ONLY_U ? ' / only-u' : ''}${SKIP_PROPER ? ' / skip-proper' : ''}${PILOT != null ? ` / pilot ${PILOT}` : ''}`,
+    `${ONLY_MISSING ? ' / only-missing' : ''}${ONLY_U ? ' / only-u' : ''}${SKIP_PROPER ? ' / skip-proper(default)' : ' / include-proper'}${PILOT != null ? ` / pilot ${PILOT}` : ''}`,
 )
 
 // ---------------------------------------------------------------- 断点缓存
@@ -675,7 +675,7 @@ async function main() {
     const proper = work.filter((m) => m.kind === 'proper').length
     console.log(
       `[usage-extra] DRY-LIST 待办 ${work.length} 词（其中 proper ${proper} / 非 proper ${work.length - proper}）` +
-        `${SKIP_PROPER ? ' [--skip-proper 已开]' : ' [--skip-proper 未开]'}` +
+        `${SKIP_PROPER ? ' [排除专有名词=开(default)]' : ' [排除专有名词=关(--include-proper)]'}` +
         `${BAND ? ` [band ${BAND[0]}-${BAND[1]}]` : ''}`,
     )
     return
