@@ -78,7 +78,7 @@
 
 | 文件 | 动作 | 说明 |
 |---|---|---|
-| `src/components/StudyCard.jsx` | 修改 | 三按钮 → 「不记得 / 记得」两按钮（见 §3.4 + §4） |
+| `src/components/StudyCard.jsx` | 修改 | 三按钮 → 「不记得 / 记得」两按钮（见 §3.4 + §4）；「记得」为两步确认（新增内部 state `revealed`） |
 | `src/components/StudySession.jsx` | 不改/微调 | 复用 StudyCard，`mode` 文案同步（R-14 复习卡同款两按钮） |
 | `src/App.jsx` | 微调 | 详情面板「我会了」按钮文案可对齐为「记得」（一致性，P2，不阻塞） |
 | `scripts/qa-harness.jsx` | 同步 | 确认 StudyCard 文案变更不破坏既有断言（批量条「我会了」在 `BulkActionBar`，独立组件，不受影响） |
@@ -160,10 +160,14 @@ const statusOf = useCallback(
 - 现有 props 不变（`word/mode/onAnswer/onMarkKnown/onNext/record`）。
 - 内部由「不认识 / 认识 / 我会了」三按钮，改为「**不记得 / 记得**」两按钮：
   - 「不记得」 → `onAnswer('incorrect')` → `applyAnswer` 使 `status='review'`、`consecutiveCorrect=0`。
-  - 「记得」 → `onMarkKnown()` → `markKnown`（`consecutiveCorrect=2`、`statusSource='manual-known'`、累计次数不变）。
+  - 「记得」= **两步确认**（新增内部 state `revealed`，**不改 props、不改 `learning.js`**）：
+    1. 第 1 步：`revealed=false→true`，**不调** `onMarkKnown`，用 `showDetail = answered || revealed` 复用**同一段答案区 markup** 揭开释义/例句；
+    2. 第 2 步：按钮文案变「确实记得 →」，此时才 `onMarkKnown()` → `markKnown`（`consecutiveCorrect=2`、`statusSource='manual-known'`、累计次数不变）。
+  - **反悔不被锁死**：`revealed` 态下 `answered` 仍为 `false`，`handleAnswer` 的 `if (answered) return` 守卫不生效，故「不记得」照常可点并走同一条 `applyAnswer('incorrect')` 路径。
+  - **揭开态不渲染「下一个」**：该词此刻既未写 `records`、也未进 `results[index]`，若能直接跳下一词会同时造成存储与结算漏算。
   - 移除「认识（correct）」路径与「答对累计 2 次」门槛（R-08/R-09）。
-- 作答后展开区文案：`buildFeedback` 改为「已掌握 ✓ / 已加入待复习」；仍显示「连续答对 x/2」「累计答对 N 次 / 累计答错 M 次」（不变量保留，R-09）。
-- 复习卡（`StudySession mode='review'`）复用同一 `StudyCard`，天然获得同款两按钮（R-14）。
+- 作答后展开区文案：`buildFeedback` 改为「已掌握 ✓ / 已加入待复习」；仍显示「连续答对 x/2」「累计答对 N 次 / 累计答错 M 次」（不变量保留，R-09）。`revealed` 态 `result` 仍为 `null`，故答案区的反馈药丸按 `feedback.text` 非空才渲染，不出现空药丸。
+- 复习卡（`StudySession mode='review'`）复用同一 `StudyCard`，天然获得同款两按钮与两步确认（R-14）。
 
 ---
 
@@ -263,10 +267,10 @@ NetworkView 顶部搜索框 onChange(q)
 
 ### 3-D 按钮改名（P0，独立，可与 3-B 并行但建议放后）
 
-15. **D1 `StudyCard` 改两按钮** — 负责：`src/components/StudyCard.jsx`；依赖：无（概念依赖 Q5 已定）；验收：仅「不记得/记得」两按钮；「记得」→`markKnown`（一次直达 known，consecutiveCorrect=2）；「不记得」→`applyAnswer('incorrect')`→review；移除「答对累计 2 次」门槛；详情「累计答对/答错」不变量保留。
+15. **D1 `StudyCard` 改两按钮** — 负责：`src/components/StudyCard.jsx`；依赖：无（概念依赖 Q5 已定）；验收：仅「不记得/记得」两按钮；「记得」**第 1 步只揭开释义且不落盘**（`status !== 'known'`）、**第 2 步「确实记得 →」才 →`markKnown`**（consecutiveCorrect=2）；揭开态点「不记得」→`applyAnswer('incorrect')`→review（可反悔）；移除「答对累计 2 次」门槛；详情「累计答对/答错」不变量保留。
 16. **D2 复习卡同步（R-14，P2）** — 负责：`StudySession.jsx`/`StudyCard.jsx`；依赖：D1；验收：复习会话同款两按钮；既有 E2E 不回退。
 17. **D3 详情面板文案对齐（P2，可选）** — 负责：`App.jsx` WordDetail「我会了」→「记得」；依赖：D1；验收：一致性，不破坏 E2E。
-18. **D4 E2E 同步** — 负责：`scripts/qa-harness.jsx`；依赖：D1；验收：`npm run test:e2e` 全绿（批量条「我会了」在 `BulkActionBar`，不受 StudyCard 变更影响）。
+18. **D4 E2E 同步** — 负责：`scripts/qa-harness.jsx`（+ `qa-harness-qa.jsx` 副本）；依赖：D1；验收：`npm run test:e2e` 全绿 —— 附加 H 断言改为「两步」：第 1 步后 `status!=='known'` 且释义已可见、第 2 步后才 `known`；附加 H-3 覆盖揭开态反悔（批量条「我会了」在 `BulkActionBar`，不受 StudyCard 变更影响）。
 
 ---
 
@@ -317,4 +321,4 @@ NetworkView 顶部搜索框 onChange(q)
 - **3-A**：`npm run validate` 0 error；`npm run test:e2e` 65/0 不回退；全库去重 ≈ 2000；`.env` 不提交；build 产物无密钥、无外部请求。
 - **3-B**：总览默认网络图；点/悬停节点高亮邻居、其余变暗；三态配色一致；顶部统计实时更新；语义图层开关可切换且默认关。
 - **3-C**：搜索框按 word/词根/释义实时过滤并聚焦命中节点；清空恢复全图。
-- **3-D**：StudyCard 仅「不记得/记得」两按钮；「记得」一次→known，「不记得」→review；详情累计不变量保留；既有 E2E 不回退。
+- **3-D**：StudyCard 仅「不记得/记得」两按钮；「记得」两步确认（先揭开释义不落盘、再「确实记得 →」→known），揭开态可改口「不记得」→review；详情累计不变量保留；既有 E2E 不回退。

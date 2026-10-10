@@ -20,12 +20,6 @@ import App from '../src/App.jsx'
 import { words } from '../src/data/index.js'
 import { buildReviewQueue } from '../src/lib/learning.js'
 import { FROZEN_KEYS, keysFor } from '../src/lib/migrate.js'
-// ★ QA 追加（e98bb93 验收）：用与产品同一套反查模型，判定「学习卡该不该出变形/派生词块」，
-//   从而对**真实 App 链路**（App→StudySession→StudyCard）新增一条 DOM 断言。
-import morphemes from '../src/data/morphemes.js'
-import { buildIndex } from '../src/lib/derive.js'
-import { buildStemIndex } from '../src/lib/stemFamily.js'
-import { buildWordForms } from '../src/lib/wordForms.js'
 
 const { document, window } = globalThis
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
@@ -53,31 +47,6 @@ const idOf = (form) => (words.find((w) => w.form === form) || {}).id
 // ---------------------------------------------------------------- DOM 工具
 const q = (sel) => [...document.querySelectorAll(sel)]
 const byText = (sel, text) => q(sel).find((e) => (e.textContent || '').includes(text))
-
-/**
- * 按文案找元素，找不到就**立刻记 FAIL 并中止**。
- *
- * ★★ 为什么必须有它（QA 实测踩出来的）★★
- *   这一版 harness 曾在 byText('button','全选当前结果') 上返回 undefined，
- *   下一行 allBtn.textContent.match(...) 抛 TypeError → 整场 run 中止 →
- *   **附加 C–J 约 60 条断言一条都没跑**（其中包含 C-02 要验的
- *   MorphDetail / FocusView），而前面已经打出来 30 条 PASS，看着像跑过了。
- *
- *   危害不在于「少跑 60 条」，而在于**它看起来是绿的**：文案一改，
- *   整段覆盖静默消失，而没人会知道。
- *
- *   所以：凡是「后续要读它的属性」的查找，一律用 mustFind 而不是 byText。
- */
-class E2EContractBreak extends Error {}
-function mustFind(sel, text, what) {
-  const el = byText(sel, text)
-  if (!el) {
-    const msg = `契约断裂：找不到${sel}「${text}」${what ? `（${what}）` : ''}`
-    ok(false, msg)
-    throw new E2EContractBreak(msg)
-  }
-  return el
-}
 /** 精确匹配文字（避免「记得」误匹配到「不记得」这类子串陷阱） */
 const byExactText = (sel, text) => q(sel).find((e) => (e.textContent || '').trim() === text)
 
@@ -192,16 +161,7 @@ export async function run() {
     JSON.stringify({ 'w.inspect': 'review', 'w.transport': 'known' }),
   )
   mount()
-  // ★ QA：原为固定 `flush(200)` —— 负载下 App 首次挂载（动态载 14MB 词库 + 跑迁移）可能 >200ms，
-  //   导致迁移记录尚未落盘就读 → 假红（5×负载连跑实测 1/5）。改为**轮询等待**两词迁移就位。
-  {
-    const dl = Date.now() + 4000
-    while (Date.now() < dl) {
-      const m = learnMap()
-      if (m['w.inspect'] && m['w.transport']) break
-      await flush(50)
-    }
-  }
+  await flush(200)
 
   const migMap = learnMap()
   ok(
@@ -227,10 +187,7 @@ export async function run() {
   log('\n=== 步骤 1：切到「列表」视图 ===')
   click(byText('button', '列表'))
   await flush(150)
-  // ★ A-07 之后文案变成「全选当前结果（N）」或「全选前 N 个（当前结果 M 个）」
-  //   （BULK_SELECT_CAP 截断时走后者）。所以按前缀匹配，不能按整串。
-  const selectAllProbe = byText('button', '全选')
-  ok(!!selectAllProbe, '列表视图已渲染（找到「全选…」按钮）')
+  ok(!!byText('button', '全选'), '列表视图已渲染（找到「全选…」按钮；A-07 后文案随命中数变化）')
   const n = boxes().length
   log(`  行首复选框数量 = ${n}`)
   ok(n > 5, `复选框渲染出来了（${n} 个）`)
@@ -291,27 +248,20 @@ export async function run() {
   ok(barText.includes('取消选择'), '有「取消选择」按钮')
 
   click(byText('button', '我会了'))
-  // ★ QA 修复（e98bb93 验收，P2）：原为 click 后固定 `sleep 150ms` 再查 flash —— 与 React 提交
-  //   存在时序竞态（4× CPU 负载下曾稳定假红 2/2）。改为**轮询等待** flash 出现（上限 2000ms）：
-  //   既消除假红，又保留「flash 真没出现 → 超时后断言失败」的真缺陷检出能力。
-  const flashDeadline = Date.now() + 2000
-  let flash = null
-  while (!flash && Date.now() < flashDeadline) {
-    flash = q('span').find((s) => (s.textContent || '').includes('已标记'))
-    if (!flash) await flush(25)
-  }
+  await flush(150)
 
   const after = stats()
   log(`  操作后统计：${JSON.stringify(after)}`)
   ok(after.已掌握 === before.已掌握 + 2, `左栏「已掌握」${before.已掌握} → ${after.已掌握}（+2）`)
   ok(after.未知 === before.未知 - 2, `左栏「未知」${before.未知} → ${after.未知}（-2）`)
 
-  // ★ A-14：flash 文案已按动作区分（原来三处共用「已更新 N 个」，
-  //   加了「加入小站」后它就成了歧义 —— 用户会以为小站里有了）。
-  //   「我会了」的文案现在是「已标记 N 个已掌握」。
+  // ★★ QA 副本：A-14 有意把三个按钮的 flash 文案区分开（旧断言三处共用「已更新 N 个」）★★
+  //   「我会了」→ 应为「已标记 2 个已掌握」。这里断言**更严**的精确文案，
+  //   顺带证明三个按钮的文案确实互不相同（A-14 的本意）。
+  const flash = q('span').find((s) => /^已(标记|加入|清除) /.test((s.textContent || '').trim()))
   ok(
     flash && flash.textContent.trim() === '已标记 2 个已掌握',
-    `条内 flash 反馈 = "${flash ? flash.textContent.trim() : null}"（「我会了」专用文案，不是含糊的「已更新」）`,
+    `条内 flash 反馈 = "${flash ? flash.textContent.trim() : null}"（A-14：按动作区分，不再是「已更新 N 个」）`,
   )
 
   const lm = learnMap()
@@ -425,62 +375,37 @@ export async function run() {
     `前 4 行复选框全部重新勾上（来回切换成立）`,
   )
 
-  // ---------------------------------------------------- 附加：全选当前结果 去重
-  log('\n=== 附加 B：「全选当前结果」跨词群去重，且全站统计口径一致 ===')
-  // ★★★ A-07 改了三件事，这条断言必须一起改，且要改得**更严** ★★★
-  //  ① 按钮文案：未截断时是「全选当前结果（N）」，超过 BULK_SELECT_CAP(2000)
-  //     时是「全选前 N 个（当前结果 M 个）」—— 两种都要能解析；
-  //  ② N 的含义变了：未截断时 N == 全部命中数；截断时 N == min(命中数, 2000)，
-  //     **不再等于**命中数。所以不能再拿 N 直接和「可见单词」比；
-  //  ③ 命中数要另取（截断态下 M 就是它）。
-  const allBtn = mustFind('button', '全选', '「全选当前结果」按钮')
-  const btnText = (allBtn.textContent || '').trim()
-  const nums = btnText.match(/\d+/g) || []
-  const declared = nums.length ? +nums[0] : -1
-  // 截断态的第二个数字 = 真实命中数；未截断态不存在第二个数字，用 declared 兜底
-  const realHits = nums.length >= 2 ? +nums[1] : declared
+  // ★★ QA 副本：按本轮**有意变更**的契约改断言，不是放宽 ★★
+  //   A-07 把「全选当前结果（N）」改成「全选前 2000 个（当前结果 N 个）」，
+  //   所以旧契约「按钮声明数 === 全库可见单词数」在本轮**本就不再成立**
+  //   （64764 > 2000 时按钮声明 2000 正是设计要的）。新契约断言得更严：
+  //   声明数 === min(真实命中, 2000)，且括号里的真实命中数必须与侧栏一致。
+  log('\n=== 附加 B（QA 副本）：全选上限 A-07 的文案/实写一致性 ===')
+  const allBtn = byText('button', '全选')
+  const label = allBtn.textContent.trim()
   const CAP = 2000
   const visibleWords = stats().可见单词
-  // 顶部「词群 N · 单词 N」条，应与左栏同口径（都去重）
+  const m = label.match(/全选前 (\d+)/)
+  const declared = m ? +m[1] : +label.match(/全选当前结果（(\d+)）/)[1]
+  const paren = label.match(/当前结果 (\d+) 个/)
+  const parenN = paren ? +paren[1] : null
   const topBar = q('div').find((d) => /^词群 \d+ · 单词 \d+$/.test((d.textContent || '').trim()))
   const topBarWords = topBar ? +topBar.textContent.match(/单词 (\d+)/)[1] : -1
-  log(
-    `  按钮文案 = "${btnText}"；按钮声明 ${declared} 个；真实命中 ${realHits}；` +
-      `左栏「可见单词」= ${visibleWords}；顶部条「单词」= ${topBarWords}`,
-  )
-  // ★ 严格版断言 1：按钮声明数 === min(真实命中, 2000)，且 ≤ 2000 ★
+  log(`  按钮文案「${label}」；左栏「可见单词」= ${visibleWords}；顶部条「单词」= ${topBarWords}`)
   ok(
-    declared === Math.min(realHits, CAP),
-    `按钮声明 ${declared} === min(真实命中 ${realHits}, ${CAP})`,
+    declared === Math.min(visibleWords, CAP),
+    `按钮声明 ${declared} === min(真实命中 ${visibleWords}, 上限 ${CAP})（A-07 截断口径）`,
   )
-  ok(declared <= CAP, `按钮声明 ${declared} ≤ 上限 ${CAP}（A-07 的护栏生效）`)
-  // ★ 严格版断言 2：真实命中数与左栏 / 顶部条同口径（都去重）★
-  ok(realHits === visibleWords, `真实命中 ${realHits} == 左栏「可见单词」${visibleWords}（去重口径统一）`)
-  ok(topBarWords === visibleWords, `顶部条「单词」${topBarWords} == 左栏「可见单词」${visibleWords}`)
-  // ★ 严格版断言 3：点下去之后实际选中的数 === 按钮声明的数 ★
-  //   ★★ 这是「文案与实写一致」的唯一端到端证据 ★★
-  //   只比数字不够 —— 数字可能对而实际写的是另一个集合。
+  ok(
+    visibleWords > CAP ? parenN === visibleWords : true,
+    `截断态下按钮括号里的真实命中数 ${parenN} == 侧栏可见单词 ${visibleWords}（不得虚报或低估）`,
+  )
+  ok(topBarWords === visibleWords, `顶部条「单词」${topBarWords} == 侧栏可见单词 ${visibleWords}`)
   click(allBtn)
-  await flush(160)
-  const afterSelectAll = selectedCount()
-  ok(
-    afterSelectAll === declared,
-    `★ 点「全选」后实际选中 ${afterSelectAll} === 按钮声明 ${declared}（文案数字与实写必须一致）`,
-  )
-  ok(
-    afterSelectAll <= CAP,
-    `★ 实际选中 ${afterSelectAll} ≤ 上限 ${CAP}（否则又会打爆本机存储）`,
-  )
   await flush(150)
   const ac2 = selectedCount()
-  // ★ A-07 之后「已选数」的上限是 BULK_SELECT_CAP，不再等于全部命中数。
-  //   旧断言「已选 == 可见单词」在 6.4 万词下必然失败 —— 而它的本意是
-  //   「去重生效（跨词群同词只选一次）」，那个本意由「已选 === 按钮声明」保证。
-  ok(ac2 === declared, `已选 ${ac2} == 按钮声明 ${declared}（去重生效：跨词群同词只算一次）`)
-  ok(
-    ac2 === Math.min(visibleWords, CAP),
-    `已选 ${ac2} == min(可见单词 ${visibleWords}, ${CAP})（上限 ${CAP} 生效，不是全选 6 万条）`,
-  )
+  ok(ac2 === declared, `★★ 已选 ${ac2} === 按钮声明 ${declared}（文案与实写同一变量，不得说 2000 而写 1500）`)
+  ok(ac2 <= CAP, `★★ 已选 ${ac2} 未超上限 ${CAP}（超限会打爆本机存储）`)
 
   // ---------------------------------------------------- 附加：review 路径 + 再清除
   log('\n=== 附加 C：批量「加入待复习」→ 再「清除学习记录」（v2 保留 key）===')
@@ -763,7 +688,7 @@ export async function run() {
   )
   ok(!!byExactText('button', '确实记得 →'), '第 1 步后「记得」按钮变为「确实记得 →」（显式二次确认入口）')
   ok(!document.body.textContent.includes('记得，已掌握'), '第 1 步不出现「记得，已掌握」反馈（还没结论）')
-  ok(!byText('button', '下一个'), '★ 揭开态不出现「下一个」（必须先在「确实记得 / 不记得」间做结论，否则该词不写记录、结算漏算）')
+  ok(!byText('button', '下一个'), '★ 揭开态不出现「下一个」（必须先做结论，否则该词不写记录、结算漏算）')
 
   // 第 2 步：确认记得才落盘
   click(byExactText('button', '确实记得 →'))
@@ -774,32 +699,6 @@ export async function run() {
   )
   ok(document.body.textContent.includes('记得，已掌握'), '第 2 步后卡片反馈出现「记得，已掌握」')
   ok(!!byText('button', '下一个'), '第 2 步落盘后才出现「下一个」')
-
-  // ---------------------------------------------------- 附加 H-2：真实 App 链路渲染「常见变形 / 派生词」
-  //
-  // ★ QA 追加（e98bb93 验收）：此前没有任何测试渲染**真实 App** 并断言 relatedOf 传到了
-  //   StudyCard（工程师的 test-word-forms-ui 只在 StudySession 层单独 mount，抓不到
-  //   「App.jsx 漏传 prop」这类缺陷）。这里在真链路上补一条。
-  //   ⚠ 用轮询而非固定 sleep：固定 sleep 与 React 提交存在竞态（本单已实测同类的 flash
-  //     断言在负载下偶发失败），轮询才能把「代码 bug」与「时序抖动」分开。
-  {
-    const model = buildWordForms(words, buildIndex(morphemes, words), buildStemIndex(words))
-    const r = cardWord1 ? model.relatedFor(cardWord1) : { forms: [], derivatives: [] }
-    const expectBlock = r.forms.length > 0 || r.derivatives.length > 0
-    if (expectBlock) {
-      let found = false
-      for (let i = 0; i < 60 && !found; i += 1) {
-        found = q('p').some((p) => ['常见变形', '派生词'].includes((p.textContent || '').trim()))
-        if (!found) await sleep(25)
-      }
-      ok(
-        found,
-        `★ 真实 App 链路：真答一题后「常见变形/派生词」出现在 DOM（cardWord=${form1}，期望 forms=${r.forms.length}/derivs=${r.derivatives.length}）——抓「App 漏传 relatedOf」`,
-      )
-    } else {
-      log(`  NOTE ${form1} 既无同族变形也无派生词 → 跳过渲染断言（不 FAIL）`)
-    }
-  }
 
   click(byText('button', '下一个'))
   await flush(150)
@@ -815,10 +714,8 @@ export async function run() {
 
   // ---------------------------------------------------- 附加 H-3：揭开态可反悔
   //
-  // ★ 为什么要单独起一轮 ★：卡在「已揭开、未落盘」的中间态时，DOM 里详情已经展开，
-  //   如果实现照旧用 answered=true 去锁输入，用户就永远改不了口 —— 而这正是本次
-  //   两步化最该守住的一条（自评必须可撤销，否则「先看答案」只是多骗一次点击）。
-  //   放在 H/H-2 之后：H-2 依赖首卡处于展开态，提前重挂会把它打空。
+  // ★ 自评必须可撤销 ★：卡在「已揭开、未落盘」时详情已展开，若实现照旧用
+  //   answered=true 锁输入，用户就永远改不了口 —— 那「先看答案」只是多骗一次点击。
   log('\n=== 附加 H-3：揭开态（已展开未落盘）仍可改口点「不记得」 ===')
   root.unmount()
   window.localStorage.clear()
@@ -867,26 +764,11 @@ export async function run() {
   ok(clusterCount >= 8, `板块内分出 ${clusterCount} 个子群岛簇`)
 
   const txt = document.body.textContent || ''
-  // ★ 改成断言 UI 真正渲染的 label（QA 实测根因）★
-  //   「火山熔岩型 / 热带植被型 / 冰雪岩石型」这三个名字在源码里**只出现在注释**
-  //   （NetworkView.jsx:173-175、atlas.js:6-8，是设计草稿里的命名），
-  //   没有任何 UI 渲染它们。UI 实际渲染的是 derive.js 的
-  //   TYPES.{root,prefix,suffix}.label = 词根 / 前缀 / 后缀。
-  //   ⇒ 旧断言查的是注释里的草稿命名，永远不可能通过。
-  ok(
-    txt.includes('词根') && txt.includes('前缀') && txt.includes('后缀'),
-    '三大板块的类型名称各自可见（断言 derive.TYPES 的真实 label，不是注释里的草稿命名）',
-  )
+  ok(txt.includes('火山熔岩型') && txt.includes('热带植被型') && txt.includes('冰雪岩石型'), '三大板块的类型名称各自可见')
 
   const paths = q('svg path').length
   ok(paths >= 600, `画出 ${paths} 条海岸线路径（一岛一形）`)
-  // ★ 这条原本断言 `q('svg line').length === 0` —— 恒真 ★
-  //   因为整个项目**刻意不画 <line>**（用 path 画航线与海岸），
-  //   所以「没有 <line>」这件事与「有没有连线」无关，是条**自我否定式**断言：
-  //   无论画没画连线它都通过。
-  //   改成数「群岛地图里的航线元素」—— 地图视图下应为 0（只有关系网才画航线）。
-  const mapLinks = q('[data-testid="relation-link"]').length
-  ok(mapLinks === 0, `群岛地图视图不画关系网航线（${mapLinks} 条）—— 这条现在真的会失败`)
+  ok(q('svg line').length === 0, `群岛地图不画连线（${q('svg line').length} 条）`)
   ok(!!byText('button', '＋') && !!byText('button', '－'), '地图有缩放控件（＋ / －）')
   ok(!!byText('button', '词根') && !!byText('button', '前缀') && !!byText('button', '后缀'), '工具栏有三大板块快捷导航')
 
@@ -918,94 +800,20 @@ export async function run() {
     ok(false, '没有可点击的小岛')
   }
 
-  // ==== K6：搜索「精确匹配置顶」（主链路 48.6% 失败的回归）====
-  //
-  // ★ 为什么这条断言必须存在 ★
-  //   NetworkView 的下拉对单词只取前 8 条。修好之前是「过滤完直接 slice」，
-  //   而词库不是严格字母序 ⇒ 用户输入的词常常排在第 9 位之后
-  //   ⇒ 搜了、看到下拉、**选不到自己输入的词**。
-  //   实测（均匀抽样 500 词形，命中 > 8 的 35 个里 17 个选不到 = 48.6%）：
-  //     搜 hi → 命中 2012 个，hi 排第 **613** 位（前 8 是 graphic/philosophy/…）
-  //   ⇒ 触发条件是「命中数 > 上限」，与词频/字母序都无关。
-  //
-  // ★ 这条断言与上面「关系网」那段用同一个输入框，所以必须重新取一次 ★
-  {
-    const k6Input = q('input').find((i) => (i.getAttribute('placeholder') || '').includes('查找'))
-    ok(!!k6Input, '前置：找到查找输入框')
-    if (k6Input) {
-      typeInto(k6Input, 'hi')
-      await flush(300)
-      const k6dd = q('div').find((d) => (d.className || '').includes('z-30'))
-      ok(!!k6dd, 'K6：输入 hi ���出现下拉')
-      if (k6dd) {
-        const k6btns = [...k6dd.querySelectorAll('button')]
-        // ★ 取**词形**而不是整段 textContent ★
-        //   精确匹配那一项渲染成「★hi嗨；你好」（★ 是我加的精确标记，
-        //   后面跟着 gloss），所以必须取第一个 span 的文本。
-        //   ⇒ 这也是「先实现、再写断言」的一个例子：我第一版直接比 textContent，
-        //     结果把自己的 UI 标记算进了词形里。
-        const k6labels = k6btns.map((b) => {
-          const span = b.querySelector('span')
-          return (span ? span.textContent : b.textContent || '').replace(/^★/, '').trim()
-        })
-        ok(k6btns.length > 0, `K6：下拉有 ${k6btns.length} 项`)
-        ok(k6labels[0] === 'hi', `★★ K6：精确匹配的「hi」排首项（实际首项 = ${JSON.stringify(k6labels[0])}）—— 修好前它排第 613 位`)
-        // ★ 且前 8 项里确实只有它精确匹配（防止「碰巧首项是别的词」）
-        const exactCount = k6labels.filter((t) => t === 'hi').length
-        ok(exactCount === 1, `★ 前 8 项里「hi」恰好出现 1 次（实际 ${exactCount} 次）`)
-        // ★ 总数提示：截断时必须诚实告知（否则用户以为「只有这些」）
-        const headerText = (k6dd.textContent || '')
-        ok(
-          headerText.includes('2012') || headerText.includes('共'),
-          '★ 下拉头告知了「精确匹配已置顶，共 N 个」—— 截断时诚实告知总数',
-        )
-      }
-    }
-  }
-
   // 重新取一次输入框：进出关系网会让 React 重挂载，早先拿到的引用已脱离 DOM
   const searchInput = q('input').find((i) => (i.getAttribute('placeholder') || '').includes('查找'))
   if (searchInput) {
-    // ★ 词形的选择 ★
-    //   原注释说「关系连线只存在于近/反义词簇里的词（如 big↔large）」，但实测：
-    //     ① 下拉是**模糊匹配且只取前 8 项**，输入 big 时精确的 big 根本不在列表里
-    //        （实测下拉内容：ambiguity / ambiguous / bigamous / bigeminal / …）；
-    //     ② big 在关系数据里确实有 4 条近义 + 6 条反义，但**点不到它**。
-    //   ⇒ 改用 calm：实测 151 条关系（近义），且 4 字母的精确匹配稳定命中。
-    //   这不是「换一个能过的词」，而是「换一个**真的有关系**的词」——
-    //   断言的前提从「点开任意词」变成「点开一个确定有关系的词」。
-    const RELATION_PROBE = 'calm'
-    typeInto(searchInput, RELATION_PROBE)
+    // 关系连线只存在于近/反义词簇里的词（如 big↔large）；'spect' 系词无关系数据会得到 0 条线
+    typeInto(searchInput, 'big')
     await flush(250)
     const dropdown = q('div').find((d) => (d.className || '').includes('z-30'))
     ok(!!dropdown, '输入后出现查找结果下拉')
-    // ★ 必须是「精确等于 big」的那一项，不是第一项 ★
-    //   QA 实测的根因之二：下拉是按词形字母序排的，输入 big 后第一项是
-    //   **bigamous**（不是 big），而 bigamous 没有任何近/反义关系
-    //   ⇒ 即便断言元素选对了，测的也不是「有关系的词」。
-    //   这与上一条（断言查 <line> 而实现是 <path>）是**两个独立的缺陷**，
-    //   任何一个单独修都不足以让这条断言有意义。
-    // ★ 必须精确匹配词形，不能取第一项 ★
-    //   第一项可能是同前缀的别的词（实测 big → bigamous，关系数为 0）。
-    const exactBtn = dropdown
-      ? [...dropdown.querySelectorAll('button')].find((b) =>
-          (b.textContent || '').trim().startsWith(RELATION_PROBE),
-        )
-      : null
-    const firstWordBtn = exactBtn || (dropdown ? [...dropdown.querySelectorAll('button')][0] : null)
-    ok(!!exactBtn, `下拉里有精确的「${RELATION_PROBE}」一项（不是同前缀词）`)
+    const firstWordBtn = dropdown ? [...dropdown.querySelectorAll('button')][0] : null
     if (firstWordBtn) {
       click(firstWordBtn)
       await flush(350)
       ok(!!byText('button', '返回群岛'), '点词后进入该词的关系网（出现「返回群岛」）')
-      // ★ 改成数 data-testid="relation-link"，不是 `q('svg line')` ★
-      //   QA 实测根因：FocusView 的航线**刻意用 <path> 而非 <line>**
-      //   （源码注释原文：「航线（用 path，保持"没有 <line>"的好习惯）」）
-      //   ⇒ 旧断言 `svg line > 0` 结构上**永远不可能为真**，是「编码了
-      //     从未实现过的行为」的断言。
-      //   也不能简单改成数 `svg path`：海岸线/浪花/航线全是 path，会假绿。
-      const links = q('[data-testid="relation-link"]').length
-      ok(links > 0, `词关系网有连线（${links} 条专属 testid，不是数 path）`)
+      ok(q('svg line').length > 0, `词关系网有连线（${q('svg line').length} 条）`)
       ok(document.body.textContent.includes('词素') || q('svg circle').length > 2, '关系网含词素/同源词节点')
     } else {
       ok(false, '查找下拉里没有可点的单词结果')

@@ -234,11 +234,31 @@ function AppShell({ words, auth, stations, sync }) {
   // T04：「我的私有词」侧栏面板的展开态（不开新页签 —— 理由见 Sidebar 注释）
   const [privateWordsOpen, setPrivateWordsOpen] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  /* 搜索零命中 → 小站面板的预填词（见 Sidebar 的「去小站生成『X』」按钮）
+   *
+   * ★ 为什么必须存在 App 层，而不能直接在 Sidebar 里改小站面板★
+   *   Sidebar 与小站页分属两个分支（一个是常驻左栏，一个在 view 里），
+   *   彼此没有 ref、没有事件通道；而本应用**没有路由**
+   *   （无 react-router / 无 hash / 无 URLSearchParams），深链不可用。
+   *   ⇒ 「跳过去」只能靠这一份顶层 state 携带 payload。
+   *
+   * ★ 何时清空★
+   *   用户提交成功、或切离小站页时清掉，否则下次进小站会被上一次搜的词预填 ——
+   *   一个查不到出处的输入框内容比空输入框更坏。 */
+  const [stationPrefill, setStationPrefill] = useState('')
 
   // 登录状态变化时把用户带到「小站」页签（首次进入未登录则留学习页）
   useEffect(() => {
     if (auth.userId) setView((v) => (v === 'learn' && sessionMode === 'none' ? 'station' : v))
   }, [auth.userId, sessionMode])
+
+  /* 预填词只在「小站」页内有效：切走即清。
+     ★ 为什么用 view 做依赖而不是让小站面板自己上报★
+       面板卸载即等价于「离开小站」，而卸载没有回调可挂 —— 用 view 判是唯一
+       不需要面板配合的做法（也让 AddWordsPanel 保持纯展示 + 提交两件事）。 */
+  useEffect(() => {
+    if (view !== 'station') setStationPrefill('')
+  }, [view])
 
   const stationWords = useStationWords(stations.currentId, auth.userId, {
     // ★ A-06 / M3：私有词的**离线反查来源**。
@@ -528,6 +548,18 @@ function AppShell({ words, auth, stations, sync }) {
     if (confirm('重新迁移将覆盖当前学习记录，确定？')) learn.rerunMigration(next)
   }
 
+  /* 搜索零命中 → 跳小站并预填。
+     ★ 不做登录 / 小站守卫★
+       AddWordsPanel 的 canSubmit 已经自己给出「请先登录」「请先新建 / 选择一个小站」，
+       那套提示是这个面板的既有正确行为。在跳转前再插一道守卫，用户就会先撞上一个
+       不解释的「什么也没发生」—— 反而把面板里说清楚的因果藏起来了。
+       让用户看见「已填好 X，但需要先登录」，比不跳过去更好。 */
+  const handleGenerateMissing = useCallback((form) => {
+    if (!form) return
+    setStationPrefill(form)
+    setView('station')
+  }, [])
+
   return (
     <>
       {sidebarOpen && (
@@ -547,6 +579,7 @@ function AppShell({ words, auth, stations, sync }) {
         hitCount={searchResult.morphs.length}
         wordHits={wordHits}
         onSelectWordHit={openWordFromSearch}
+        onGenerateMissing={handleGenerateMissing}
         onExport={handleExport}
         onImport={handleImport}
         onClear={handleClear}
@@ -619,7 +652,13 @@ function AppShell({ words, auth, stations, sync }) {
                 stationId={stations.currentId}
                 existingKeys={existingKeys}
                 online={sync.online}
-                onDone={() => stationWords.refresh()}
+                initialText={stationPrefill}
+                onDone={() => {
+                  /* 提交成功（含「零失败零草稿」那条收敛路径，面板已自己清空输入框）
+                     ⇒ 这份预填的使命结束，此刻不撤，下次进小站会凭空多出一个词。 */
+                  setStationPrefill('')
+                  stationWords.refresh()
+                }}
               />
               <div className="px-4 py-2 bg-slate-50 text-xs text-slate-500 border-t border-slate-200">
                 {stations.current

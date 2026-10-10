@@ -39,6 +39,7 @@ export default function Sidebar({
   hitCount,
   wordHits = [],
   onSelectWordHit,
+  onGenerateMissing,
   onExport,
   onImport,
   onClear,
@@ -105,11 +106,40 @@ export default function Sidebar({
              搜 spec」会让这个数字变小，读起来像是「搜索本身命中变少了」。
              现在它读 searchResult.morphs.length（零新增开销：searchResult 本来就
              被 hitWordIds / visibleOrphans 消费，读 .length 是 O(1) 字段访问），
-             并补一行小字把口径写明。 */
+             并补一行小字把口径写明。
+             ★ 小字口径必须与代码一致 ★
+               这里曾写「当前筛选下的可见词群」，可这句话同时说了两件互相矛盾的事：
+               「当前筛选下」= 受筛选器影响，「不随筛选变化」= 不受筛选器影响。
+               而数字读的是 searchResult.morphs.length，**根本不吃筛选器** ——
+               照字面理解的用户会以为「调筛选能让这个数变」，去试一次发现纹丝不动，
+               反而怀疑自己看错了。现在只说「搜索命中」，与实现同义。 */
           <p className="text-xs text-slate-400 mt-1.5">
             命中 {hitCount} 个词群
-            <span className="block text-slate-400">（当前筛选下的可见词群，不随筛选变化）</span>
+            <span className="block text-slate-400">（搜索命中数，不随下方筛选器变化）</span>
           </p>
+        )}
+        {/* ★ 搜索零命中的出口（A-05 的下半段）★
+             零命中时这一区只渲染「命中 0 个词群」，wordHits 也空 —— 用户搜了个
+             库里没有的生词，界面就此打住：既不知道这个词在哪儿，也没有下一步。
+             搜不到的词恰恰是「批量加词」面板的输入域，所以出口就是它：
+             一点直接跳到小站页，输入框已填好这个词，下一步（加入 / 生成）现成。
+             ★ 判据用 hitCount === 0 && wordHits.length === 0★
+               两者是**独立**的搜索产物（词群命中 vs 单词命中），只判前者会出现
+               「词群 0 但单词有命中」时 CTA 与词表同时消失的分支 —— 那时用户明明
+               搜到了东西（单词命中列表就在下面），给他一个「去生成」的按钮是错的。 */}
+        {filters.query && hitCount === 0 && wordHits.length === 0 && (
+          <div className="mt-2 rounded-md bg-slate-50 border border-slate-200 px-2.5 py-2">
+            <p className="text-xs text-slate-500 leading-relaxed">
+              词库里没有匹配「{filters.query.trim()}」的词群或单词。
+            </p>
+            <button
+              type="button"
+              onClick={() => onGenerateMissing?.(filters.query.trim())}
+              className="mt-1.5 w-full px-2 py-1.5 rounded-md border border-blue-300 bg-white text-xs text-blue-600 hover:bg-blue-50 transition-colors"
+            >
+              去小站生成「{filters.query.trim()}」
+            </button>
+          </div>
         )}
         {filters.query && wordHits.length > 0 && (
           <div className="mt-2">

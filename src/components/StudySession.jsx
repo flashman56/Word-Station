@@ -8,6 +8,11 @@ import StudyCard from './StudyCard.jsx'
  * 打乱本轮顺序；每题作答 / 标记后立即通过传入的 answer / markKnown 落盘。
  * 队列耗尽或满 10 词后进入总结页，不自动开下一轮（用户手动再进）。
  *
+ * ★ markKnown 是**两步确认的第 2 步** ★
+ *   StudyCard 第 1 次点「记得」只揭开释义、不调本容器；只有用户在看到释义后
+ *   再点「确实记得 →」，才会走到 submitMarkKnown 落盘并写 results。
+ *   所以「记得」的弱信号（无答题证据）现在至少经过了「先看答案再自评」这一道闸。
+ *
  * props:
  *   mode        'learn' | 'review'
  *   queue       来自 useLearn.learnQueue 或 reviewQueue 的单词数组
@@ -46,6 +51,7 @@ export default function StudySession({
     return res
   }
 
+  /** 「确实记得」的落盘入口：StudyCard 两步确认的第 2 步才调到这里。result 仍是 'known'，结算口径不变。 */
   const submitMarkKnown = () => {
     if (!current) return
     if (markKnown) markKnown(current.id)
@@ -95,6 +101,12 @@ export default function StudySession({
 
 /**
  * 本轮总结页。
+ *
+ * ★「新增掌握」口径不变（仍是 `result === 'known'` 或本次答题带来的 mastered）★
+ *   「记得」改成两步确认后，results 里的 'known' 只可能来自「确实记得 →」，
+ *   即用户**已经看过释义之后**的自评。它仍是一条弱证据（无 correctCount /
+ *   lastStudiedAt，见 lib/learning.js::markKnown），但已不是「盲点一下就毕业」，
+ *   故保留在「新增掌握」里、与答对达标并列，不另立口径。
  */
 function Summary({ mode, round, results, onExit }) {
   const remembered = results.filter((r) => r && (r.result === 'known' || r.result === 'correct')).length
