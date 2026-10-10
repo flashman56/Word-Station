@@ -25,6 +25,8 @@ const state = {
   voicesReady: false,
   selectedVoiceSignature: '',
   activeText: null,
+  /** 当前 utterance 的强引用（Chrome 已知问题：utterance 被回收会导致朗读中断） */
+  activeUtterance: null,
   listenerAttached: false,
   pendingTimer: null,
   playbackToken: 0,
@@ -160,7 +162,7 @@ export function scheduleSpeech({
   utterance.onend = onEnd
   utterance.onerror = onError
 
-  const timer = setTimeout(() => {
+  const run = () => {
     if (!shouldSpeak()) return
     onBeforeSpeak()
     try {
@@ -169,7 +171,17 @@ export function scheduleSpeech({
     } catch {
       onError()
     }
-  }, Math.max(0, delayMs))
+  }
+
+  // ★ delayMs <= 0 ⇒ **同步** speak，留在用户点击的调用栈里。
+  //   Android Chrome 要求 speak() 处于用户激活窗口内；把它推到 setTimeout 里会静音
+  //   （表现为：按钮可点、voice 已就绪，但点击后没有任何声音）。
+  if (!(delayMs > 0)) {
+    run()
+    return { utterance, timer: null }
+  }
+
+  const timer = setTimeout(run, delayMs)
 
   return { utterance, timer }
 }
@@ -257,6 +269,7 @@ function cancelPlayback() {
     }
   }
   state.activeText = null
+  state.activeUtterance = null
   notify()
 }
 
@@ -305,8 +318,21 @@ export function useSpeech() {
     if (!selectedVoice) return
     primeIosSynthesis(selectedVoice)
 
-    // 新朗读前先清空旧队列。Chrome 中 cancel 后紧跟 speak 可能吞音，故延迟 60ms。
-    cancelPlayback()
+    // ★ Android Chrome 修复：speak() 必须落在用户激活窗口内。
+    //   旧实现无条件 cancel() + setTimeout(60ms)，把真正的 speak 推到手势栈之外 →
+    //   安卓上按钮可点、voice 已就绪，但点击后静音。
+    //   修法：没有正在播放的内容时**不调 cancel、不延迟**，直接在点击栈里同步 speak；
+    //   确实要打断旧朗读时才走 cancel + 60ms 延迟（桌面 Chrome cancel 后紧跟 speak 会吞音）。
+    const hadActive = state.activeText != null
+    if (hadActive) {
+      cancelPlayback()
+    } else {
+      state.playbackToken += 1
+      if (state.pendingTimer != null) {
+        clearTimeout(state.pendingTimer)
+        state.pendingTimer = null
+      }
+    }
     const token = state.playbackToken
 
     // 在用户点击的同步调用栈中 resume，可兼容 iOS Safari 的手势激活要求；
@@ -323,9 +349,14 @@ export function useSpeech() {
       if (state.playbackToken === token && state.activeText === normalizedText) {
         state.activeText = null
         state.pendingTimer = null
+        state.activeUtterance = null
         notify()
       }
     }
+
+    // 先落 activeText —— 同步 speak 时 shouldSpeak() 需要它已就位
+    textRef.current = normalizedText
+    state.activeText = normalizedText
 
     const scheduled = scheduleSpeech({
       synthesis: window.speechSynthesis,
@@ -334,6 +365,7 @@ export function useSpeech() {
       text: normalizedText,
       lang: options.lang || 'en-US',
       rate: typeof options.rate === 'number' ? options.rate : DEFAULT_RATE,
+      delayMs: hadActive ? SPEAK_DELAY_MS : 0,
       shouldSpeak: () => state.playbackToken === token && state.activeText === normalizedText,
       onBeforeSpeak: () => {
         state.pendingTimer = null
@@ -341,10 +373,16 @@ export function useSpeech() {
       onEnd: finish,
       onError: finish,
     })
-    if (!scheduled) return
+    if (!scheduled) {
+      state.activeText = null
+      textRef.current = null
+      state.activeUtterance = null
+      notify()
+      return
+    }
 
-    textRef.current = normalizedText
-    state.activeText = normalizedText
+    // Chrome 已知问题：utterance 被回收会导致朗读中断 → 保持强引用
+    state.activeUtterance = scheduled.utterance
     state.pendingTimer = scheduled.timer
     notify()
   }, [])
