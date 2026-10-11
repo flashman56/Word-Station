@@ -23,6 +23,8 @@ import { buildWeeklySummary, rewindNewlyMastered } from './lib/daily.js'
 import { MAX_VOCAB_PRIVATE_WORDS } from './lib/derive.js'
 import { useSettings } from './hooks/useSettings.js'
 import { buildBands, normalizeBand } from './hooks/useLearn.js'
+import { usePlacement } from './hooks/usePlacement.js'
+import { scopeOf } from './lib/migrate.js'
 import { isFolded } from './lib/lemmaFold.js'
 import { useAuth } from './hooks/useAuth.js'
 import { useStations } from './hooks/useStations.js'
@@ -32,6 +34,7 @@ import { useStationWords } from './hooks/useStationWords.js'
 import { useUserWords } from './hooks/useUserWords.js'
 import Sidebar from './components/Sidebar.jsx'
 import LearnHome from './components/LearnHome.jsx'
+import PlacementTest from './components/PlacementTest.jsx'
 import StudySession from './components/StudySession.jsx'
 import WeeklySummary from './components/WeeklySummary.jsx'
 import WordRow from './components/WordRow.jsx'
@@ -314,6 +317,27 @@ function AppShell({ words, auth, stations, sync }) {
     [words],
   )
   const bands = useMemo(() => buildBands(maxRank), [maxRank])
+
+  /* 起点测评：出题 / 作答 / 评分 / 落盘全在 usePlacement 里，纯算分在 lib/placement.js。
+   *
+   * ★ 它**一条 learn.records 都不写** ★
+   *   vocab.js 的证据判别式是「records[id] 存在且 statusSource !== 'migration'」，
+   *   也就是任何 status:'known' 都被读成「实测已知」。测评作答 100% 是自报，
+   *   写进去的话「全答认识」= 64,700 词（全库）。详见 lib/placement.js 头部。
+   *
+   * ★ scope 从 scopeOf(ownerId) 取，不自己拼 ★
+   *   键名只存在于 lib/migrate.js（scripts/check-storage-keys.mjs 的 R1 会拦）。
+   */
+  const placement = usePlacement(words, bands, scopeOf(auth.userId))
+
+  /** 采用推荐档：写进与「难度分档」同一个字段 learnBand —— 见下方生效点说明。 */
+  const applyPlacementBand = useCallback(
+    (band) => {
+      if (!band) return
+      setFilters((prev) => ({ ...prev, learnBand: band }))
+    },
+    [setFilters],
+  )
 
   // 预测词汇量：纯本地派生（离线 / 未登录天然可用），随学习记录变化重算
   //
@@ -753,6 +777,31 @@ function AppShell({ words, auth, stations, sync }) {
                 privateCount={userWords.words.length}
                 vocabIncludesPrivate={vocabIncludesPrivate}
               />
+
+              {/* 起点测评：放在 LearnHome 之后、周报之前。
+                  · 它要读的是同一个 bands（上面 buildBands(maxRank) 的结果），故放在本层；
+                  · 推荐档通过 filters.learnBand 生效（见 applyPlacementBand 注释）。
+                  · ★ 不放进 LearnHome 内部 ★：LearnHome 被 StationLearn 复用，
+                    小站里弹一个「你该从哪档开始背」的全局测评会把小站语境弄乱。 */}
+              <div className="max-w-3xl mx-auto">
+                <PlacementTest
+                  size={placement.size}
+                  items={placement.items}
+                  answeredCount={placement.answeredCount}
+                  answers={placement.answers}
+                  running={placement.running}
+                  done={placement.done}
+                  result={placement.result}
+                  hasResult={placement.hasResult}
+                  onStart={placement.start}
+                  onAnswer={placement.answer}
+                  onSubmit={placement.submit}
+                  onRetake={placement.retake}
+                  onCancel={placement.cancel}
+                  onApplyBand={applyPlacementBand}
+                  activeBandId={activeBand === 'all' ? null : activeBand.id}
+                />
+              </div>
 
               {/* 周报独立成块而不是塞进 LearnHome：它只在「学习」页签渲染，
                   而 LearnHome 还被小站复用 —— 小站用户看到的应是本站的今日任务，
