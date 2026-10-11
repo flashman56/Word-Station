@@ -16,7 +16,8 @@
  *      ★ 展示与折叠是两件事 ★：挂了 `.formRep` 的词（determined …）**仍是独立
  *        学习单元**（折叠表没动），只是卡面会显示它的常见变形。
  *   ② 「派生词」  = 共享**词素**的其它词（构词派生，如 abandon → abandonment）；
- *      无词素的词（`morphs` 为空）退回按词形反查（`stemFamily.familyOf`）。
+ *      无词素的词（`morphs` 为空）退回 `stemFamily.familyOf`（按**词根**分组反查；
+ *      同样无词根则返回空 —— 宁缺毋滥，不按拼写凑）。
  *
  * ★ 四条约束 ★
  *   1. **纯函数**：绝不 import 任何 `words-*.js` 数据文件（那会把 28MB 拖进
@@ -197,7 +198,7 @@ export function buildWordForms(words, index, stemIndex) {
   /**
    * 「派生词」：给定词条，返回与之**共享词素**的其它词。
    * 排序：共享词素数降序 → 词频升序 → 词形字典序。
-   * 无词素（`morphs` 为空）时退回 `familyOf` 按词形反查。
+   * 无词素（`morphs` 为空）时退回 `familyOf` 按**词根**反查；无词根则返回空。
    *
    * @param {object} word 当前词条
    * @param {{ excludeIds?: string[], cap?: number }} [opts]
@@ -212,7 +213,7 @@ export function buildWordForms(words, index, stemIndex) {
     const morphs = Array.isArray(word.morphs) ? word.morphs : []
 
     if (morphs.length === 0) {
-      // 无词素：按词形反查同族（多取一些，剔除后仍够 cap）
+      // 无词素：退回按词根反查同族（多取一些，剔除后仍够 cap；无词根则仍为空）
       const picked = familyOf(stemIndex, word, cap + exclude.size)
       return picked.filter((x) => x && !exclude.has(x.id)).slice(0, cap)
     }

@@ -6,8 +6,9 @@ import {
   countByStatus,
   defaultFamilyKeyOf,
 } from '../lib/learning.js'
-import { buildBands, normalizeBand, bandFilter } from '../hooks/useLearn.js'
+import { buildBands, normalizeBand, bandFilter, useDueClock } from '../hooks/useLearn.js'
 import { buildFoldView } from '../lib/lemmaFold.js'
+import { buildDailyTask } from '../lib/daily.js'
 import { countScheduled } from '../lib/scheduled.js'
 import { STATUS } from '../lib/derive.js'
 import LearnHome from './LearnHome.jsx'
@@ -181,6 +182,13 @@ export default function StationLearn({
     return counts
   }, [foldUnits, bands])
 
+  /**
+   * 到期时钟。与学习页共用 useLearn.js 导出的同一个 hook ——
+   * 「已排期」「复习队列」「今天该做什么」三个数字必须来自同一瞬间，
+   * 否则会出现 scheduled.js 注释里点名的那种自相矛盾显示。
+   */
+  const dueNow = useDueClock(foldUnits, foldRecords)
+
   /* ★ 与 useLearn.js:584-587 逐字同形：小站也要报「已排期」★
      * LearnHome 渲染 `stats.scheduled ?? 0 > 0` 那一行（LearnHome.jsx:115），
      * 而这里原本只给 countByStatus 的三桶 —— 没有 scheduled 键 → `?? 0` → 恒不渲染。
@@ -189,8 +197,8 @@ export default function StationLearn({
      * 且 countScheduled 与 countByStatus 共用同一个 foldUnits / foldRecords，
      * 子集关系（已排期 ⊆ 待复习）自动成立。 */
   const stats = useMemo(
-    () => ({ ...countByStatus(foldUnits, foldRecords), scheduled: countScheduled(foldUnits, foldRecords) }),
-    [foldUnits, foldRecords],
+    () => ({ ...countByStatus(foldUnits, foldRecords), scheduled: countScheduled(foldUnits, foldRecords, dueNow) }),
+    [foldUnits, foldRecords, dueNow],
   )
   const learnPool = useMemo(() => bandFilter(foldUnits, activeBand), [foldUnits, activeBand])
   const morphTypes = useMemo(() => {
@@ -209,8 +217,25 @@ export default function StationLearn({
     [learnPool, foldRecords, groupByFamily, familyKeyOf],
   )
   const reviewQueue = useMemo(
-    () => buildReviewQueue(foldUnits, foldRecords, DEFAULT_ROUND_SIZE, new Date().toISOString()),
-    [foldUnits, foldRecords],
+    () => buildReviewQueue(foldUnits, foldRecords, DEFAULT_ROUND_SIZE, dueNow),
+    [foldUnits, foldRecords, dueNow],
+  )
+
+  /**
+   * 站内「今天该做什么」。与学习页同一个 daily.js::buildDailyTask、同一套判据，
+   * 只是词池换成本小站的词。共用 useDueClock（同一个唤醒策略），
+   * 所以站内与学习页不会一个说 7 个、一个说 6 个。
+   */
+  const daily = useMemo(
+    () =>
+      buildDailyTask({
+        reviewPool: foldUnits,
+        learnPool,
+        records: foldRecords,
+        now: dueNow,
+        roundSize: DEFAULT_ROUND_SIZE,
+      }),
+    [foldUnits, learnPool, foldRecords, dueNow],
   )
 
   if (editing) {
@@ -238,6 +263,7 @@ export default function StationLearn({
             stats={stats}
             learnQueue={learnQueue}
             reviewQueue={reviewQueue}
+            daily={daily}
             onStartLearn={() => setSessionMode('learn')}
             onStartReview={() => setSessionMode('review')}
             migrationReport={null}
@@ -383,6 +409,7 @@ export default function StationLearn({
           markKnown={markKnown}
           onExit={() => setSessionMode('none')}
           onViewInCloud={null}
+          daily={daily}
         />
       )}
     </div>
