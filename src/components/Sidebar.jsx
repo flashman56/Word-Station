@@ -1,5 +1,5 @@
 import React from 'react'
-import { CEFR, ORIGINS, STATUS, TYPES, AUTO_KNOWN_RANK } from '../lib/derive.js'
+import { ORIGINS, STATUS, TYPES, AUTO_KNOWN_RANK } from '../lib/derive.js'
 import { describeMigrationReport } from '../lib/migrationCopy.js'
 import VocabCard from './VocabCard.jsx'
 
@@ -208,16 +208,11 @@ export default function Sidebar({
         {privateWordsOpen && privateWordsPanel}
       </Section>
 
-      <Section title="最低难度">
-        <div className="flex flex-wrap gap-1.5">
-          {CEFR.map((c) => (
-            <Chip key={c} active={filters.minCefr === c} color="#4f7fd4" onClick={() => patch({ minCefr: c })}>
-              {c}
-            </Chip>
-          ))}
-        </div>
-        <p className="text-xs text-slate-400 mt-1.5">只显示该等级及以上的词</p>
-      </Section>
+      {/* ★「最低难度」筛选器已移除（2026-10-11，用户判定无用）★
+       *   它默认 B1、且按 CEFR 收窄；实测用户在「已知词处理 / 词素类型 / 来源」之后
+       *   几乎从不改它，却一直在悄悄缩小可见词集 —— 一个「没人用但一直在起作用」的筛选器。
+       *   底层 filters.minCefr 保留（derive.js 仍读它，默认 A1 = 不过滤），
+       *   这样删 UI 不会连带改坏 derive 的筛选契约。 */}
 
       <Section title="词素类型">
         <div className="flex flex-wrap gap-1.5">
