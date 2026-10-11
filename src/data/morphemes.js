@@ -68,7 +68,14 @@ const morphemes = [
   { id: 'p.de', type: 'prefix', form: 'de', display: 'de-', variants: [], gloss: '向下；去除；相反', glossEn: 'down, away, reverse', origin: 'latin', note: 'deposit（放下）、destroy（毁掉）、decode（解码）。' },
 
   // ---------------- 后缀 ----------------
+  /* ★ 屈折后缀（2026-10-11 补）—— 不是派生后缀，但缺了它们会让大批高频常用词被判为「不可拆」。
+   * 试点实测：determined / cleared / packed / wounds / homes / beings 全因为表里没有 -ed / -s / -es / -d
+   * 而成了「孤岛词」——明明是 determine+ed、wound+s，却显示不出来。
+   * 补上这两条，是最直接提高「按词素可学词数」的一刀：不新增任何单词，只是让已有的常用词能拆开。
+   */
   { id: 's.tion', type: 'suffix', form: 'tion', display: '-tion / -sion / -ation', variants: ['sion', 'ation', 'ion'], gloss: '名词后缀：动作、过程、结果', glossEn: 'action, process, result', origin: 'latin', note: '最常见的名词化后缀；加在动词或词根后。' },
+  { id: 's.ed', type: 'suffix', form: 'ed', display: '-ed', variants: ['d'], gloss: '动词屈折后缀：过去式 / 过去分词', glossEn: 'past tense / past participle', origin: 'old_english', note: '规则的过去式与过去分词：determined、cleared、packed、wanted。⚠️ 是屈折（同一词的不同形态），不是派生（不造新词），故不构成独立「词族」，但能让学习者看出这个词由哪个原形变来。' },
+  { id: 's.plural', type: 'suffix', form: 's', display: '-s / -es', variants: ['es'], gloss: '名词屈折后缀：复数；动词第三人称单数', glossEn: 'plural / third person singular', origin: 'old_english', note: 'homes、wounds、beings、books；也用于动词三单 takes、makes。⚠️ 只表屈折，注意与派生后缀 s.er / s.ess 区分。' },
   { id: 's.able', type: 'suffix', form: 'able', display: '-able / -ible', variants: ['ible'], gloss: '形容词后缀：可…的，能…的', glossEn: 'capable of, worthy of', origin: 'latin', note: '-able 多与本族语动词结合，-ible 多与拉丁词根结合。' },
   { id: 's.ment', type: 'suffix', form: 'ment', display: '-mentum / -ment', variants: ['mentum'], gloss: '名词后缀：结果、产物、手段、行为', glossEn: 'result, product, means, action', origin: 'latin', note: '拉丁名词中缀 -mentum「工具、手段、行为之结果」，经古法语 -ment 进入英语：development、amazement、government。⚠️ 与拉丁词根 r.ment（mens「心」）形同义不同，不要混为一谈：comment / management / document / parliament / equipment / experiment / fragment 归本后缀，mental / mention / mentor / mentality 归 r.ment。' },
   { id: 's.ity', type: 'suffix', form: 'ity', display: '-ity / -ty', variants: ['ty'], gloss: '名词后缀：性质、状态', glossEn: 'quality, state', origin: 'latin', note: '常加在形容词后：ability、curiosity、density。' },
