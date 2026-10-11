@@ -763,6 +763,7 @@ const morphemes = [
   { id: 's.smith', type: 'suffix', form: 'smith', display: '-smith', variants: [], gloss: '名词后缀：…匠', glossEn: 'maker', origin: 'old_english', note: 'goldsmith（金匠）、blacksmith（铁匠）。' },
   { id: 's.craft', type: 'suffix', form: 'craft', display: '-craft', variants: [], gloss: '名词后缀：技艺；船', glossEn: 'skill; vessel', origin: 'old_english', note: 'witchcraft（巫术）、spacecraft（宇宙飞船）。' },
   { id: 's.ware', type: 'suffix', form: 'ware', display: '-ware', variants: [], gloss: '名词后缀：制品，器皿', glossEn: 'articles', origin: 'old_english', note: 'software（软件）、hardware（硬件）。' },
+  { id: 's.al', type: 'suffix', form: 'al', display: '-al', variants: ['al'], gloss: '形容词/名词后缀：…的，与…有关的；动作、结果', glossEn: 'of, relating to; act, result', origin: 'latin', note: 'internal（内部的）、global（全球的）、musical（音乐的）、arrival（到达）、rehearsal（排练）。⚠️ -ical / -ual 是 -ic / -u- 与 -al 的复合，切分时只把末尾 -al 归本条（如 musical = music + al、spiritual = spiritu + al），**不要**把 ical / ual 当成 s.al 的变体——否则会重现「段形与变体互为子串」的误判漏洞（曾把 -al 错贴到 s.ic 上）。' },
 
   // ---------------- 占位词素（用户生成词兜底） ----------------
   // 用途：AI 无法给出构词拆解时 morphs 填 ['x.unk']、chain[].morph 填 null，

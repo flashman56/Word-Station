@@ -1,0 +1,7174 @@
+{
+  "generatedAt": "2026-10-11T16:27:36.484Z",
+  "added": 711,
+  "bySuffix": {
+    "ies": 55,
+    "es": 8,
+    "s": 399,
+    "ing": 109,
+    "ed": 140,
+    "d": 0
+  },
+  "guardDrops": [
+    {
+      "form": "herring",
+      "base": "her",
+      "letters": "ing",
+      "why": "G2 原形是虚词（pos=adj. / pron.）"
+    },
+    {
+      "form": "herd",
+      "base": "her",
+      "letters": "d",
+      "why": "G2 原形是虚词（pos=adj. / pron.）"
+    },
+    {
+      "form": "hers",
+      "base": "her",
+      "letters": "s",
+      "why": "G2 原形是虚词（pos=adj. / pron.）"
+    },
+    {
+      "form": "trillions",
+      "base": "trillion",
+      "letters": "s",
+      "why": "G2 原形是虚词（pos=num.）"
+    },
+    {
+      "form": "herding",
+      "base": "her",
+      "letters": "ing",
+      "why": "G2 原形是虚词（pos=adj. / pron.）"
+    },
+    {
+      "form": "herded",
+      "base": "her",
+      "letters": "ed",
+      "why": "G2 原形是虚词（pos=adj. / pron.）"
+    },
+    {
+      "form": "heres",
+      "base": "her",
+      "letters": "es",
+      "why": "G2 原形是虚词（pos=adj. / pron.）"
+    },
+    {
+      "form": "nixed",
+      "base": "ni",
+      "letters": "ed",
+      "why": "G1 原形过短（pos=n.）"
+    }
+  ],
+  "entries": [
+    {
+      "id": "w.involved",
+      "form": "involved",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.involve",
+      "baseForm": "involve",
+      "basePos": "v.",
+      "freqRank": 676
+    },
+    {
+      "id": "w.excited",
+      "form": "excited",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.excite",
+      "baseForm": "excite",
+      "basePos": "v.",
+      "freqRank": 908
+    },
+    {
+      "id": "w.united",
+      "form": "united",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.unite",
+      "baseForm": "unite",
+      "basePos": "v.",
+      "freqRank": 1091
+    },
+    {
+      "id": "w.exciting",
+      "form": "exciting",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.excite",
+      "baseForm": "excite",
+      "basePos": "v.",
+      "freqRank": 1345
+    },
+    {
+      "id": "w.confused",
+      "form": "confused",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.confuse",
+      "baseForm": "confuse",
+      "basePos": "v.",
+      "freqRank": 1523
+    },
+    {
+      "id": "w.connected",
+      "form": "connected",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.connect",
+      "baseForm": "connect",
+      "basePos": "v.",
+      "freqRank": 1842
+    },
+    {
+      "id": "w.disappointed",
+      "form": "disappointed",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.disappoint",
+      "baseForm": "disappoint",
+      "basePos": "v.",
+      "freqRank": 1975
+    },
+    {
+      "id": "w.accused",
+      "form": "accused",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.accuse",
+      "baseForm": "accuse",
+      "basePos": "v.",
+      "freqRank": 2088
+    },
+    {
+      "id": "w.surrounded",
+      "form": "surrounded",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.surround",
+      "baseForm": "surround",
+      "basePos": "v.",
+      "freqRank": 2353
+    },
+    {
+      "id": "w.punished",
+      "form": "punished",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.punish",
+      "baseForm": "punish",
+      "basePos": "v.",
+      "freqRank": 2793
+    },
+    {
+      "id": "w.investigating",
+      "form": "investigating",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.investigate",
+      "baseForm": "investigate",
+      "basePos": "v.",
+      "freqRank": 2806
+    },
+    {
+      "id": "w.recovered",
+      "form": "recovered",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.recover",
+      "baseForm": "recover",
+      "basePos": "v.",
+      "freqRank": 3346
+    },
+    {
+      "id": "w.complaining",
+      "form": "complaining",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.complain",
+      "baseForm": "complain",
+      "basePos": "v.",
+      "freqRank": 3363
+    },
+    {
+      "id": "w.requires",
+      "form": "requires",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.require",
+      "baseForm": "require",
+      "basePos": "v.",
+      "freqRank": 3372
+    },
+    {
+      "id": "w.relations",
+      "form": "relations",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.relation",
+      "baseForm": "relation",
+      "basePos": "n.",
+      "freqRank": 3801
+    },
+    {
+      "id": "w.flames",
+      "form": "flames",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.flame",
+      "baseForm": "flame",
+      "basePos": "n.",
+      "freqRank": 3808
+    },
+    {
+      "id": "w.activities",
+      "form": "activities",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.activity",
+      "baseForm": "activity",
+      "basePos": "n.",
+      "freqRank": 3817
+    },
+    {
+      "id": "w.affected",
+      "form": "affected",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.affect",
+      "baseForm": "affect",
+      "basePos": "v.",
+      "freqRank": 3834
+    },
+    {
+      "id": "w.vegetables",
+      "form": "vegetables",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.vegetable",
+      "baseForm": "vegetable",
+      "basePos": "n.",
+      "freqRank": 4028
+    },
+    {
+      "id": "w.farmers",
+      "form": "farmers",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.farmer",
+      "baseForm": "farmer",
+      "basePos": "n.",
+      "freqRank": 4080
+    },
+    {
+      "id": "w.confusing",
+      "form": "confusing",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.confuse",
+      "baseForm": "confuse",
+      "basePos": "v.",
+      "freqRank": 4118
+    },
+    {
+      "id": "w.methods",
+      "form": "methods",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.method",
+      "baseForm": "method",
+      "basePos": "n.",
+      "freqRank": 4217
+    },
+    {
+      "id": "w.accomplished",
+      "form": "accomplished",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.accomplish",
+      "baseForm": "accomplish",
+      "basePos": "v.",
+      "freqRank": 4376
+    },
+    {
+      "id": "w.communications",
+      "form": "communications",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.communication",
+      "baseForm": "communication",
+      "basePos": "n.",
+      "freqRank": 4690
+    },
+    {
+      "id": "w.devoted",
+      "form": "devoted",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.devote",
+      "baseForm": "devote",
+      "basePos": "v.",
+      "freqRank": 4699
+    },
+    {
+      "id": "w.instincts",
+      "form": "instincts",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.instinct",
+      "baseForm": "instinct",
+      "basePos": "n.",
+      "freqRank": 4851
+    },
+    {
+      "id": "w.accusing",
+      "form": "accusing",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.accuse",
+      "baseForm": "accuse",
+      "basePos": "v.",
+      "freqRank": 5166
+    },
+    {
+      "id": "w.surrounding",
+      "form": "surrounding",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.surround",
+      "baseForm": "surround",
+      "basePos": "v.",
+      "freqRank": 5266
+    },
+    {
+      "id": "w.eliminated",
+      "form": "eliminated",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.eliminate",
+      "baseForm": "eliminate",
+      "basePos": "v.",
+      "freqRank": 5351
+    },
+    {
+      "id": "w.selected",
+      "form": "selected",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.select",
+      "baseForm": "select",
+      "basePos": "v.",
+      "freqRank": 5394
+    },
+    {
+      "id": "w.chemicals",
+      "form": "chemicals",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.chemical",
+      "baseForm": "chemical",
+      "basePos": "adj.",
+      "freqRank": 5511
+    },
+    {
+      "id": "w.compromised",
+      "form": "compromised",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.compromise",
+      "baseForm": "compromise",
+      "basePos": "n.",
+      "freqRank": 5513
+    },
+    {
+      "id": "w.abused",
+      "form": "abused",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.abuse",
+      "baseForm": "abuse",
+      "basePos": "n.",
+      "freqRank": 5547
+    },
+    {
+      "id": "w.casualties",
+      "form": "casualties",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.casualty",
+      "baseForm": "casualty",
+      "basePos": "n.",
+      "freqRank": 5604
+    },
+    {
+      "id": "w.dancers",
+      "form": "dancers",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.dancer",
+      "baseForm": "dancer",
+      "basePos": "n.",
+      "freqRank": 5800
+    },
+    {
+      "id": "w.examined",
+      "form": "examined",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.examine",
+      "baseForm": "examine",
+      "basePos": "v.",
+      "freqRank": 5847
+    },
+    {
+      "id": "w.musicians",
+      "form": "musicians",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.musician",
+      "baseForm": "musician",
+      "basePos": "n.",
+      "freqRank": 5930
+    },
+    {
+      "id": "w.involves",
+      "form": "involves",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.involve",
+      "baseForm": "involve",
+      "basePos": "v.",
+      "freqRank": 6184
+    },
+    {
+      "id": "w.difficulties",
+      "form": "difficulties",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.difficulty",
+      "baseForm": "difficulty",
+      "basePos": "n.",
+      "freqRank": 6189
+    },
+    {
+      "id": "w.producers",
+      "form": "producers",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.producer",
+      "baseForm": "producer",
+      "basePos": "n.",
+      "freqRank": 6190
+    },
+    {
+      "id": "w.activated",
+      "form": "activated",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.activate",
+      "baseForm": "activate",
+      "basePos": "v.",
+      "freqRank": 6304
+    },
+    {
+      "id": "w.deceived",
+      "form": "deceived",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.deceive",
+      "baseForm": "deceive",
+      "basePos": "v.",
+      "freqRank": 6324
+    },
+    {
+      "id": "w.disabled",
+      "form": "disabled",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.disable",
+      "baseForm": "disable",
+      "basePos": "v.",
+      "freqRank": 6341
+    },
+    {
+      "id": "w.facilities",
+      "form": "facilities",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.facility",
+      "baseForm": "facility",
+      "basePos": "n.",
+      "freqRank": 6372
+    },
+    {
+      "id": "w.affects",
+      "form": "affects",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.affect",
+      "baseForm": "affect",
+      "basePos": "v.",
+      "freqRank": 6389
+    },
+    {
+      "id": "w.biscuits",
+      "form": "biscuits",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.biscuit",
+      "baseForm": "biscuit",
+      "basePos": "n.",
+      "freqRank": 6426
+    },
+    {
+      "id": "w.occasions",
+      "form": "occasions",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.occasion",
+      "baseForm": "occasion",
+      "basePos": "n.",
+      "freqRank": 6541
+    },
+    {
+      "id": "w.communists",
+      "form": "communists",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.communist",
+      "baseForm": "communist",
+      "basePos": "n.",
+      "freqRank": 6559
+    },
+    {
+      "id": "w.sailors",
+      "form": "sailors",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.sailor",
+      "baseForm": "sailor",
+      "basePos": "n.",
+      "freqRank": 6562
+    },
+    {
+      "id": "w.encouraged",
+      "form": "encouraged",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.encourage",
+      "baseForm": "encourage",
+      "basePos": "v.",
+      "freqRank": 6592
+    },
+    {
+      "id": "w.distinguished",
+      "form": "distinguished",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.distinguish",
+      "baseForm": "distinguish",
+      "basePos": "v.",
+      "freqRank": 6602
+    },
+    {
+      "id": "w.discharged",
+      "form": "discharged",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.discharge",
+      "baseForm": "discharge",
+      "basePos": "v.",
+      "freqRank": 6621
+    },
+    {
+      "id": "w.erased",
+      "form": "erased",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.erase",
+      "baseForm": "erase",
+      "basePos": "v.",
+      "freqRank": 6655
+    },
+    {
+      "id": "w.viewers",
+      "form": "viewers",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.viewer",
+      "baseForm": "viewer",
+      "basePos": "n.",
+      "freqRank": 6682
+    },
+    {
+      "id": "w.competing",
+      "form": "competing",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.compete",
+      "baseForm": "compete",
+      "basePos": "v.",
+      "freqRank": 6749
+    },
+    {
+      "id": "w.groceries",
+      "form": "groceries",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.grocery",
+      "baseForm": "grocery",
+      "basePos": "n.",
+      "freqRank": 6817
+    },
+    {
+      "id": "w.complained",
+      "form": "complained",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.complain",
+      "baseForm": "complain",
+      "basePos": "v.",
+      "freqRank": 6849
+    },
+    {
+      "id": "w.observed",
+      "form": "observed",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.observe",
+      "baseForm": "observe",
+      "basePos": "v.",
+      "freqRank": 6876
+    },
+    {
+      "id": "w.repairs",
+      "form": "repairs",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.repair",
+      "baseForm": "repair",
+      "basePos": "v.",
+      "freqRank": 6979
+    },
+    {
+      "id": "w.investigated",
+      "form": "investigated",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.investigate",
+      "baseForm": "investigate",
+      "basePos": "v.",
+      "freqRank": 6984
+    },
+    {
+      "id": "w.procedures",
+      "form": "procedures",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.procedure",
+      "baseForm": "procedure",
+      "basePos": "n.",
+      "freqRank": 7026
+    },
+    {
+      "id": "w.functions",
+      "form": "functions",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.function",
+      "baseForm": "function",
+      "basePos": "n.",
+      "freqRank": 7093
+    },
+    {
+      "id": "w.traditions",
+      "form": "traditions",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.tradition",
+      "baseForm": "tradition",
+      "basePos": "n.",
+      "freqRank": 7098
+    },
+    {
+      "id": "w.connecting",
+      "form": "connecting",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.connect",
+      "baseForm": "connect",
+      "basePos": "v.",
+      "freqRank": 7181
+    },
+    {
+      "id": "w.encountered",
+      "form": "encountered",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.encounter",
+      "baseForm": "encounter",
+      "basePos": "v.",
+      "freqRank": 7279
+    },
+    {
+      "id": "w.novels",
+      "form": "novels",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.novel",
+      "baseForm": "novel",
+      "basePos": "n.",
+      "freqRank": 7293
+    },
+    {
+      "id": "w.interfering",
+      "form": "interfering",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.interfere",
+      "baseForm": "interfere",
+      "basePos": "v.",
+      "freqRank": 7303
+    },
+    {
+      "id": "w.resigned",
+      "form": "resigned",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.resign",
+      "baseForm": "resign",
+      "basePos": "v.",
+      "freqRank": 7338
+    },
+    {
+      "id": "w.appearances",
+      "form": "appearances",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.appearance",
+      "baseForm": "appearance",
+      "basePos": "n.",
+      "freqRank": 7341
+    },
+    {
+      "id": "w.preparations",
+      "form": "preparations",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.preparation",
+      "baseForm": "preparation",
+      "basePos": "n.",
+      "freqRank": 7360
+    },
+    {
+      "id": "w.responded",
+      "form": "responded",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.respond",
+      "baseForm": "respond",
+      "basePos": "v.",
+      "freqRank": 7417
+    },
+    {
+      "id": "w.comics",
+      "form": "comics",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.comic",
+      "baseForm": "comic",
+      "basePos": "adj.",
+      "freqRank": 7484
+    },
+    {
+      "id": "w.celebrities",
+      "form": "celebrities",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.celebrity",
+      "baseForm": "celebrity",
+      "basePos": "n.",
+      "freqRank": 7495
+    },
+    {
+      "id": "w.encouraging",
+      "form": "encouraging",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.encourage",
+      "baseForm": "encourage",
+      "basePos": "v.",
+      "freqRank": 7526
+    },
+    {
+      "id": "w.recovering",
+      "form": "recovering",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.recover",
+      "baseForm": "recover",
+      "basePos": "v.",
+      "freqRank": 7537
+    },
+    {
+      "id": "w.applying",
+      "form": "applying",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.apply",
+      "baseForm": "apply",
+      "basePos": "v.",
+      "freqRank": 7566
+    },
+    {
+      "id": "w.repaired",
+      "form": "repaired",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.repair",
+      "baseForm": "repair",
+      "basePos": "v.",
+      "freqRank": 7590
+    },
+    {
+      "id": "w.dialing",
+      "form": "dialing",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.dial",
+      "baseForm": "dial",
+      "basePos": "n.",
+      "freqRank": 7604
+    },
+    {
+      "id": "w.motives",
+      "form": "motives",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.motive",
+      "baseForm": "motive",
+      "basePos": "n.",
+      "freqRank": 7783
+    },
+    {
+      "id": "w.organised",
+      "form": "organised",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.organise",
+      "baseForm": "organise",
+      "basePos": "v.",
+      "freqRank": 7811
+    },
+    {
+      "id": "w.punishing",
+      "form": "punishing",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.punish",
+      "baseForm": "punish",
+      "basePos": "v.",
+      "freqRank": 7893
+    },
+    {
+      "id": "w.obtained",
+      "form": "obtained",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.obtain",
+      "baseForm": "obtain",
+      "basePos": "v.",
+      "freqRank": 7937
+    },
+    {
+      "id": "w.ideals",
+      "form": "ideals",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.ideal",
+      "baseForm": "ideal",
+      "basePos": "adj.",
+      "freqRank": 7941
+    },
+    {
+      "id": "w.negotiating",
+      "form": "negotiating",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.negotiate",
+      "baseForm": "negotiate",
+      "basePos": "v.",
+      "freqRank": 7981
+    },
+    {
+      "id": "w.estimated",
+      "form": "estimated",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.estimate",
+      "baseForm": "estimate",
+      "basePos": "v.",
+      "freqRank": 8013
+    },
+    {
+      "id": "w.investigators",
+      "form": "investigators",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.investigator",
+      "baseForm": "investigator",
+      "basePos": "n.",
+      "freqRank": 8059
+    },
+    {
+      "id": "w.occurs",
+      "form": "occurs",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.occur",
+      "baseForm": "occur",
+      "basePos": "v.",
+      "freqRank": 8129
+    },
+    {
+      "id": "w.rituals",
+      "form": "rituals",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.ritual",
+      "baseForm": "ritual",
+      "basePos": "n.",
+      "freqRank": 8130
+    },
+    {
+      "id": "w.receipts",
+      "form": "receipts",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.receipt",
+      "baseForm": "receipt",
+      "basePos": "n.",
+      "freqRank": 8175
+    },
+    {
+      "id": "w.initials",
+      "form": "initials",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.initial",
+      "baseForm": "initial",
+      "basePos": "adj.",
+      "freqRank": 8204
+    },
+    {
+      "id": "w.superiors",
+      "form": "superiors",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.superior",
+      "baseForm": "superior",
+      "basePos": "adj.",
+      "freqRank": 8224
+    },
+    {
+      "id": "w.designers",
+      "form": "designers",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.designer",
+      "baseForm": "designer",
+      "basePos": "n.",
+      "freqRank": 8263
+    },
+    {
+      "id": "w.assembled",
+      "form": "assembled",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.assemble",
+      "baseForm": "assemble",
+      "basePos": "v.",
+      "freqRank": 8391
+    },
+    {
+      "id": "w.functioning",
+      "form": "functioning",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.function",
+      "baseForm": "function",
+      "basePos": "n.",
+      "freqRank": 8444
+    },
+    {
+      "id": "w.natives",
+      "form": "natives",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.native",
+      "baseForm": "native",
+      "basePos": "adj.",
+      "freqRank": 8450
+    },
+    {
+      "id": "w.obstacles",
+      "form": "obstacles",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.obstacle",
+      "baseForm": "obstacle",
+      "basePos": "n.",
+      "freqRank": 8549
+    },
+    {
+      "id": "w.fluids",
+      "form": "fluids",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.fluid",
+      "baseForm": "fluid",
+      "basePos": "n.",
+      "freqRank": 8611
+    },
+    {
+      "id": "w.deleted",
+      "form": "deleted",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.delete",
+      "baseForm": "delete",
+      "basePos": "v.",
+      "freqRank": 8612
+    },
+    {
+      "id": "w.departed",
+      "form": "departed",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.depart",
+      "baseForm": "depart",
+      "basePos": "v.",
+      "freqRank": 8680
+    },
+    {
+      "id": "w.helicopters",
+      "form": "helicopters",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.helicopter",
+      "baseForm": "helicopter",
+      "basePos": "n.",
+      "freqRank": 8747
+    },
+    {
+      "id": "w.disconnected",
+      "form": "disconnected",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.disconnect",
+      "baseForm": "disconnect",
+      "basePos": "v.",
+      "freqRank": 8764
+    },
+    {
+      "id": "w.priorities",
+      "form": "priorities",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.priority",
+      "baseForm": "priority",
+      "basePos": "n.",
+      "freqRank": 8770
+    },
+    {
+      "id": "w.dimensions",
+      "form": "dimensions",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.dimension",
+      "baseForm": "dimension",
+      "basePos": "n.",
+      "freqRank": 8791
+    },
+    {
+      "id": "w.connects",
+      "form": "connects",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.connect",
+      "baseForm": "connect",
+      "basePos": "v.",
+      "freqRank": 8932
+    },
+    {
+      "id": "w.reviews",
+      "form": "reviews",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.review",
+      "baseForm": "review",
+      "basePos": "n.",
+      "freqRank": 8939
+    },
+    {
+      "id": "w.bombers",
+      "form": "bombers",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.bomber",
+      "baseForm": "bomber",
+      "basePos": "n.",
+      "freqRank": 8967
+    },
+    {
+      "id": "w.communicating",
+      "form": "communicating",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.communicate",
+      "baseForm": "communicate",
+      "basePos": "v.",
+      "freqRank": 8979
+    },
+    {
+      "id": "w.invitations",
+      "form": "invitations",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.invitation",
+      "baseForm": "invitation",
+      "basePos": "n.",
+      "freqRank": 9040
+    },
+    {
+      "id": "w.retiring",
+      "form": "retiring",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.retire",
+      "baseForm": "retire",
+      "basePos": "v.",
+      "freqRank": 9074
+    },
+    {
+      "id": "w.rehearsals",
+      "form": "rehearsals",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.rehearsal",
+      "baseForm": "rehearsal",
+      "basePos": "n.",
+      "freqRank": 9093
+    },
+    {
+      "id": "w.stables",
+      "form": "stables",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.stable",
+      "baseForm": "stable",
+      "basePos": "adj.",
+      "freqRank": 9149
+    },
+    {
+      "id": "w.ambitions",
+      "form": "ambitions",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.ambition",
+      "baseForm": "ambition",
+      "basePos": "n.",
+      "freqRank": 9152
+    },
+    {
+      "id": "w.illusions",
+      "form": "illusions",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.illusion",
+      "baseForm": "illusion",
+      "basePos": "n.",
+      "freqRank": 9214
+    },
+    {
+      "id": "w.hallucinations",
+      "form": "hallucinations",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.hallucination",
+      "baseForm": "hallucination",
+      "basePos": "n.",
+      "freqRank": 9240
+    },
+    {
+      "id": "w.factors",
+      "form": "factors",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.factor",
+      "baseForm": "factor",
+      "basePos": "n.",
+      "freqRank": 9242
+    },
+    {
+      "id": "w.entrusted",
+      "form": "entrusted",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.entrust",
+      "baseForm": "entrust",
+      "basePos": "v.",
+      "freqRank": 9247
+    },
+    {
+      "id": "w.concealed",
+      "form": "concealed",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.conceal",
+      "baseForm": "conceal",
+      "basePos": "v.",
+      "freqRank": 9254
+    },
+    {
+      "id": "w.applies",
+      "form": "applies",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.apply",
+      "baseForm": "apply",
+      "basePos": "v.",
+      "freqRank": 9279
+    },
+    {
+      "id": "w.monitors",
+      "form": "monitors",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.monitor",
+      "baseForm": "monitor",
+      "basePos": "v.",
+      "freqRank": 9372
+    },
+    {
+      "id": "w.personalities",
+      "form": "personalities",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.personality",
+      "baseForm": "personality",
+      "basePos": "n.",
+      "freqRank": 9385
+    },
+    {
+      "id": "w.guardians",
+      "form": "guardians",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.guardian",
+      "baseForm": "guardian",
+      "basePos": "n.",
+      "freqRank": 9462
+    },
+    {
+      "id": "w.injected",
+      "form": "injected",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.inject",
+      "baseForm": "inject",
+      "basePos": "v.",
+      "freqRank": 9496
+    },
+    {
+      "id": "w.bandages",
+      "form": "bandages",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.bandage",
+      "baseForm": "bandage",
+      "basePos": "n.",
+      "freqRank": 9503
+    },
+    {
+      "id": "w.opponents",
+      "form": "opponents",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.opponent",
+      "baseForm": "opponent",
+      "basePos": "n.",
+      "freqRank": 9565
+    },
+    {
+      "id": "w.motors",
+      "form": "motors",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.motor",
+      "baseForm": "motor",
+      "basePos": "n.",
+      "freqRank": 9636
+    },
+    {
+      "id": "w.reacted",
+      "form": "reacted",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.react",
+      "baseForm": "react",
+      "basePos": "v.",
+      "freqRank": 9667
+    },
+    {
+      "id": "w.regions",
+      "form": "regions",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.region",
+      "baseForm": "region",
+      "basePos": "n.",
+      "freqRank": 9716
+    },
+    {
+      "id": "w.offenders",
+      "form": "offenders",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.offender",
+      "baseForm": "offender",
+      "basePos": "n.",
+      "freqRank": 9753
+    },
+    {
+      "id": "w.obligations",
+      "form": "obligations",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.obligation",
+      "baseForm": "obligation",
+      "basePos": "n.",
+      "freqRank": 9754
+    },
+    {
+      "id": "w.institutions",
+      "form": "institutions",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.institution",
+      "baseForm": "institution",
+      "basePos": "n.",
+      "freqRank": 9787
+    },
+    {
+      "id": "w.absorbed",
+      "form": "absorbed",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.absorb",
+      "baseForm": "absorb",
+      "basePos": "v.",
+      "freqRank": 9791
+    },
+    {
+      "id": "w.bankers",
+      "form": "bankers",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.banker",
+      "baseForm": "banker",
+      "basePos": "n.",
+      "freqRank": 9825
+    },
+    {
+      "id": "w.organizations",
+      "form": "organizations",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.organization",
+      "baseForm": "organization",
+      "basePos": "n.",
+      "freqRank": 9846
+    },
+    {
+      "id": "w.examining",
+      "form": "examining",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.examine",
+      "baseForm": "examine",
+      "basePos": "v.",
+      "freqRank": 9879
+    },
+    {
+      "id": "w.resumes",
+      "form": "resumes",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.resume",
+      "baseForm": "resume",
+      "basePos": "v.",
+      "freqRank": 9972
+    },
+    {
+      "id": "w.dominated",
+      "form": "dominated",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.dominate",
+      "baseForm": "dominate",
+      "basePos": "v.",
+      "freqRank": 9980
+    },
+    {
+      "id": "w.albums",
+      "form": "albums",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.album",
+      "baseForm": "album",
+      "basePos": "n.",
+      "freqRank": 9987
+    },
+    {
+      "id": "w.deceiving",
+      "form": "deceiving",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.deceive",
+      "baseForm": "deceive",
+      "basePos": "v.",
+      "freqRank": 10047
+    },
+    {
+      "id": "w.enlisted",
+      "form": "enlisted",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.enlist",
+      "baseForm": "enlist",
+      "basePos": "v.",
+      "freqRank": 10130
+    },
+    {
+      "id": "w.provoked",
+      "form": "provoked",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.provoke",
+      "baseForm": "provoke",
+      "basePos": "v.",
+      "freqRank": 10241
+    },
+    {
+      "id": "w.republicans",
+      "form": "republicans",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.republican",
+      "baseForm": "republican",
+      "basePos": "adj.",
+      "freqRank": 10269
+    },
+    {
+      "id": "w.users",
+      "form": "users",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.user",
+      "baseForm": "user",
+      "basePos": "n.",
+      "freqRank": 10365
+    },
+    {
+      "id": "w.mammals",
+      "form": "mammals",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.mammal",
+      "baseForm": "mammal",
+      "basePos": "n.",
+      "freqRank": 10441
+    },
+    {
+      "id": "w.embraced",
+      "form": "embraced",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.embrace",
+      "baseForm": "embrace",
+      "basePos": "v.",
+      "freqRank": 10495
+    },
+    {
+      "id": "w.encounters",
+      "form": "encounters",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.encounter",
+      "baseForm": "encounter",
+      "basePos": "v.",
+      "freqRank": 10679
+    },
+    {
+      "id": "w.abusing",
+      "form": "abusing",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.abuse",
+      "baseForm": "abuse",
+      "basePos": "n.",
+      "freqRank": 10818
+    },
+    {
+      "id": "w.actresses",
+      "form": "actresses",
+      "suffix": "-es",
+      "morphId": "s.plural",
+      "baseId": "w.actress",
+      "baseForm": "actress",
+      "basePos": "n.",
+      "freqRank": 10875
+    },
+    {
+      "id": "w.reassuring",
+      "form": "reassuring",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.reassure",
+      "baseForm": "reassure",
+      "basePos": "v.",
+      "freqRank": 11007
+    },
+    {
+      "id": "w.relying",
+      "form": "relying",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.rely",
+      "baseForm": "rely",
+      "basePos": "v.",
+      "freqRank": 11063
+    },
+    {
+      "id": "w.frequencies",
+      "form": "frequencies",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.frequency",
+      "baseForm": "frequency",
+      "basePos": "n.",
+      "freqRank": 11099
+    },
+    {
+      "id": "w.disgraced",
+      "form": "disgraced",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.disgrace",
+      "baseForm": "disgrace",
+      "basePos": "n.",
+      "freqRank": 11116
+    },
+    {
+      "id": "w.travelers",
+      "form": "travelers",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.traveler",
+      "baseForm": "traveler",
+      "basePos": "n.",
+      "freqRank": 11244
+    },
+    {
+      "id": "w.mutants",
+      "form": "mutants",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.mutant",
+      "baseForm": "mutant",
+      "basePos": "n.",
+      "freqRank": 11256
+    },
+    {
+      "id": "w.intruders",
+      "form": "intruders",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.intruder",
+      "baseForm": "intruder",
+      "basePos": "n.",
+      "freqRank": 11291
+    },
+    {
+      "id": "w.reviewed",
+      "form": "reviewed",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.review",
+      "baseForm": "review",
+      "basePos": "n.",
+      "freqRank": 11299
+    },
+    {
+      "id": "w.promoting",
+      "form": "promoting",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.promote",
+      "baseForm": "promote",
+      "basePos": "v.",
+      "freqRank": 11301
+    },
+    {
+      "id": "w.demonstrated",
+      "form": "demonstrated",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.demonstrate",
+      "baseForm": "demonstrate",
+      "basePos": "v.",
+      "freqRank": 11315
+    },
+    {
+      "id": "w.resisted",
+      "form": "resisted",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.resist",
+      "baseForm": "resist",
+      "basePos": "v.",
+      "freqRank": 11374
+    },
+    {
+      "id": "w.verses",
+      "form": "verses",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.verse",
+      "baseForm": "verse",
+      "basePos": "n.",
+      "freqRank": 11430
+    },
+    {
+      "id": "w.executives",
+      "form": "executives",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.executive",
+      "baseForm": "executive",
+      "basePos": "n.",
+      "freqRank": 11476
+    },
+    {
+      "id": "w.organisms",
+      "form": "organisms",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.organism",
+      "baseForm": "organism",
+      "basePos": "n.",
+      "freqRank": 11484
+    },
+    {
+      "id": "w.psyched",
+      "form": "psyched",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.psyche",
+      "baseForm": "psyche",
+      "basePos": "n.",
+      "freqRank": 11565
+    },
+    {
+      "id": "w.achievements",
+      "form": "achievements",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.achievement",
+      "baseForm": "achievement",
+      "basePos": "n.",
+      "freqRank": 11592
+    },
+    {
+      "id": "w.reacting",
+      "form": "reacting",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.react",
+      "baseForm": "react",
+      "basePos": "v.",
+      "freqRank": 11728
+    },
+    {
+      "id": "w.seizures",
+      "form": "seizures",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.seizure",
+      "baseForm": "seizure",
+      "basePos": "n.",
+      "freqRank": 11740
+    },
+    {
+      "id": "w.resembles",
+      "form": "resembles",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.resemble",
+      "baseForm": "resemble",
+      "basePos": "v.",
+      "freqRank": 11806
+    },
+    {
+      "id": "w.fossils",
+      "form": "fossils",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.fossil",
+      "baseForm": "fossil",
+      "basePos": "n.",
+      "freqRank": 11820
+    },
+    {
+      "id": "w.impulses",
+      "form": "impulses",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.impulse",
+      "baseForm": "impulse",
+      "basePos": "n.",
+      "freqRank": 11830
+    },
+    {
+      "id": "w.dialed",
+      "form": "dialed",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.dial",
+      "baseForm": "dial",
+      "basePos": "n.",
+      "freqRank": 11860
+    },
+    {
+      "id": "w.regained",
+      "form": "regained",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.regain",
+      "baseForm": "regain",
+      "basePos": "v.",
+      "freqRank": 11880
+    },
+    {
+      "id": "w.tormented",
+      "form": "tormented",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.torment",
+      "baseForm": "torment",
+      "basePos": "v.",
+      "freqRank": 11894
+    },
+    {
+      "id": "w.capabilities",
+      "form": "capabilities",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.capability",
+      "baseForm": "capability",
+      "basePos": "n.",
+      "freqRank": 11928
+    },
+    {
+      "id": "w.inquiries",
+      "form": "inquiries",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.inquiry",
+      "baseForm": "inquiry",
+      "basePos": "n.",
+      "freqRank": 11935
+    },
+    {
+      "id": "w.battered",
+      "form": "battered",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.batter",
+      "baseForm": "batter",
+      "basePos": "n.",
+      "freqRank": 11947
+    },
+    {
+      "id": "w.formalities",
+      "form": "formalities",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.formality",
+      "baseForm": "formality",
+      "basePos": "n.",
+      "freqRank": 12056
+    },
+    {
+      "id": "w.interns",
+      "form": "interns",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.intern",
+      "baseForm": "intern",
+      "basePos": "n.",
+      "freqRank": 12065
+    },
+    {
+      "id": "w.servers",
+      "form": "servers",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.server",
+      "baseForm": "server",
+      "basePos": "n.",
+      "freqRank": 12202
+    },
+    {
+      "id": "w.cycles",
+      "form": "cycles",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.cycle",
+      "baseForm": "cycle",
+      "basePos": "n.",
+      "freqRank": 12453
+    },
+    {
+      "id": "w.reviewing",
+      "form": "reviewing",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.review",
+      "baseForm": "review",
+      "basePos": "n.",
+      "freqRank": 12460
+    },
+    {
+      "id": "w.envelopes",
+      "form": "envelopes",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.envelope",
+      "baseForm": "envelope",
+      "basePos": "n.",
+      "freqRank": 12480
+    },
+    {
+      "id": "w.portraits",
+      "form": "portraits",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.portrait",
+      "baseForm": "portrait",
+      "basePos": "n.",
+      "freqRank": 12491
+    },
+    {
+      "id": "w.renewed",
+      "form": "renewed",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.renew",
+      "baseForm": "renew",
+      "basePos": "v.",
+      "freqRank": 12536
+    },
+    {
+      "id": "w.waiters",
+      "form": "waiters",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.waiter",
+      "baseForm": "waiter",
+      "basePos": "n.",
+      "freqRank": 12603
+    },
+    {
+      "id": "w.implies",
+      "form": "implies",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.imply",
+      "baseForm": "imply",
+      "basePos": "v.",
+      "freqRank": 12609
+    },
+    {
+      "id": "w.reptiles",
+      "form": "reptiles",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.reptile",
+      "baseForm": "reptile",
+      "basePos": "n.",
+      "freqRank": 12628
+    },
+    {
+      "id": "w.patriots",
+      "form": "patriots",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.patriot",
+      "baseForm": "patriot",
+      "basePos": "n.",
+      "freqRank": 12692
+    },
+    {
+      "id": "w.journals",
+      "form": "journals",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.journal",
+      "baseForm": "journal",
+      "basePos": "n.",
+      "freqRank": 12773
+    },
+    {
+      "id": "w.reflexes",
+      "form": "reflexes",
+      "suffix": "-es",
+      "morphId": "s.plural",
+      "baseId": "w.reflex",
+      "baseForm": "reflex",
+      "basePos": "n.",
+      "freqRank": 12886
+    },
+    {
+      "id": "w.acquaintances",
+      "form": "acquaintances",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.acquaintance",
+      "baseForm": "acquaintance",
+      "basePos": "n.",
+      "freqRank": 12970
+    },
+    {
+      "id": "w.championships",
+      "form": "championships",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.championship",
+      "baseForm": "championship",
+      "basePos": "n.",
+      "freqRank": 12973
+    },
+    {
+      "id": "w.quantities",
+      "form": "quantities",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.quantity",
+      "baseForm": "quantity",
+      "basePos": "n.",
+      "freqRank": 12991
+    },
+    {
+      "id": "w.responds",
+      "form": "responds",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.respond",
+      "baseForm": "respond",
+      "basePos": "v.",
+      "freqRank": 13189
+    },
+    {
+      "id": "w.disobeyed",
+      "form": "disobeyed",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.disobey",
+      "baseForm": "disobey",
+      "basePos": "v.",
+      "freqRank": 13211
+    },
+    {
+      "id": "w.infiltrated",
+      "form": "infiltrated",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.infiltrate",
+      "baseForm": "infiltrate",
+      "basePos": "v.",
+      "freqRank": 13225
+    },
+    {
+      "id": "w.minerals",
+      "form": "minerals",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.mineral",
+      "baseForm": "mineral",
+      "basePos": "n.",
+      "freqRank": 13301
+    },
+    {
+      "id": "w.diaries",
+      "form": "diaries",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.diary",
+      "baseForm": "diary",
+      "basePos": "n.",
+      "freqRank": 13308
+    },
+    {
+      "id": "w.calculating",
+      "form": "calculating",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.calculate",
+      "baseForm": "calculate",
+      "basePos": "v.",
+      "freqRank": 13312
+    },
+    {
+      "id": "w.offerings",
+      "form": "offerings",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.offering",
+      "baseForm": "offering",
+      "basePos": "n.",
+      "freqRank": 13328
+    },
+    {
+      "id": "w.celebrations",
+      "form": "celebrations",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.celebration",
+      "baseForm": "celebration",
+      "basePos": "n.",
+      "freqRank": 13377
+    },
+    {
+      "id": "w.penetrated",
+      "form": "penetrated",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.penetrate",
+      "baseForm": "penetrate",
+      "basePos": "v.",
+      "freqRank": 13390
+    },
+    {
+      "id": "w.suffocated",
+      "form": "suffocated",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.suffocate",
+      "baseForm": "suffocate",
+      "basePos": "v.",
+      "freqRank": 13460
+    },
+    {
+      "id": "w.interfered",
+      "form": "interfered",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.interfere",
+      "baseForm": "interfere",
+      "basePos": "v.",
+      "freqRank": 13469
+    },
+    {
+      "id": "w.troopers",
+      "form": "troopers",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.trooper",
+      "baseForm": "trooper",
+      "basePos": "n.",
+      "freqRank": 13529
+    },
+    {
+      "id": "w.compromising",
+      "form": "compromising",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.compromise",
+      "baseForm": "compromise",
+      "basePos": "n.",
+      "freqRank": 13533
+    },
+    {
+      "id": "w.lunatics",
+      "form": "lunatics",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.lunatic",
+      "baseForm": "lunatic",
+      "basePos": "n.",
+      "freqRank": 13560
+    },
+    {
+      "id": "w.liberties",
+      "form": "liberties",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.liberty",
+      "baseForm": "liberty",
+      "basePos": "n.",
+      "freqRank": 13613
+    },
+    {
+      "id": "w.employers",
+      "form": "employers",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.employer",
+      "baseForm": "employer",
+      "basePos": "n.",
+      "freqRank": 13640
+    },
+    {
+      "id": "w.carriers",
+      "form": "carriers",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.carrier",
+      "baseForm": "carrier",
+      "basePos": "n.",
+      "freqRank": 13664
+    },
+    {
+      "id": "w.enabled",
+      "form": "enabled",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.enable",
+      "baseForm": "enable",
+      "basePos": "v.",
+      "freqRank": 13747
+    },
+    {
+      "id": "w.motorcycles",
+      "form": "motorcycles",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.motorcycle",
+      "baseForm": "motorcycle",
+      "basePos": "n.",
+      "freqRank": 13807
+    },
+    {
+      "id": "w.embracing",
+      "form": "embracing",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.embrace",
+      "baseForm": "embrace",
+      "basePos": "v.",
+      "freqRank": 13829
+    },
+    {
+      "id": "w.generators",
+      "form": "generators",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.generator",
+      "baseForm": "generator",
+      "basePos": "n.",
+      "freqRank": 13883
+    },
+    {
+      "id": "w.explored",
+      "form": "explored",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.explore",
+      "baseForm": "explore",
+      "basePos": "v.",
+      "freqRank": 13989
+    },
+    {
+      "id": "w.explorers",
+      "form": "explorers",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.explorer",
+      "baseForm": "explorer",
+      "basePos": "n.",
+      "freqRank": 13994
+    },
+    {
+      "id": "w.negotiated",
+      "form": "negotiated",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.negotiate",
+      "baseForm": "negotiate",
+      "basePos": "v.",
+      "freqRank": 14012
+    },
+    {
+      "id": "w.complains",
+      "form": "complains",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.complain",
+      "baseForm": "complain",
+      "basePos": "v.",
+      "freqRank": 14023
+    },
+    {
+      "id": "w.repairing",
+      "form": "repairing",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.repair",
+      "baseForm": "repair",
+      "basePos": "v.",
+      "freqRank": 14024
+    },
+    {
+      "id": "w.magicians",
+      "form": "magicians",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.magician",
+      "baseForm": "magician",
+      "basePos": "n.",
+      "freqRank": 14029
+    },
+    {
+      "id": "w.trainers",
+      "form": "trainers",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.trainer",
+      "baseForm": "trainer",
+      "basePos": "n.",
+      "freqRank": 14084
+    },
+    {
+      "id": "w.sentiments",
+      "form": "sentiments",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.sentiment",
+      "baseForm": "sentiment",
+      "basePos": "n.",
+      "freqRank": 14172
+    },
+    {
+      "id": "w.disorders",
+      "form": "disorders",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.disorder",
+      "baseForm": "disorder",
+      "basePos": "n.",
+      "freqRank": 14217
+    },
+    {
+      "id": "w.inspires",
+      "form": "inspires",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.inspire",
+      "baseForm": "inspire",
+      "basePos": "v.",
+      "freqRank": 14222
+    },
+    {
+      "id": "w.reacts",
+      "form": "reacts",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.react",
+      "baseForm": "react",
+      "basePos": "v.",
+      "freqRank": 14300
+    },
+    {
+      "id": "w.estimates",
+      "form": "estimates",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.estimate",
+      "baseForm": "estimate",
+      "basePos": "v.",
+      "freqRank": 14349
+    },
+    {
+      "id": "w.administered",
+      "form": "administered",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.administer",
+      "baseForm": "administer",
+      "basePos": "v.",
+      "freqRank": 14455
+    },
+    {
+      "id": "w.improvements",
+      "form": "improvements",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.improvement",
+      "baseForm": "improvement",
+      "basePos": "n.",
+      "freqRank": 14512
+    },
+    {
+      "id": "w.suppliers",
+      "form": "suppliers",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.supplier",
+      "baseForm": "supplier",
+      "basePos": "n.",
+      "freqRank": 14572
+    },
+    {
+      "id": "w.homosexuals",
+      "form": "homosexuals",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.homosexual",
+      "baseForm": "homosexual",
+      "basePos": "adj.",
+      "freqRank": 14608
+    },
+    {
+      "id": "w.detectors",
+      "form": "detectors",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.detector",
+      "baseForm": "detector",
+      "basePos": "n.",
+      "freqRank": 14611
+    },
+    {
+      "id": "w.homicides",
+      "form": "homicides",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.homicide",
+      "baseForm": "homicide",
+      "basePos": "n.",
+      "freqRank": 14631
+    },
+    {
+      "id": "w.salaries",
+      "form": "salaries",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.salary",
+      "baseForm": "salary",
+      "basePos": "n.",
+      "freqRank": 14652
+    },
+    {
+      "id": "w.debating",
+      "form": "debating",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.debate",
+      "baseForm": "debate",
+      "basePos": "n.",
+      "freqRank": 14703
+    },
+    {
+      "id": "w.rejects",
+      "form": "rejects",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.reject",
+      "baseForm": "reject",
+      "basePos": "v.",
+      "freqRank": 14857
+    },
+    {
+      "id": "w.notions",
+      "form": "notions",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.notion",
+      "baseForm": "notion",
+      "basePos": "n.",
+      "freqRank": 14860
+    },
+    {
+      "id": "w.comedians",
+      "form": "comedians",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.comedian",
+      "baseForm": "comedian",
+      "basePos": "n.",
+      "freqRank": 14862
+    },
+    {
+      "id": "w.editors",
+      "form": "editors",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.editor",
+      "baseForm": "editor",
+      "basePos": "n.",
+      "freqRank": 14908
+    },
+    {
+      "id": "w.eliminating",
+      "form": "eliminating",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.eliminate",
+      "baseForm": "eliminate",
+      "basePos": "v.",
+      "freqRank": 14950
+    },
+    {
+      "id": "w.nominees",
+      "form": "nominees",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.nominee",
+      "baseForm": "nominee",
+      "basePos": "n.",
+      "freqRank": 14976
+    },
+    {
+      "id": "w.advisors",
+      "form": "advisors",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.advisor",
+      "baseForm": "advisor",
+      "basePos": "n.",
+      "freqRank": 15109
+    },
+    {
+      "id": "w.creations",
+      "form": "creations",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.creation",
+      "baseForm": "creation",
+      "basePos": "n.",
+      "freqRank": 15144
+    },
+    {
+      "id": "w.vanishing",
+      "form": "vanishing",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.vanish",
+      "baseForm": "vanish",
+      "basePos": "v.",
+      "freqRank": 15149
+    },
+    {
+      "id": "w.accompanying",
+      "form": "accompanying",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.accompany",
+      "baseForm": "accompany",
+      "basePos": "v.",
+      "freqRank": 15333
+    },
+    {
+      "id": "w.inserted",
+      "form": "inserted",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.insert",
+      "baseForm": "insert",
+      "basePos": "v.",
+      "freqRank": 15354
+    },
+    {
+      "id": "w.travellers",
+      "form": "travellers",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.traveller",
+      "baseForm": "traveller",
+      "basePos": "n.",
+      "freqRank": 15375
+    },
+    {
+      "id": "w.surrounds",
+      "form": "surrounds",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.surround",
+      "baseForm": "surround",
+      "basePos": "v.",
+      "freqRank": 15434
+    },
+    {
+      "id": "w.variations",
+      "form": "variations",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.variation",
+      "baseForm": "variation",
+      "basePos": "n.",
+      "freqRank": 15453
+    },
+    {
+      "id": "w.relies",
+      "form": "relies",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.rely",
+      "baseForm": "rely",
+      "basePos": "v.",
+      "freqRank": 15519
+    },
+    {
+      "id": "w.counselors",
+      "form": "counselors",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.counselor",
+      "baseForm": "counselor",
+      "basePos": "n.",
+      "freqRank": 15532
+    },
+    {
+      "id": "w.inhaling",
+      "form": "inhaling",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.inhale",
+      "baseForm": "inhale",
+      "basePos": "v.",
+      "freqRank": 15558
+    },
+    {
+      "id": "w.maniacs",
+      "form": "maniacs",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.maniac",
+      "baseForm": "maniac",
+      "basePos": "n.",
+      "freqRank": 15586
+    },
+    {
+      "id": "w.extremes",
+      "form": "extremes",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.extreme",
+      "baseForm": "extreme",
+      "basePos": "adj.",
+      "freqRank": 15613
+    },
+    {
+      "id": "w.retrieved",
+      "form": "retrieved",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.retrieve",
+      "baseForm": "retrieve",
+      "basePos": "v.",
+      "freqRank": 15625
+    },
+    {
+      "id": "w.entries",
+      "form": "entries",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.entry",
+      "baseForm": "entry",
+      "basePos": "n.",
+      "freqRank": 15654
+    },
+    {
+      "id": "w.penetrating",
+      "form": "penetrating",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.penetrate",
+      "baseForm": "penetrate",
+      "basePos": "v.",
+      "freqRank": 15810
+    },
+    {
+      "id": "w.historians",
+      "form": "historians",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.historian",
+      "baseForm": "historian",
+      "basePos": "n.",
+      "freqRank": 15834
+    },
+    {
+      "id": "w.alliances",
+      "form": "alliances",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.alliance",
+      "baseForm": "alliance",
+      "basePos": "n.",
+      "freqRank": 15860
+    },
+    {
+      "id": "w.indications",
+      "form": "indications",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.indication",
+      "baseForm": "indication",
+      "basePos": "n.",
+      "freqRank": 15906
+    },
+    {
+      "id": "w.executions",
+      "form": "executions",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.execution",
+      "baseForm": "execution",
+      "basePos": "n.",
+      "freqRank": 15919
+    },
+    {
+      "id": "w.defenders",
+      "form": "defenders",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.defender",
+      "baseForm": "defender",
+      "basePos": "n.",
+      "freqRank": 15924
+    },
+    {
+      "id": "w.combinations",
+      "form": "combinations",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.combination",
+      "baseForm": "combination",
+      "basePos": "n.",
+      "freqRank": 15928
+    },
+    {
+      "id": "w.accomplishments",
+      "form": "accomplishments",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.accomplishment",
+      "baseForm": "accomplishment",
+      "basePos": "n.",
+      "freqRank": 15954
+    },
+    {
+      "id": "w.rapists",
+      "form": "rapists",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.rapist",
+      "baseForm": "rapist",
+      "basePos": "n.",
+      "freqRank": 16065
+    },
+    {
+      "id": "w.abuses",
+      "form": "abuses",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.abuse",
+      "baseForm": "abuse",
+      "basePos": "n.",
+      "freqRank": 16192
+    },
+    {
+      "id": "w.coordinated",
+      "form": "coordinated",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.coordinate",
+      "baseForm": "coordinate",
+      "basePos": "v.",
+      "freqRank": 16248
+    },
+    {
+      "id": "w.gladiators",
+      "form": "gladiators",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.gladiator",
+      "baseForm": "gladiator",
+      "basePos": "n.",
+      "freqRank": 16360
+    },
+    {
+      "id": "w.qualifies",
+      "form": "qualifies",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.qualify",
+      "baseForm": "qualify",
+      "basePos": "v.",
+      "freqRank": 16395
+    },
+    {
+      "id": "w.provoking",
+      "form": "provoking",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.provoke",
+      "baseForm": "provoke",
+      "basePos": "v.",
+      "freqRank": 16397
+    },
+    {
+      "id": "w.fused",
+      "form": "fused",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.fuse",
+      "baseForm": "fuse",
+      "basePos": "n.",
+      "freqRank": 16404
+    },
+    {
+      "id": "w.dials",
+      "form": "dials",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.dial",
+      "baseForm": "dial",
+      "basePos": "n.",
+      "freqRank": 16609
+    },
+    {
+      "id": "w.waitresses",
+      "form": "waitresses",
+      "suffix": "-es",
+      "morphId": "s.plural",
+      "baseId": "w.waitress",
+      "baseForm": "waitress",
+      "basePos": "n.",
+      "freqRank": 16651
+    },
+    {
+      "id": "w.accommodations",
+      "form": "accommodations",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.accommodation",
+      "baseForm": "accommodation",
+      "basePos": "n.",
+      "freqRank": 16657
+    },
+    {
+      "id": "w.fuses",
+      "form": "fuses",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.fuse",
+      "baseForm": "fuse",
+      "basePos": "n.",
+      "freqRank": 16740
+    },
+    {
+      "id": "w.locating",
+      "form": "locating",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.locate",
+      "baseForm": "locate",
+      "basePos": "v.",
+      "freqRank": 16750
+    },
+    {
+      "id": "w.alcoholics",
+      "form": "alcoholics",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.alcoholic",
+      "baseForm": "alcoholic",
+      "basePos": "adj.",
+      "freqRank": 16802
+    },
+    {
+      "id": "w.liberals",
+      "form": "liberals",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.liberal",
+      "baseForm": "liberal",
+      "basePos": "adj.",
+      "freqRank": 16872
+    },
+    {
+      "id": "w.defects",
+      "form": "defects",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.defect",
+      "baseForm": "defect",
+      "basePos": "n.",
+      "freqRank": 16944
+    },
+    {
+      "id": "w.vocals",
+      "form": "vocals",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.vocal",
+      "baseForm": "vocal",
+      "basePos": "adj.",
+      "freqRank": 16945
+    },
+    {
+      "id": "w.detonated",
+      "form": "detonated",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.detonate",
+      "baseForm": "detonate",
+      "basePos": "v.",
+      "freqRank": 17101
+    },
+    {
+      "id": "w.resented",
+      "form": "resented",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.resent",
+      "baseForm": "resent",
+      "basePos": "v.",
+      "freqRank": 17235
+    },
+    {
+      "id": "w.activating",
+      "form": "activating",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.activate",
+      "baseForm": "activate",
+      "basePos": "v.",
+      "freqRank": 17237
+    },
+    {
+      "id": "w.founders",
+      "form": "founders",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.founder",
+      "baseForm": "founder",
+      "basePos": "n.",
+      "freqRank": 17324
+    },
+    {
+      "id": "w.installing",
+      "form": "installing",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.install",
+      "baseForm": "install",
+      "basePos": "v.",
+      "freqRank": 17382
+    },
+    {
+      "id": "w.penalties",
+      "form": "penalties",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.penalty",
+      "baseForm": "penalty",
+      "basePos": "n.",
+      "freqRank": 17543
+    },
+    {
+      "id": "w.enables",
+      "form": "enables",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.enable",
+      "baseForm": "enable",
+      "basePos": "v.",
+      "freqRank": 17544
+    },
+    {
+      "id": "w.fanatics",
+      "form": "fanatics",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.fanatic",
+      "baseForm": "fanatic",
+      "basePos": "n.",
+      "freqRank": 17560
+    },
+    {
+      "id": "w.admirers",
+      "form": "admirers",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.admirer",
+      "baseForm": "admirer",
+      "basePos": "n.",
+      "freqRank": 17576
+    },
+    {
+      "id": "w.vendors",
+      "form": "vendors",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.vendor",
+      "baseForm": "vendor",
+      "basePos": "n.",
+      "freqRank": 17600
+    },
+    {
+      "id": "w.accountants",
+      "form": "accountants",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.accountant",
+      "baseForm": "accountant",
+      "basePos": "n.",
+      "freqRank": 17604
+    },
+    {
+      "id": "w.compromises",
+      "form": "compromises",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.compromise",
+      "baseForm": "compromise",
+      "basePos": "n.",
+      "freqRank": 17621
+    },
+    {
+      "id": "w.endangering",
+      "form": "endangering",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.endanger",
+      "baseForm": "endanger",
+      "basePos": "v.",
+      "freqRank": 17654
+    },
+    {
+      "id": "w.communicated",
+      "form": "communicated",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.communicate",
+      "baseForm": "communicate",
+      "basePos": "v.",
+      "freqRank": 17705
+    },
+    {
+      "id": "w.royalties",
+      "form": "royalties",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.royalty",
+      "baseForm": "royalty",
+      "basePos": "n.",
+      "freqRank": 17732
+    },
+    {
+      "id": "w.misunderstandings",
+      "form": "misunderstandings",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.misunderstanding",
+      "baseForm": "misunderstanding",
+      "basePos": "n.",
+      "freqRank": 17800
+    },
+    {
+      "id": "w.entities",
+      "form": "entities",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.entity",
+      "baseForm": "entity",
+      "basePos": "n.",
+      "freqRank": 17821
+    },
+    {
+      "id": "w.denounced",
+      "form": "denounced",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.denounce",
+      "baseForm": "denounce",
+      "basePos": "v.",
+      "freqRank": 17834
+    },
+    {
+      "id": "w.rollers",
+      "form": "rollers",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.roller",
+      "baseForm": "roller",
+      "basePos": "n.",
+      "freqRank": 17878
+    },
+    {
+      "id": "w.suitors",
+      "form": "suitors",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.suitor",
+      "baseForm": "suitor",
+      "basePos": "n.",
+      "freqRank": 17910
+    },
+    {
+      "id": "w.attackers",
+      "form": "attackers",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.attacker",
+      "baseForm": "attacker",
+      "basePos": "n.",
+      "freqRank": 17933
+    },
+    {
+      "id": "w.vanishes",
+      "form": "vanishes",
+      "suffix": "-es",
+      "morphId": "s.plural",
+      "baseId": "w.vanish",
+      "baseForm": "vanish",
+      "basePos": "v.",
+      "freqRank": 17963
+    },
+    {
+      "id": "w.replacements",
+      "form": "replacements",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.replacement",
+      "baseForm": "replacement",
+      "basePos": "n.",
+      "freqRank": 18058
+    },
+    {
+      "id": "w.prophecies",
+      "form": "prophecies",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.prophecy",
+      "baseForm": "prophecy",
+      "basePos": "n.",
+      "freqRank": 18076
+    },
+    {
+      "id": "w.reassured",
+      "form": "reassured",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.reassure",
+      "baseForm": "reassure",
+      "basePos": "v.",
+      "freqRank": 18080
+    },
+    {
+      "id": "w.sensations",
+      "form": "sensations",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.sensation",
+      "baseForm": "sensation",
+      "basePos": "n.",
+      "freqRank": 18117
+    },
+    {
+      "id": "w.disagreed",
+      "form": "disagreed",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.disagree",
+      "baseForm": "disagree",
+      "basePos": "v.",
+      "freqRank": 18151
+    },
+    {
+      "id": "w.arrivals",
+      "form": "arrivals",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.arrival",
+      "baseForm": "arrival",
+      "basePos": "n.",
+      "freqRank": 18183
+    },
+    {
+      "id": "w.encourages",
+      "form": "encourages",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.encourage",
+      "baseForm": "encourage",
+      "basePos": "v.",
+      "freqRank": 18214
+    },
+    {
+      "id": "w.excites",
+      "form": "excites",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.excite",
+      "baseForm": "excite",
+      "basePos": "v.",
+      "freqRank": 18329
+    },
+    {
+      "id": "w.promotions",
+      "form": "promotions",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.promotion",
+      "baseForm": "promotion",
+      "basePos": "n.",
+      "freqRank": 18468
+    },
+    {
+      "id": "w.perpetrators",
+      "form": "perpetrators",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.perpetrator",
+      "baseForm": "perpetrator",
+      "basePos": "n.",
+      "freqRank": 18573
+    },
+    {
+      "id": "w.refreshed",
+      "form": "refreshed",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.refresh",
+      "baseForm": "refresh",
+      "basePos": "v.",
+      "freqRank": 18626
+    },
+    {
+      "id": "w.loyalties",
+      "form": "loyalties",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.loyalty",
+      "baseForm": "loyalty",
+      "basePos": "n.",
+      "freqRank": 18651
+    },
+    {
+      "id": "w.concealing",
+      "form": "concealing",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.conceal",
+      "baseForm": "conceal",
+      "basePos": "v.",
+      "freqRank": 18729
+    },
+    {
+      "id": "w.sectors",
+      "form": "sectors",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.sector",
+      "baseForm": "sector",
+      "basePos": "n.",
+      "freqRank": 18779
+    },
+    {
+      "id": "w.debates",
+      "form": "debates",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.debate",
+      "baseForm": "debate",
+      "basePos": "n.",
+      "freqRank": 18832
+    },
+    {
+      "id": "w.enforced",
+      "form": "enforced",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.enforce",
+      "baseForm": "enforce",
+      "basePos": "v.",
+      "freqRank": 18886
+    },
+    {
+      "id": "w.armoured",
+      "form": "armoured",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.armour",
+      "baseForm": "armour",
+      "basePos": "n.",
+      "freqRank": 18914
+    },
+    {
+      "id": "w.radicals",
+      "form": "radicals",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.radical",
+      "baseForm": "radical",
+      "basePos": "adj.",
+      "freqRank": 18957
+    },
+    {
+      "id": "w.musicals",
+      "form": "musicals",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.musical",
+      "baseForm": "musical",
+      "basePos": "adj.",
+      "freqRank": 18978
+    },
+    {
+      "id": "w.disarmed",
+      "form": "disarmed",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.disarm",
+      "baseForm": "disarm",
+      "basePos": "v.",
+      "freqRank": 19116
+    },
+    {
+      "id": "w.examinations",
+      "form": "examinations",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.examination",
+      "baseForm": "examination",
+      "basePos": "n.",
+      "freqRank": 19119
+    },
+    {
+      "id": "w.essentials",
+      "form": "essentials",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.essential",
+      "baseForm": "essential",
+      "basePos": "adj.",
+      "freqRank": 19130
+    },
+    {
+      "id": "w.acids",
+      "form": "acids",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.acid",
+      "baseForm": "acid",
+      "basePos": "n.",
+      "freqRank": 19184
+    },
+    {
+      "id": "w.dominating",
+      "form": "dominating",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.dominate",
+      "baseForm": "dominate",
+      "basePos": "v.",
+      "freqRank": 19204
+    },
+    {
+      "id": "w.mechanisms",
+      "form": "mechanisms",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.mechanism",
+      "baseForm": "mechanism",
+      "basePos": "n.",
+      "freqRank": 19232
+    },
+    {
+      "id": "w.dentists",
+      "form": "dentists",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.dentist",
+      "baseForm": "dentist",
+      "basePos": "n.",
+      "freqRank": 19259
+    },
+    {
+      "id": "w.unicorns",
+      "form": "unicorns",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.unicorn",
+      "baseForm": "unicorn",
+      "basePos": "n.",
+      "freqRank": 19261
+    },
+    {
+      "id": "w.rodents",
+      "form": "rodents",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.rodent",
+      "baseForm": "rodent",
+      "basePos": "n.",
+      "freqRank": 19301
+    },
+    {
+      "id": "w.impacts",
+      "form": "impacts",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.impact",
+      "baseForm": "impact",
+      "basePos": "n.",
+      "freqRank": 19324
+    },
+    {
+      "id": "w.organising",
+      "form": "organising",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.organise",
+      "baseForm": "organise",
+      "basePos": "v.",
+      "freqRank": 19325
+    },
+    {
+      "id": "w.instances",
+      "form": "instances",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.instance",
+      "baseForm": "instance",
+      "basePos": "n.",
+      "freqRank": 19352
+    },
+    {
+      "id": "w.erected",
+      "form": "erected",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.erect",
+      "baseForm": "erect",
+      "basePos": "v.",
+      "freqRank": 19398
+    },
+    {
+      "id": "w.capsules",
+      "form": "capsules",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.capsule",
+      "baseForm": "capsule",
+      "basePos": "n.",
+      "freqRank": 19420
+    },
+    {
+      "id": "w.collided",
+      "form": "collided",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.collide",
+      "baseForm": "collide",
+      "basePos": "v.",
+      "freqRank": 19517
+    },
+    {
+      "id": "w.consultants",
+      "form": "consultants",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.consultant",
+      "baseForm": "consultant",
+      "basePos": "n.",
+      "freqRank": 19544
+    },
+    {
+      "id": "w.assembling",
+      "form": "assembling",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.assemble",
+      "baseForm": "assemble",
+      "basePos": "v.",
+      "freqRank": 19569
+    },
+    {
+      "id": "w.scholarships",
+      "form": "scholarships",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.scholarship",
+      "baseForm": "scholarship",
+      "basePos": "n.",
+      "freqRank": 19648
+    },
+    {
+      "id": "w.disobeying",
+      "form": "disobeying",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.disobey",
+      "baseForm": "disobey",
+      "basePos": "v.",
+      "freqRank": 19649
+    },
+    {
+      "id": "w.coordinating",
+      "form": "coordinating",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.coordinate",
+      "baseForm": "coordinate",
+      "basePos": "v.",
+      "freqRank": 19663
+    },
+    {
+      "id": "w.diners",
+      "form": "diners",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.diner",
+      "baseForm": "diner",
+      "basePos": "n.",
+      "freqRank": 19668
+    },
+    {
+      "id": "w.automobiles",
+      "form": "automobiles",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.automobile",
+      "baseForm": "automobile",
+      "basePos": "n.",
+      "freqRank": 19696
+    },
+    {
+      "id": "w.neutralized",
+      "form": "neutralized",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.neutralize",
+      "baseForm": "neutralize",
+      "basePos": "v.",
+      "freqRank": 19821
+    },
+    {
+      "id": "w.interacting",
+      "form": "interacting",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.interact",
+      "baseForm": "interact",
+      "basePos": "v.",
+      "freqRank": 19830
+    },
+    {
+      "id": "w.torments",
+      "form": "torments",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.torment",
+      "baseForm": "torment",
+      "basePos": "v.",
+      "freqRank": 19865
+    },
+    {
+      "id": "w.plumbers",
+      "form": "plumbers",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.plumber",
+      "baseForm": "plumber",
+      "basePos": "n.",
+      "freqRank": 19885
+    },
+    {
+      "id": "w.offences",
+      "form": "offences",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.offence",
+      "baseForm": "offence",
+      "basePos": "n.",
+      "freqRank": 19923
+    },
+    {
+      "id": "w.brokers",
+      "form": "brokers",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.broker",
+      "baseForm": "broker",
+      "basePos": "n.",
+      "freqRank": 19947
+    },
+    {
+      "id": "w.varieties",
+      "form": "varieties",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.variety",
+      "baseForm": "variety",
+      "basePos": "n.",
+      "freqRank": 19948
+    },
+    {
+      "id": "w.expeditions",
+      "form": "expeditions",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.expedition",
+      "baseForm": "expedition",
+      "basePos": "n.",
+      "freqRank": 19958
+    },
+    {
+      "id": "w.rallies",
+      "form": "rallies",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.rally",
+      "baseForm": "rally",
+      "basePos": "n.",
+      "freqRank": 19990
+    },
+    {
+      "id": "w.saucers",
+      "form": "saucers",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.saucer",
+      "baseForm": "saucer",
+      "basePos": "n.",
+      "freqRank": 20102
+    },
+    {
+      "id": "w.ensuring",
+      "form": "ensuring",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.ensure",
+      "baseForm": "ensure",
+      "basePos": "v.",
+      "freqRank": 20187
+    },
+    {
+      "id": "w.subpoenaed",
+      "form": "subpoenaed",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.subpoena",
+      "baseForm": "subpoena",
+      "basePos": "n.",
+      "freqRank": 20255
+    },
+    {
+      "id": "w.transplants",
+      "form": "transplants",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.transplant",
+      "baseForm": "transplant",
+      "basePos": "v.",
+      "freqRank": 20295
+    },
+    {
+      "id": "w.mansions",
+      "form": "mansions",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.mansion",
+      "baseForm": "mansion",
+      "basePos": "n.",
+      "freqRank": 20311
+    },
+    {
+      "id": "w.accuses",
+      "form": "accuses",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.accuse",
+      "baseForm": "accuse",
+      "basePos": "v.",
+      "freqRank": 20326
+    },
+    {
+      "id": "w.analysts",
+      "form": "analysts",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.analyst",
+      "baseForm": "analyst",
+      "basePos": "n.",
+      "freqRank": 20360
+    },
+    {
+      "id": "w.deserters",
+      "form": "deserters",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.deserter",
+      "baseForm": "deserter",
+      "basePos": "n.",
+      "freqRank": 20371
+    },
+    {
+      "id": "w.abortions",
+      "form": "abortions",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.abortion",
+      "baseForm": "abortion",
+      "basePos": "n.",
+      "freqRank": 20395
+    },
+    {
+      "id": "w.regionals",
+      "form": "regionals",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.regional",
+      "baseForm": "regional",
+      "basePos": "adj.",
+      "freqRank": 20534
+    },
+    {
+      "id": "w.registering",
+      "form": "registering",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.register",
+      "baseForm": "register",
+      "basePos": "v.",
+      "freqRank": 20636
+    },
+    {
+      "id": "w.appetites",
+      "form": "appetites",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.appetite",
+      "baseForm": "appetite",
+      "basePos": "n.",
+      "freqRank": 20664
+    },
+    {
+      "id": "w.demonstrates",
+      "form": "demonstrates",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.demonstrate",
+      "baseForm": "demonstrate",
+      "basePos": "v.",
+      "freqRank": 20692
+    },
+    {
+      "id": "w.minorities",
+      "form": "minorities",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.minority",
+      "baseForm": "minority",
+      "basePos": "n.",
+      "freqRank": 20698
+    },
+    {
+      "id": "w.registers",
+      "form": "registers",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.register",
+      "baseForm": "register",
+      "basePos": "v.",
+      "freqRank": 20723
+    },
+    {
+      "id": "w.formulas",
+      "form": "formulas",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.formula",
+      "baseForm": "formula",
+      "basePos": "n.",
+      "freqRank": 20839
+    },
+    {
+      "id": "w.sufferings",
+      "form": "sufferings",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.suffering",
+      "baseForm": "suffering",
+      "basePos": "n.",
+      "freqRank": 20848
+    },
+    {
+      "id": "w.unites",
+      "form": "unites",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.unite",
+      "baseForm": "unite",
+      "basePos": "v.",
+      "freqRank": 20856
+    },
+    {
+      "id": "w.voyages",
+      "form": "voyages",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.voyage",
+      "baseForm": "voyage",
+      "basePos": "n.",
+      "freqRank": 20871
+    },
+    {
+      "id": "w.supermarkets",
+      "form": "supermarkets",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.supermarket",
+      "baseForm": "supermarket",
+      "basePos": "n.",
+      "freqRank": 20954
+    },
+    {
+      "id": "w.psychos",
+      "form": "psychos",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.psycho",
+      "baseForm": "psycho",
+      "basePos": "n.",
+      "freqRank": 20996
+    },
+    {
+      "id": "w.triads",
+      "form": "triads",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.triad",
+      "baseForm": "triad",
+      "basePos": "n.",
+      "freqRank": 21012
+    },
+    {
+      "id": "w.resumed",
+      "form": "resumed",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.resume",
+      "baseForm": "resume",
+      "basePos": "v.",
+      "freqRank": 21017
+    },
+    {
+      "id": "w.inhaled",
+      "form": "inhaled",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.inhale",
+      "baseForm": "inhale",
+      "basePos": "v.",
+      "freqRank": 21100
+    },
+    {
+      "id": "w.considerations",
+      "form": "considerations",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.consideration",
+      "baseForm": "consideration",
+      "basePos": "n.",
+      "freqRank": 21101
+    },
+    {
+      "id": "w.attachments",
+      "form": "attachments",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.attachment",
+      "baseForm": "attachment",
+      "basePos": "n.",
+      "freqRank": 21106
+    },
+    {
+      "id": "w.assurances",
+      "form": "assurances",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.assurance",
+      "baseForm": "assurance",
+      "basePos": "n.",
+      "freqRank": 21169
+    },
+    {
+      "id": "w.faculties",
+      "form": "faculties",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.faculty",
+      "baseForm": "faculty",
+      "basePos": "n.",
+      "freqRank": 21170
+    },
+    {
+      "id": "w.interferes",
+      "form": "interferes",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.interfere",
+      "baseForm": "interfere",
+      "basePos": "v.",
+      "freqRank": 21200
+    },
+    {
+      "id": "w.instructors",
+      "form": "instructors",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.instructor",
+      "baseForm": "instructor",
+      "basePos": "n.",
+      "freqRank": 21208
+    },
+    {
+      "id": "w.departs",
+      "form": "departs",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.depart",
+      "baseForm": "depart",
+      "basePos": "v.",
+      "freqRank": 21249
+    },
+    {
+      "id": "w.attained",
+      "form": "attained",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.attain",
+      "baseForm": "attain",
+      "basePos": "v.",
+      "freqRank": 21304
+    },
+    {
+      "id": "w.confuses",
+      "form": "confuses",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.confuse",
+      "baseForm": "confuse",
+      "basePos": "v.",
+      "freqRank": 21307
+    },
+    {
+      "id": "w.portals",
+      "form": "portals",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.portal",
+      "baseForm": "portal",
+      "basePos": "n.",
+      "freqRank": 21347
+    },
+    {
+      "id": "w.absorbs",
+      "form": "absorbs",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.absorb",
+      "baseForm": "absorb",
+      "basePos": "v.",
+      "freqRank": 21401
+    },
+    {
+      "id": "w.parachutes",
+      "form": "parachutes",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.parachute",
+      "baseForm": "parachute",
+      "basePos": "n.",
+      "freqRank": 21414
+    },
+    {
+      "id": "w.resists",
+      "form": "resists",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.resist",
+      "baseForm": "resist",
+      "basePos": "v.",
+      "freqRank": 21482
+    },
+    {
+      "id": "w.embraces",
+      "form": "embraces",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.embrace",
+      "baseForm": "embrace",
+      "basePos": "v.",
+      "freqRank": 21553
+    },
+    {
+      "id": "w.chartered",
+      "form": "chartered",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.charter",
+      "baseForm": "charter",
+      "basePos": "n.",
+      "freqRank": 21696
+    },
+    {
+      "id": "w.competed",
+      "form": "competed",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.compete",
+      "baseForm": "compete",
+      "basePos": "v.",
+      "freqRank": 21709
+    },
+    {
+      "id": "w.erasing",
+      "form": "erasing",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.erase",
+      "baseForm": "erase",
+      "basePos": "v.",
+      "freqRank": 21821
+    },
+    {
+      "id": "w.resembling",
+      "form": "resembling",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.resemble",
+      "baseForm": "resemble",
+      "basePos": "v.",
+      "freqRank": 21874
+    },
+    {
+      "id": "w.resorts",
+      "form": "resorts",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.resort",
+      "baseForm": "resort",
+      "basePos": "n.",
+      "freqRank": 21920
+    },
+    {
+      "id": "w.creators",
+      "form": "creators",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.creator",
+      "baseForm": "creator",
+      "basePos": "n.",
+      "freqRank": 21984
+    },
+    {
+      "id": "w.uniting",
+      "form": "uniting",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.unite",
+      "baseForm": "unite",
+      "basePos": "v.",
+      "freqRank": 21991
+    },
+    {
+      "id": "w.interactions",
+      "form": "interactions",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.interaction",
+      "baseForm": "interaction",
+      "basePos": "n.",
+      "freqRank": 22011
+    },
+    {
+      "id": "w.interrogations",
+      "form": "interrogations",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.interrogation",
+      "baseForm": "interrogation",
+      "basePos": "n.",
+      "freqRank": 22065
+    },
+    {
+      "id": "w.commodities",
+      "form": "commodities",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.commodity",
+      "baseForm": "commodity",
+      "basePos": "n.",
+      "freqRank": 22134
+    },
+    {
+      "id": "w.nominations",
+      "form": "nominations",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.nomination",
+      "baseForm": "nomination",
+      "basePos": "n.",
+      "freqRank": 22185
+    },
+    {
+      "id": "w.battering",
+      "form": "battering",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.batter",
+      "baseForm": "batter",
+      "basePos": "n.",
+      "freqRank": 22191
+    },
+    {
+      "id": "w.triangles",
+      "form": "triangles",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.triangle",
+      "baseForm": "triangle",
+      "basePos": "n.",
+      "freqRank": 22198
+    },
+    {
+      "id": "w.preferences",
+      "form": "preferences",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.preference",
+      "baseForm": "preference",
+      "basePos": "n.",
+      "freqRank": 22268
+    },
+    {
+      "id": "w.printers",
+      "form": "printers",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.printer",
+      "baseForm": "printer",
+      "basePos": "n.",
+      "freqRank": 22330
+    },
+    {
+      "id": "w.advisers",
+      "form": "advisers",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.adviser",
+      "baseForm": "adviser",
+      "basePos": "n.",
+      "freqRank": 22420
+    },
+    {
+      "id": "w.destinations",
+      "form": "destinations",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.destination",
+      "baseForm": "destination",
+      "basePos": "n.",
+      "freqRank": 22429
+    },
+    {
+      "id": "w.disconnects",
+      "form": "disconnects",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.disconnect",
+      "baseForm": "disconnect",
+      "basePos": "v.",
+      "freqRank": 22454
+    },
+    {
+      "id": "w.disappearances",
+      "form": "disappearances",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.disappearance",
+      "baseForm": "disappearance",
+      "basePos": "n.",
+      "freqRank": 22455
+    },
+    {
+      "id": "w.crusades",
+      "form": "crusades",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.crusade",
+      "baseForm": "crusade",
+      "basePos": "n.",
+      "freqRank": 22483
+    },
+    {
+      "id": "w.visuals",
+      "form": "visuals",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.visual",
+      "baseForm": "visual",
+      "basePos": "adj.",
+      "freqRank": 22543
+    },
+    {
+      "id": "w.enabling",
+      "form": "enabling",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.enable",
+      "baseForm": "enable",
+      "basePos": "v.",
+      "freqRank": 22583
+    },
+    {
+      "id": "w.civilisations",
+      "form": "civilisations",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.civilisation",
+      "baseForm": "civilisation",
+      "basePos": "n.",
+      "freqRank": 22668
+    },
+    {
+      "id": "w.superstars",
+      "form": "superstars",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.superstar",
+      "baseForm": "superstar",
+      "basePos": "n.",
+      "freqRank": 22722
+    },
+    {
+      "id": "w.heroics",
+      "form": "heroics",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.heroic",
+      "baseForm": "heroic",
+      "basePos": "adj.",
+      "freqRank": 22850
+    },
+    {
+      "id": "w.versed",
+      "form": "versed",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.verse",
+      "baseForm": "verse",
+      "basePos": "n.",
+      "freqRank": 22919
+    },
+    {
+      "id": "w.distinguishing",
+      "form": "distinguishing",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.distinguish",
+      "baseForm": "distinguish",
+      "basePos": "v.",
+      "freqRank": 22968
+    },
+    {
+      "id": "w.accommodating",
+      "form": "accommodating",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.accommodate",
+      "baseForm": "accommodate",
+      "basePos": "v.",
+      "freqRank": 22976
+    },
+    {
+      "id": "w.apologising",
+      "form": "apologising",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.apologise",
+      "baseForm": "apologise",
+      "basePos": "v.",
+      "freqRank": 23038
+    },
+    {
+      "id": "w.compels",
+      "form": "compels",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.compel",
+      "baseForm": "compel",
+      "basePos": "v.",
+      "freqRank": 23052
+    },
+    {
+      "id": "w.impacted",
+      "form": "impacted",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.impact",
+      "baseForm": "impact",
+      "basePos": "n.",
+      "freqRank": 23088
+    },
+    {
+      "id": "w.tractors",
+      "form": "tractors",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.tractor",
+      "baseForm": "tractor",
+      "basePos": "n.",
+      "freqRank": 23146
+    },
+    {
+      "id": "w.disappointments",
+      "form": "disappointments",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.disappointment",
+      "baseForm": "disappointment",
+      "basePos": "n.",
+      "freqRank": 23168
+    },
+    {
+      "id": "w.tripled",
+      "form": "tripled",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.triple",
+      "baseForm": "triple",
+      "basePos": "adj.",
+      "freqRank": 23243
+    },
+    {
+      "id": "w.relays",
+      "form": "relays",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.relay",
+      "baseForm": "relay",
+      "basePos": "v.",
+      "freqRank": 23244
+    },
+    {
+      "id": "w.allowances",
+      "form": "allowances",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.allowance",
+      "baseForm": "allowance",
+      "basePos": "n.",
+      "freqRank": 23329
+    },
+    {
+      "id": "w.renounced",
+      "form": "renounced",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.renounce",
+      "baseForm": "renounce",
+      "basePos": "v.",
+      "freqRank": 23447
+    },
+    {
+      "id": "w.editions",
+      "form": "editions",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.edition",
+      "baseForm": "edition",
+      "basePos": "n.",
+      "freqRank": 23462
+    },
+    {
+      "id": "w.evaluations",
+      "form": "evaluations",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.evaluation",
+      "baseForm": "evaluation",
+      "basePos": "n.",
+      "freqRank": 23500
+    },
+    {
+      "id": "w.segments",
+      "form": "segments",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.segment",
+      "baseForm": "segment",
+      "basePos": "n.",
+      "freqRank": 23522
+    },
+    {
+      "id": "w.plantations",
+      "form": "plantations",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.plantation",
+      "baseForm": "plantation",
+      "basePos": "n.",
+      "freqRank": 23539
+    },
+    {
+      "id": "w.ensured",
+      "form": "ensured",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.ensure",
+      "baseForm": "ensure",
+      "basePos": "v.",
+      "freqRank": 23549
+    },
+    {
+      "id": "w.aeroplanes",
+      "form": "aeroplanes",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.aeroplane",
+      "baseForm": "aeroplane",
+      "basePos": "n.",
+      "freqRank": 23560
+    },
+    {
+      "id": "w.bandaged",
+      "form": "bandaged",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.bandage",
+      "baseForm": "bandage",
+      "basePos": "n.",
+      "freqRank": 23610
+    },
+    {
+      "id": "w.collisions",
+      "form": "collisions",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.collision",
+      "baseForm": "collision",
+      "basePos": "n.",
+      "freqRank": 23622
+    },
+    {
+      "id": "w.rallying",
+      "form": "rallying",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.rally",
+      "baseForm": "rally",
+      "basePos": "n.",
+      "freqRank": 23638
+    },
+    {
+      "id": "w.debated",
+      "form": "debated",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.debate",
+      "baseForm": "debate",
+      "basePos": "n.",
+      "freqRank": 23639
+    },
+    {
+      "id": "w.disagrees",
+      "form": "disagrees",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.disagree",
+      "baseForm": "disagree",
+      "basePos": "v.",
+      "freqRank": 23667
+    },
+    {
+      "id": "w.coordinators",
+      "form": "coordinators",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.coordinator",
+      "baseForm": "coordinator",
+      "basePos": "n.",
+      "freqRank": 23744
+    },
+    {
+      "id": "w.discounts",
+      "form": "discounts",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.discount",
+      "baseForm": "discount",
+      "basePos": "n.",
+      "freqRank": 23760
+    },
+    {
+      "id": "w.translations",
+      "form": "translations",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.translation",
+      "baseForm": "translation",
+      "basePos": "n.",
+      "freqRank": 23855
+    },
+    {
+      "id": "w.supervisors",
+      "form": "supervisors",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.supervisor",
+      "baseForm": "supervisor",
+      "basePos": "n.",
+      "freqRank": 23867
+    },
+    {
+      "id": "w.detonators",
+      "form": "detonators",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.detonator",
+      "baseForm": "detonator",
+      "basePos": "n.",
+      "freqRank": 23887
+    },
+    {
+      "id": "w.conveyed",
+      "form": "conveyed",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.convey",
+      "baseForm": "convey",
+      "basePos": "v.",
+      "freqRank": 23942
+    },
+    {
+      "id": "w.dialling",
+      "form": "dialling",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.dial",
+      "baseForm": "dial",
+      "basePos": "n.",
+      "freqRank": 23993
+    },
+    {
+      "id": "w.trainees",
+      "form": "trainees",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.trainee",
+      "baseForm": "trainee",
+      "basePos": "n.",
+      "freqRank": 24022
+    },
+    {
+      "id": "w.inquired",
+      "form": "inquired",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.inquire",
+      "baseForm": "inquire",
+      "basePos": "v.",
+      "freqRank": 24054
+    },
+    {
+      "id": "w.dominates",
+      "form": "dominates",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.dominate",
+      "baseForm": "dominate",
+      "basePos": "v.",
+      "freqRank": 24067
+    },
+    {
+      "id": "w.installations",
+      "form": "installations",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.installation",
+      "baseForm": "installation",
+      "basePos": "n.",
+      "freqRank": 24072
+    },
+    {
+      "id": "w.multiplying",
+      "form": "multiplying",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.multiply",
+      "baseForm": "multiply",
+      "basePos": "v.",
+      "freqRank": 24079
+    },
+    {
+      "id": "w.qualifying",
+      "form": "qualifying",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.qualify",
+      "baseForm": "qualify",
+      "basePos": "v.",
+      "freqRank": 24082
+    },
+    {
+      "id": "w.professions",
+      "form": "professions",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.profession",
+      "baseForm": "profession",
+      "basePos": "n.",
+      "freqRank": 24129
+    },
+    {
+      "id": "w.resembled",
+      "form": "resembled",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.resemble",
+      "baseForm": "resemble",
+      "basePos": "v.",
+      "freqRank": 24199
+    },
+    {
+      "id": "w.forgeries",
+      "form": "forgeries",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.forgery",
+      "baseForm": "forgery",
+      "basePos": "n.",
+      "freqRank": 24203
+    },
+    {
+      "id": "w.assessed",
+      "form": "assessed",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.assess",
+      "baseForm": "assess",
+      "basePos": "v.",
+      "freqRank": 24320
+    },
+    {
+      "id": "w.eliminates",
+      "form": "eliminates",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.eliminate",
+      "baseForm": "eliminate",
+      "basePos": "v.",
+      "freqRank": 24578
+    },
+    {
+      "id": "w.advocates",
+      "form": "advocates",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.advocate",
+      "baseForm": "advocate",
+      "basePos": "v.",
+      "freqRank": 24600
+    },
+    {
+      "id": "w.apologised",
+      "form": "apologised",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.apologise",
+      "baseForm": "apologise",
+      "basePos": "v.",
+      "freqRank": 24660
+    },
+    {
+      "id": "w.reconsidered",
+      "form": "reconsidered",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.reconsider",
+      "baseForm": "reconsider",
+      "basePos": "v.",
+      "freqRank": 24675
+    },
+    {
+      "id": "w.defected",
+      "form": "defected",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.defect",
+      "baseForm": "defect",
+      "basePos": "n.",
+      "freqRank": 24803
+    },
+    {
+      "id": "w.punishes",
+      "form": "punishes",
+      "suffix": "-es",
+      "morphId": "s.plural",
+      "baseId": "w.punish",
+      "baseForm": "punish",
+      "basePos": "v.",
+      "freqRank": 24813
+    },
+    {
+      "id": "w.translators",
+      "form": "translators",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.translator",
+      "baseForm": "translator",
+      "basePos": "n.",
+      "freqRank": 24959
+    },
+    {
+      "id": "w.rentals",
+      "form": "rentals",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.rental",
+      "baseForm": "rental",
+      "basePos": "n.",
+      "freqRank": 24976
+    },
+    {
+      "id": "w.innovations",
+      "form": "innovations",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.innovation",
+      "baseForm": "innovation",
+      "basePos": "n.",
+      "freqRank": 25073
+    },
+    {
+      "id": "w.economies",
+      "form": "economies",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.economy",
+      "baseForm": "economy",
+      "basePos": "n.",
+      "freqRank": 25086
+    },
+    {
+      "id": "w.digested",
+      "form": "digested",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.digest",
+      "baseForm": "digest",
+      "basePos": "v.",
+      "freqRank": 25098
+    },
+    {
+      "id": "w.reunions",
+      "form": "reunions",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.reunion",
+      "baseForm": "reunion",
+      "basePos": "n.",
+      "freqRank": 25180
+    },
+    {
+      "id": "w.rhinos",
+      "form": "rhinos",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.rhino",
+      "baseForm": "rhino",
+      "basePos": "n.",
+      "freqRank": 25208
+    },
+    {
+      "id": "w.activates",
+      "form": "activates",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.activate",
+      "baseForm": "activate",
+      "basePos": "v.",
+      "freqRank": 25234
+    },
+    {
+      "id": "w.trackers",
+      "form": "trackers",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.tracker",
+      "baseForm": "tracker",
+      "basePos": "n.",
+      "freqRank": 25243
+    },
+    {
+      "id": "w.magistrates",
+      "form": "magistrates",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.magistrate",
+      "baseForm": "magistrate",
+      "basePos": "n.",
+      "freqRank": 25247
+    },
+    {
+      "id": "w.rescheduled",
+      "form": "rescheduled",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.reschedule",
+      "baseForm": "reschedule",
+      "basePos": "v.",
+      "freqRank": 25391
+    },
+    {
+      "id": "w.preachers",
+      "form": "preachers",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.preacher",
+      "baseForm": "preacher",
+      "basePos": "n.",
+      "freqRank": 25406
+    },
+    {
+      "id": "w.oriented",
+      "form": "oriented",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.orient",
+      "baseForm": "orient",
+      "basePos": "v.",
+      "freqRank": 25417
+    },
+    {
+      "id": "w.ensures",
+      "form": "ensures",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.ensure",
+      "baseForm": "ensure",
+      "basePos": "v.",
+      "freqRank": 25461
+    },
+    {
+      "id": "w.chemists",
+      "form": "chemists",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.chemist",
+      "baseForm": "chemist",
+      "basePos": "n.",
+      "freqRank": 25527
+    },
+    {
+      "id": "w.salvaged",
+      "form": "salvaged",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.salvage",
+      "baseForm": "salvage",
+      "basePos": "v.",
+      "freqRank": 25545
+    },
+    {
+      "id": "w.distributors",
+      "form": "distributors",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.distributor",
+      "baseForm": "distributor",
+      "basePos": "n.",
+      "freqRank": 25656
+    },
+    {
+      "id": "w.colliding",
+      "form": "colliding",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.collide",
+      "baseForm": "collide",
+      "basePos": "v.",
+      "freqRank": 26050
+    },
+    {
+      "id": "w.retrieving",
+      "form": "retrieving",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.retrieve",
+      "baseForm": "retrieve",
+      "basePos": "v.",
+      "freqRank": 26095
+    },
+    {
+      "id": "w.racists",
+      "form": "racists",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.racist",
+      "baseForm": "racist",
+      "basePos": "n.",
+      "freqRank": 26102
+    },
+    {
+      "id": "w.organisations",
+      "form": "organisations",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.organisation",
+      "baseForm": "organisation",
+      "basePos": "n.",
+      "freqRank": 26232
+    },
+    {
+      "id": "w.administering",
+      "form": "administering",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.administer",
+      "baseForm": "administer",
+      "basePos": "v.",
+      "freqRank": 26339
+    },
+    {
+      "id": "w.jeopardizing",
+      "form": "jeopardizing",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.jeopardize",
+      "baseForm": "jeopardize",
+      "basePos": "v.",
+      "freqRank": 26351
+    },
+    {
+      "id": "w.atheists",
+      "form": "atheists",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.atheist",
+      "baseForm": "atheist",
+      "basePos": "n.",
+      "freqRank": 26405
+    },
+    {
+      "id": "w.retires",
+      "form": "retires",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.retire",
+      "baseForm": "retire",
+      "basePos": "v.",
+      "freqRank": 26696
+    },
+    {
+      "id": "w.deities",
+      "form": "deities",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.deity",
+      "baseForm": "deity",
+      "basePos": "n.",
+      "freqRank": 26796
+    },
+    {
+      "id": "w.regaining",
+      "form": "regaining",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.regain",
+      "baseForm": "regain",
+      "basePos": "v.",
+      "freqRank": 26945
+    },
+    {
+      "id": "w.inventors",
+      "form": "inventors",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.inventor",
+      "baseForm": "inventor",
+      "basePos": "n.",
+      "freqRank": 26984
+    },
+    {
+      "id": "w.advocating",
+      "form": "advocating",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.advocate",
+      "baseForm": "advocate",
+      "basePos": "v.",
+      "freqRank": 27075
+    },
+    {
+      "id": "w.infiltrating",
+      "form": "infiltrating",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.infiltrate",
+      "baseForm": "infiltrate",
+      "basePos": "v.",
+      "freqRank": 27078
+    },
+    {
+      "id": "w.reclaimed",
+      "form": "reclaimed",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.reclaim",
+      "baseForm": "reclaim",
+      "basePos": "v.",
+      "freqRank": 27080
+    },
+    {
+      "id": "w.promotes",
+      "form": "promotes",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.promote",
+      "baseForm": "promote",
+      "basePos": "v.",
+      "freqRank": 27121
+    },
+    {
+      "id": "w.specialties",
+      "form": "specialties",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.specialty",
+      "baseForm": "specialty",
+      "basePos": "n.",
+      "freqRank": 27282
+    },
+    {
+      "id": "w.jeopardized",
+      "form": "jeopardized",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.jeopardize",
+      "baseForm": "jeopardize",
+      "basePos": "v.",
+      "freqRank": 27325
+    },
+    {
+      "id": "w.appointing",
+      "form": "appointing",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.appoint",
+      "baseForm": "appoint",
+      "basePos": "v.",
+      "freqRank": 27327
+    },
+    {
+      "id": "w.remarked",
+      "form": "remarked",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.remark",
+      "baseForm": "remark",
+      "basePos": "n.",
+      "freqRank": 27382
+    },
+    {
+      "id": "w.initiatives",
+      "form": "initiatives",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.initiative",
+      "baseForm": "initiative",
+      "basePos": "n.",
+      "freqRank": 27455
+    },
+    {
+      "id": "w.assailants",
+      "form": "assailants",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.assailant",
+      "baseForm": "assailant",
+      "basePos": "n.",
+      "freqRank": 27465
+    },
+    {
+      "id": "w.vacuuming",
+      "form": "vacuuming",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.vacuum",
+      "baseForm": "vacuum",
+      "basePos": "n.",
+      "freqRank": 27624
+    },
+    {
+      "id": "w.inhumans",
+      "form": "inhumans",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.inhuman",
+      "baseForm": "inhuman",
+      "basePos": "adj.",
+      "freqRank": 27647
+    },
+    {
+      "id": "w.pregnancies",
+      "form": "pregnancies",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.pregnancy",
+      "baseForm": "pregnancy",
+      "basePos": "n.",
+      "freqRank": 27667
+    },
+    {
+      "id": "w.administrators",
+      "form": "administrators",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.administrator",
+      "baseForm": "administrator",
+      "basePos": "n.",
+      "freqRank": 27680
+    },
+    {
+      "id": "w.relayed",
+      "form": "relayed",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.relay",
+      "baseForm": "relay",
+      "basePos": "v.",
+      "freqRank": 28037
+    },
+    {
+      "id": "w.penetrates",
+      "form": "penetrates",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.penetrate",
+      "baseForm": "penetrate",
+      "basePos": "v.",
+      "freqRank": 28104
+    },
+    {
+      "id": "w.excesses",
+      "form": "excesses",
+      "suffix": "-es",
+      "morphId": "s.plural",
+      "baseId": "w.excess",
+      "baseForm": "excess",
+      "basePos": "n.",
+      "freqRank": 28108
+    },
+    {
+      "id": "w.repaying",
+      "form": "repaying",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.repay",
+      "baseForm": "repay",
+      "basePos": "v.",
+      "freqRank": 28189
+    },
+    {
+      "id": "w.renewing",
+      "form": "renewing",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.renew",
+      "baseForm": "renew",
+      "basePos": "v.",
+      "freqRank": 28277
+    },
+    {
+      "id": "w.resorted",
+      "form": "resorted",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.resort",
+      "baseForm": "resort",
+      "basePos": "n.",
+      "freqRank": 28318
+    },
+    {
+      "id": "w.dialled",
+      "form": "dialled",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.dial",
+      "baseForm": "dial",
+      "basePos": "n.",
+      "freqRank": 28337
+    },
+    {
+      "id": "w.habitats",
+      "form": "habitats",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.habitat",
+      "baseForm": "habitat",
+      "basePos": "n.",
+      "freqRank": 28340
+    },
+    {
+      "id": "w.inconvenienced",
+      "form": "inconvenienced",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.inconvenience",
+      "baseForm": "inconvenience",
+      "basePos": "n.",
+      "freqRank": 28346
+    },
+    {
+      "id": "w.regains",
+      "form": "regains",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.regain",
+      "baseForm": "regain",
+      "basePos": "v.",
+      "freqRank": 28402
+    },
+    {
+      "id": "w.transplanted",
+      "form": "transplanted",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.transplant",
+      "baseForm": "transplant",
+      "basePos": "v.",
+      "freqRank": 28422
+    },
+    {
+      "id": "w.investigates",
+      "form": "investigates",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.investigate",
+      "baseForm": "investigate",
+      "basePos": "v.",
+      "freqRank": 28668
+    },
+    {
+      "id": "w.audited",
+      "form": "audited",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.audit",
+      "baseForm": "audit",
+      "basePos": "n.",
+      "freqRank": 28735
+    },
+    {
+      "id": "w.deciphered",
+      "form": "deciphered",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.decipher",
+      "baseForm": "decipher",
+      "basePos": "v.",
+      "freqRank": 28765
+    },
+    {
+      "id": "w.accomplishing",
+      "form": "accomplishing",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.accomplish",
+      "baseForm": "accomplish",
+      "basePos": "v.",
+      "freqRank": 28784
+    },
+    {
+      "id": "w.brunettes",
+      "form": "brunettes",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.brunette",
+      "baseForm": "brunette",
+      "basePos": "n.",
+      "freqRank": 28912
+    },
+    {
+      "id": "w.confederates",
+      "form": "confederates",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.confederate",
+      "baseForm": "confederate",
+      "basePos": "n.",
+      "freqRank": 28937
+    },
+    {
+      "id": "w.planners",
+      "form": "planners",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.planner",
+      "baseForm": "planner",
+      "basePos": "n.",
+      "freqRank": 29007
+    },
+    {
+      "id": "w.interned",
+      "form": "interned",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.intern",
+      "baseForm": "intern",
+      "basePos": "n.",
+      "freqRank": 29018
+    },
+    {
+      "id": "w.instituted",
+      "form": "instituted",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.institute",
+      "baseForm": "institute",
+      "basePos": "n.",
+      "freqRank": 29039
+    },
+    {
+      "id": "w.executioners",
+      "form": "executioners",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.executioner",
+      "baseForm": "executioner",
+      "basePos": "n.",
+      "freqRank": 29075
+    },
+    {
+      "id": "w.adolescents",
+      "form": "adolescents",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.adolescent",
+      "baseForm": "adolescent",
+      "basePos": "n.",
+      "freqRank": 29087
+    },
+    {
+      "id": "w.motoring",
+      "form": "motoring",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.motor",
+      "baseForm": "motor",
+      "basePos": "n.",
+      "freqRank": 29121
+    },
+    {
+      "id": "w.harmonies",
+      "form": "harmonies",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.harmony",
+      "baseForm": "harmony",
+      "basePos": "n.",
+      "freqRank": 29136
+    },
+    {
+      "id": "w.deleting",
+      "form": "deleting",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.delete",
+      "baseForm": "delete",
+      "basePos": "v.",
+      "freqRank": 29248
+    },
+    {
+      "id": "w.regents",
+      "form": "regents",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.regent",
+      "baseForm": "regent",
+      "basePos": "n.",
+      "freqRank": 29365
+    },
+    {
+      "id": "w.accompanies",
+      "form": "accompanies",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.accompany",
+      "baseForm": "accompany",
+      "basePos": "v.",
+      "freqRank": 29387
+    },
+    {
+      "id": "w.enforcing",
+      "form": "enforcing",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.enforce",
+      "baseForm": "enforce",
+      "basePos": "v.",
+      "freqRank": 29401
+    },
+    {
+      "id": "w.provokes",
+      "form": "provokes",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.provoke",
+      "baseForm": "provoke",
+      "basePos": "v.",
+      "freqRank": 29413
+    },
+    {
+      "id": "w.sorcerers",
+      "form": "sorcerers",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.sorcerer",
+      "baseForm": "sorcerer",
+      "basePos": "n.",
+      "freqRank": 29435
+    },
+    {
+      "id": "w.motivations",
+      "form": "motivations",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.motivation",
+      "baseForm": "motivation",
+      "basePos": "n.",
+      "freqRank": 29587
+    },
+    {
+      "id": "w.saviors",
+      "form": "saviors",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.savior",
+      "baseForm": "savior",
+      "basePos": "n.",
+      "freqRank": 29674
+    },
+    {
+      "id": "w.resents",
+      "form": "resents",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.resent",
+      "baseForm": "resent",
+      "basePos": "v.",
+      "freqRank": 29675
+    },
+    {
+      "id": "w.communicates",
+      "form": "communicates",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.communicate",
+      "baseForm": "communicate",
+      "basePos": "v.",
+      "freqRank": 29695
+    },
+    {
+      "id": "w.premiums",
+      "form": "premiums",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.premium",
+      "baseForm": "premium",
+      "basePos": "n.",
+      "freqRank": 29696
+    },
+    {
+      "id": "w.inserting",
+      "form": "inserting",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.insert",
+      "baseForm": "insert",
+      "basePos": "v.",
+      "freqRank": 29763
+    },
+    {
+      "id": "w.encountering",
+      "form": "encountering",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.encounter",
+      "baseForm": "encounter",
+      "basePos": "v.",
+      "freqRank": 29808
+    },
+    {
+      "id": "w.compositions",
+      "form": "compositions",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.composition",
+      "baseForm": "composition",
+      "basePos": "n.",
+      "freqRank": 29811
+    },
+    {
+      "id": "w.disarming",
+      "form": "disarming",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.disarm",
+      "baseForm": "disarm",
+      "basePos": "v.",
+      "freqRank": 29828
+    },
+    {
+      "id": "w.establishments",
+      "form": "establishments",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.establishment",
+      "baseForm": "establishment",
+      "basePos": "n.",
+      "freqRank": 30035
+    },
+    {
+      "id": "w.miseries",
+      "form": "miseries",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.misery",
+      "baseForm": "misery",
+      "basePos": "n.",
+      "freqRank": 30329
+    },
+    {
+      "id": "w.additions",
+      "form": "additions",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.addition",
+      "baseForm": "addition",
+      "basePos": "n.",
+      "freqRank": 30337
+    },
+    {
+      "id": "w.juveniles",
+      "form": "juveniles",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.juvenile",
+      "baseForm": "juvenile",
+      "basePos": "adj./n.",
+      "freqRank": 30366
+    },
+    {
+      "id": "w.repented",
+      "form": "repented",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.repent",
+      "baseForm": "repent",
+      "basePos": "v.",
+      "freqRank": 30444
+    },
+    {
+      "id": "w.subpoenas",
+      "form": "subpoenas",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.subpoena",
+      "baseForm": "subpoena",
+      "basePos": "n.",
+      "freqRank": 30952
+    },
+    {
+      "id": "w.waitressing",
+      "form": "waitressing",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.waitress",
+      "baseForm": "waitress",
+      "basePos": "n.",
+      "freqRank": 31045
+    },
+    {
+      "id": "w.liabilities",
+      "form": "liabilities",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.liability",
+      "baseForm": "liability",
+      "basePos": "n.",
+      "freqRank": 31068
+    },
+    {
+      "id": "w.retainers",
+      "form": "retainers",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.retainer",
+      "baseForm": "retainer",
+      "basePos": "n.",
+      "freqRank": 31077
+    },
+    {
+      "id": "w.discharging",
+      "form": "discharging",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.discharge",
+      "baseForm": "discharge",
+      "basePos": "v.",
+      "freqRank": 31154
+    },
+    {
+      "id": "w.resorting",
+      "form": "resorting",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.resort",
+      "baseForm": "resort",
+      "basePos": "n.",
+      "freqRank": 31387
+    },
+    {
+      "id": "w.transfusions",
+      "form": "transfusions",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.transfusion",
+      "baseForm": "transfusion",
+      "basePos": "n.",
+      "freqRank": 31416
+    },
+    {
+      "id": "w.challengers",
+      "form": "challengers",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.challenger",
+      "baseForm": "challenger",
+      "basePos": "n.",
+      "freqRank": 31463
+    },
+    {
+      "id": "w.consorting",
+      "form": "consorting",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.consort",
+      "baseForm": "consort",
+      "basePos": "v.",
+      "freqRank": 31560
+    },
+    {
+      "id": "w.interiors",
+      "form": "interiors",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.interior",
+      "baseForm": "interior",
+      "basePos": "n.",
+      "freqRank": 31570
+    },
+    {
+      "id": "w.occupations",
+      "form": "occupations",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.occupation",
+      "baseForm": "occupation",
+      "basePos": "n.",
+      "freqRank": 31694
+    },
+    {
+      "id": "w.phonies",
+      "form": "phonies",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.phony",
+      "baseForm": "phony",
+      "basePos": "adj.",
+      "freqRank": 31760
+    },
+    {
+      "id": "w.disadvantaged",
+      "form": "disadvantaged",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.disadvantage",
+      "baseForm": "disadvantage",
+      "basePos": "n.",
+      "freqRank": 31801
+    },
+    {
+      "id": "w.entrusting",
+      "form": "entrusting",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.entrust",
+      "baseForm": "entrust",
+      "basePos": "v.",
+      "freqRank": 31806
+    },
+    {
+      "id": "w.infects",
+      "form": "infects",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.infect",
+      "baseForm": "infect",
+      "basePos": "v.",
+      "freqRank": 31811
+    },
+    {
+      "id": "w.enveloped",
+      "form": "enveloped",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.envelope",
+      "baseForm": "envelope",
+      "basePos": "n.",
+      "freqRank": 31989
+    },
+    {
+      "id": "w.discounted",
+      "form": "discounted",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.discount",
+      "baseForm": "discount",
+      "basePos": "n.",
+      "freqRank": 32061
+    },
+    {
+      "id": "w.resuming",
+      "form": "resuming",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.resume",
+      "baseForm": "resume",
+      "basePos": "v.",
+      "freqRank": 32292
+    },
+    {
+      "id": "w.spirals",
+      "form": "spirals",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.spiral",
+      "baseForm": "spiral",
+      "basePos": "n.",
+      "freqRank": 32369
+    },
+    {
+      "id": "w.clearances",
+      "form": "clearances",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.clearance",
+      "baseForm": "clearance",
+      "basePos": "n.",
+      "freqRank": 32462
+    },
+    {
+      "id": "w.heroines",
+      "form": "heroines",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.heroine",
+      "baseForm": "heroine",
+      "basePos": "n.",
+      "freqRank": 32636
+    },
+    {
+      "id": "w.disadvantages",
+      "form": "disadvantages",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.disadvantage",
+      "baseForm": "disadvantage",
+      "basePos": "n.",
+      "freqRank": 32891
+    },
+    {
+      "id": "w.disregarded",
+      "form": "disregarded",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.disregard",
+      "baseForm": "disregard",
+      "basePos": "v.",
+      "freqRank": 32906
+    },
+    {
+      "id": "w.brokered",
+      "form": "brokered",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.broker",
+      "baseForm": "broker",
+      "basePos": "n.",
+      "freqRank": 32935
+    },
+    {
+      "id": "w.devoting",
+      "form": "devoting",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.devote",
+      "baseForm": "devote",
+      "basePos": "v.",
+      "freqRank": 32985
+    },
+    {
+      "id": "w.catalogs",
+      "form": "catalogs",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.catalog",
+      "baseForm": "catalog",
+      "basePos": "n.",
+      "freqRank": 33161
+    },
+    {
+      "id": "w.verifying",
+      "form": "verifying",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.verify",
+      "baseForm": "verify",
+      "basePos": "v.",
+      "freqRank": 33344
+    },
+    {
+      "id": "w.ideologies",
+      "form": "ideologies",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.ideology",
+      "baseForm": "ideology",
+      "basePos": "n.",
+      "freqRank": 33495
+    },
+    {
+      "id": "w.enlisting",
+      "form": "enlisting",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.enlist",
+      "baseForm": "enlist",
+      "basePos": "v.",
+      "freqRank": 33610
+    },
+    {
+      "id": "w.cereals",
+      "form": "cereals",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.cereal",
+      "baseForm": "cereal",
+      "basePos": "n.",
+      "freqRank": 33611
+    },
+    {
+      "id": "w.disagreeing",
+      "form": "disagreeing",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.disagree",
+      "baseForm": "disagree",
+      "basePos": "v.",
+      "freqRank": 33620
+    },
+    {
+      "id": "w.precedents",
+      "form": "precedents",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.precedent",
+      "baseForm": "precedent",
+      "basePos": "n.",
+      "freqRank": 33665
+    },
+    {
+      "id": "w.distinctions",
+      "form": "distinctions",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.distinction",
+      "baseForm": "distinction",
+      "basePos": "n.",
+      "freqRank": 33713
+    },
+    {
+      "id": "w.absences",
+      "form": "absences",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.absence",
+      "baseForm": "absence",
+      "basePos": "n.",
+      "freqRank": 34147
+    },
+    {
+      "id": "w.serials",
+      "form": "serials",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.serial",
+      "baseForm": "serial",
+      "basePos": "adj.",
+      "freqRank": 34249
+    },
+    {
+      "id": "w.conceals",
+      "form": "conceals",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.conceal",
+      "baseForm": "conceal",
+      "basePos": "v.",
+      "freqRank": 34631
+    },
+    {
+      "id": "w.examines",
+      "form": "examines",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.examine",
+      "baseForm": "examine",
+      "basePos": "v.",
+      "freqRank": 34638
+    },
+    {
+      "id": "w.selects",
+      "form": "selects",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.select",
+      "baseForm": "select",
+      "basePos": "v.",
+      "freqRank": 34696
+    },
+    {
+      "id": "w.examiners",
+      "form": "examiners",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.examiner",
+      "baseForm": "examiner",
+      "basePos": "n.",
+      "freqRank": 34736
+    },
+    {
+      "id": "w.disabling",
+      "form": "disabling",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.disable",
+      "baseForm": "disable",
+      "basePos": "v.",
+      "freqRank": 34745
+    },
+    {
+      "id": "w.capacities",
+      "form": "capacities",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.capacity",
+      "baseForm": "capacity",
+      "basePos": "n.",
+      "freqRank": 34843
+    },
+    {
+      "id": "w.filings",
+      "form": "filings",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.filing",
+      "baseForm": "filing",
+      "basePos": "v.",
+      "freqRank": 35007
+    },
+    {
+      "id": "w.negotiators",
+      "form": "negotiators",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.negotiator",
+      "baseForm": "negotiator",
+      "basePos": "n.",
+      "freqRank": 35039
+    },
+    {
+      "id": "w.deciphering",
+      "form": "deciphering",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.decipher",
+      "baseForm": "decipher",
+      "basePos": "v.",
+      "freqRank": 35229
+    },
+    {
+      "id": "w.consultations",
+      "form": "consultations",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.consultation",
+      "baseForm": "consultation",
+      "basePos": "n.",
+      "freqRank": 35316
+    },
+    {
+      "id": "w.discharges",
+      "form": "discharges",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.discharge",
+      "baseForm": "discharge",
+      "basePos": "v.",
+      "freqRank": 35475
+    },
+    {
+      "id": "w.detonating",
+      "form": "detonating",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.detonate",
+      "baseForm": "detonate",
+      "basePos": "v.",
+      "freqRank": 35721
+    },
+    {
+      "id": "w.charters",
+      "form": "charters",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.charter",
+      "baseForm": "charter",
+      "basePos": "n.",
+      "freqRank": 35741
+    },
+    {
+      "id": "w.recesses",
+      "form": "recesses",
+      "suffix": "-es",
+      "morphId": "s.plural",
+      "baseId": "w.recess",
+      "baseForm": "recess",
+      "basePos": "n.",
+      "freqRank": 36005
+    },
+    {
+      "id": "w.epidemics",
+      "form": "epidemics",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.epidemic",
+      "baseForm": "epidemic",
+      "basePos": "n.",
+      "freqRank": 36024
+    },
+    {
+      "id": "w.concussions",
+      "form": "concussions",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.concussion",
+      "baseForm": "concussion",
+      "basePos": "n.",
+      "freqRank": 36040
+    },
+    {
+      "id": "w.observes",
+      "form": "observes",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.observe",
+      "baseForm": "observe",
+      "basePos": "v.",
+      "freqRank": 36131
+    },
+    {
+      "id": "w.erases",
+      "form": "erases",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.erase",
+      "baseForm": "erase",
+      "basePos": "v.",
+      "freqRank": 36196
+    },
+    {
+      "id": "w.accords",
+      "form": "accords",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.accord",
+      "baseForm": "accord",
+      "basePos": "n.",
+      "freqRank": 36219
+    },
+    {
+      "id": "w.posses",
+      "form": "posses",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.posse",
+      "baseForm": "posse",
+      "basePos": "n.",
+      "freqRank": 36387
+    },
+    {
+      "id": "w.reconsidering",
+      "form": "reconsidering",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.reconsider",
+      "baseForm": "reconsider",
+      "basePos": "v.",
+      "freqRank": 36613
+    },
+    {
+      "id": "w.councillors",
+      "form": "councillors",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.councillor",
+      "baseForm": "councillor",
+      "basePos": "n.",
+      "freqRank": 36758
+    },
+    {
+      "id": "w.explores",
+      "form": "explores",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.explore",
+      "baseForm": "explore",
+      "basePos": "v.",
+      "freqRank": 36796
+    },
+    {
+      "id": "w.assemblies",
+      "form": "assemblies",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.assembly",
+      "baseForm": "assembly",
+      "basePos": "n.",
+      "freqRank": 36904
+    },
+    {
+      "id": "w.disappoints",
+      "form": "disappoints",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.disappoint",
+      "baseForm": "disappoint",
+      "basePos": "v.",
+      "freqRank": 36986
+    },
+    {
+      "id": "w.pavements",
+      "form": "pavements",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.pavement",
+      "baseForm": "pavement",
+      "basePos": "n.",
+      "freqRank": 37012
+    },
+    {
+      "id": "w.reservoirs",
+      "form": "reservoirs",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.reservoir",
+      "baseForm": "reservoir",
+      "basePos": "n.",
+      "freqRank": 37043
+    },
+    {
+      "id": "w.detonates",
+      "form": "detonates",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.detonate",
+      "baseForm": "detonate",
+      "basePos": "v.",
+      "freqRank": 37048
+    },
+    {
+      "id": "w.estimating",
+      "form": "estimating",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.estimate",
+      "baseForm": "estimate",
+      "basePos": "v.",
+      "freqRank": 37300
+    },
+    {
+      "id": "w.vacuumed",
+      "form": "vacuumed",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.vacuum",
+      "baseForm": "vacuum",
+      "basePos": "n.",
+      "freqRank": 37353
+    },
+    {
+      "id": "w.inserts",
+      "form": "inserts",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.insert",
+      "baseForm": "insert",
+      "basePos": "v.",
+      "freqRank": 37377
+    },
+    {
+      "id": "w.diversions",
+      "form": "diversions",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.diversion",
+      "baseForm": "diversion",
+      "basePos": "n.",
+      "freqRank": 37480
+    },
+    {
+      "id": "w.bankrupted",
+      "form": "bankrupted",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.bankrupt",
+      "baseForm": "bankrupt",
+      "basePos": "adj.",
+      "freqRank": 37567
+    },
+    {
+      "id": "w.counsellors",
+      "form": "counsellors",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.counsellor",
+      "baseForm": "counsellor",
+      "basePos": "n.",
+      "freqRank": 37768
+    },
+    {
+      "id": "w.syndicated",
+      "form": "syndicated",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.syndicate",
+      "baseForm": "syndicate",
+      "basePos": "n.",
+      "freqRank": 37926
+    },
+    {
+      "id": "w.interacted",
+      "form": "interacted",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.interact",
+      "baseForm": "interact",
+      "basePos": "v.",
+      "freqRank": 37939
+    },
+    {
+      "id": "w.humanities",
+      "form": "humanities",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.humanity",
+      "baseForm": "humanity",
+      "basePos": "n.",
+      "freqRank": 38002
+    },
+    {
+      "id": "w.sequels",
+      "form": "sequels",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.sequel",
+      "baseForm": "sequel",
+      "basePos": "n.",
+      "freqRank": 38012
+    },
+    {
+      "id": "w.electricians",
+      "form": "electricians",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.electrician",
+      "baseForm": "electrician",
+      "basePos": "n.",
+      "freqRank": 38160
+    },
+    {
+      "id": "w.cautioned",
+      "form": "cautioned",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.caution",
+      "baseForm": "caution",
+      "basePos": "n.",
+      "freqRank": 38175
+    },
+    {
+      "id": "w.conveniences",
+      "form": "conveniences",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.convenience",
+      "baseForm": "convenience",
+      "basePos": "n.",
+      "freqRank": 38216
+    },
+    {
+      "id": "w.deceives",
+      "form": "deceives",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.deceive",
+      "baseForm": "deceive",
+      "basePos": "v.",
+      "freqRank": 38267
+    },
+    {
+      "id": "w.stereos",
+      "form": "stereos",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.stereo",
+      "baseForm": "stereo",
+      "basePos": "n.",
+      "freqRank": 38280
+    },
+    {
+      "id": "w.functioned",
+      "form": "functioned",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.function",
+      "baseForm": "function",
+      "basePos": "n.",
+      "freqRank": 38319
+    },
+    {
+      "id": "w.advocated",
+      "form": "advocated",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.advocate",
+      "baseForm": "advocate",
+      "basePos": "v.",
+      "freqRank": 38411
+    },
+    {
+      "id": "w.denials",
+      "form": "denials",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.denial",
+      "baseForm": "denial",
+      "basePos": "n.",
+      "freqRank": 38604
+    },
+    {
+      "id": "w.thermals",
+      "form": "thermals",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.thermal",
+      "baseForm": "thermal",
+      "basePos": "adj.",
+      "freqRank": 38684
+    },
+    {
+      "id": "w.lotions",
+      "form": "lotions",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.lotion",
+      "baseForm": "lotion",
+      "basePos": "n.",
+      "freqRank": 38735
+    },
+    {
+      "id": "w.disregarding",
+      "form": "disregarding",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.disregard",
+      "baseForm": "disregard",
+      "basePos": "v.",
+      "freqRank": 38975
+    },
+    {
+      "id": "w.mixers",
+      "form": "mixers",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.mixer",
+      "baseForm": "mixer",
+      "basePos": "n.",
+      "freqRank": 39018
+    },
+    {
+      "id": "w.conveys",
+      "form": "conveys",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.convey",
+      "baseForm": "convey",
+      "basePos": "v.",
+      "freqRank": 39195
+    },
+    {
+      "id": "w.mergers",
+      "form": "mergers",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.merger",
+      "baseForm": "merger",
+      "basePos": "n.",
+      "freqRank": 39285
+    },
+    {
+      "id": "w.relaying",
+      "form": "relaying",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.relay",
+      "baseForm": "relay",
+      "basePos": "v.",
+      "freqRank": 39296
+    },
+    {
+      "id": "w.resigns",
+      "form": "resigns",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.resign",
+      "baseForm": "resign",
+      "basePos": "v.",
+      "freqRank": 39375
+    },
+    {
+      "id": "w.conveying",
+      "form": "conveying",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.convey",
+      "baseForm": "convey",
+      "basePos": "v.",
+      "freqRank": 39513
+    },
+    {
+      "id": "w.abominations",
+      "form": "abominations",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.abomination",
+      "baseForm": "abomination",
+      "basePos": "n.",
+      "freqRank": 39816
+    },
+    {
+      "id": "w.mimes",
+      "form": "mimes",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.mime",
+      "baseForm": "mime",
+      "basePos": "n.",
+      "freqRank": 39832
+    },
+    {
+      "id": "w.endangers",
+      "form": "endangers",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.endanger",
+      "baseForm": "endanger",
+      "basePos": "v.",
+      "freqRank": 40057
+    },
+    {
+      "id": "w.cycled",
+      "form": "cycled",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.cycle",
+      "baseForm": "cycle",
+      "basePos": "n.",
+      "freqRank": 40089
+    },
+    {
+      "id": "w.calculates",
+      "form": "calculates",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.calculate",
+      "baseForm": "calculate",
+      "basePos": "v.",
+      "freqRank": 40245
+    },
+    {
+      "id": "w.parachuted",
+      "form": "parachuted",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.parachute",
+      "baseForm": "parachute",
+      "basePos": "n.",
+      "freqRank": 40366
+    },
+    {
+      "id": "w.radiators",
+      "form": "radiators",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.radiator",
+      "baseForm": "radiator",
+      "basePos": "n.",
+      "freqRank": 40596
+    },
+    {
+      "id": "w.distinguishes",
+      "form": "distinguishes",
+      "suffix": "-es",
+      "morphId": "s.plural",
+      "baseId": "w.distinguish",
+      "baseForm": "distinguish",
+      "basePos": "v.",
+      "freqRank": 40612
+    },
+    {
+      "id": "w.facials",
+      "form": "facials",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.facial",
+      "baseForm": "facial",
+      "basePos": "adj.",
+      "freqRank": 40664
+    },
+    {
+      "id": "w.fusing",
+      "form": "fusing",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.fuse",
+      "baseForm": "fuse",
+      "basePos": "n.",
+      "freqRank": 40791
+    },
+    {
+      "id": "w.editorials",
+      "form": "editorials",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.editorial",
+      "baseForm": "editorial",
+      "basePos": "n.",
+      "freqRank": 40829
+    },
+    {
+      "id": "w.agonies",
+      "form": "agonies",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.agony",
+      "baseForm": "agony",
+      "basePos": "n.",
+      "freqRank": 41131
+    },
+    {
+      "id": "w.contrasts",
+      "form": "contrasts",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.contrast",
+      "baseForm": "contrast",
+      "basePos": "n.",
+      "freqRank": 41319
+    },
+    {
+      "id": "w.disconnecting",
+      "form": "disconnecting",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.disconnect",
+      "baseForm": "disconnect",
+      "basePos": "v.",
+      "freqRank": 41330
+    },
+    {
+      "id": "w.suffocates",
+      "form": "suffocates",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.suffocate",
+      "baseForm": "suffocate",
+      "basePos": "v.",
+      "freqRank": 41567
+    },
+    {
+      "id": "w.overtures",
+      "form": "overtures",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.overture",
+      "baseForm": "overture",
+      "basePos": "n.",
+      "freqRank": 41702
+    },
+    {
+      "id": "w.licences",
+      "form": "licences",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.licence",
+      "baseForm": "licence",
+      "basePos": "n.",
+      "freqRank": 41777
+    },
+    {
+      "id": "w.partials",
+      "form": "partials",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.partial",
+      "baseForm": "partial",
+      "basePos": "adj.",
+      "freqRank": 41909
+    },
+    {
+      "id": "w.humiliations",
+      "form": "humiliations",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.humiliation",
+      "baseForm": "humiliation",
+      "basePos": "n.",
+      "freqRank": 41910
+    },
+    {
+      "id": "w.dynasties",
+      "form": "dynasties",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.dynasty",
+      "baseForm": "dynasty",
+      "basePos": "n.",
+      "freqRank": 41928
+    },
+    {
+      "id": "w.syndicates",
+      "form": "syndicates",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.syndicate",
+      "baseForm": "syndicate",
+      "basePos": "n.",
+      "freqRank": 41997
+    },
+    {
+      "id": "w.tuitions",
+      "form": "tuitions",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.tuition",
+      "baseForm": "tuition",
+      "basePos": "n.",
+      "freqRank": 42024
+    },
+    {
+      "id": "w.propositions",
+      "form": "propositions",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.proposition",
+      "baseForm": "proposition",
+      "basePos": "n.",
+      "freqRank": 42127
+    },
+    {
+      "id": "w.compensations",
+      "form": "compensations",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.compensation",
+      "baseForm": "compensation",
+      "basePos": "n.",
+      "freqRank": 42331
+    },
+    {
+      "id": "w.disobeys",
+      "form": "disobeys",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.disobey",
+      "baseForm": "disobey",
+      "basePos": "v.",
+      "freqRank": 42384
+    },
+    {
+      "id": "w.rejoined",
+      "form": "rejoined",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.rejoin",
+      "baseForm": "rejoin",
+      "basePos": "v.",
+      "freqRank": 42712
+    },
+    {
+      "id": "w.interning",
+      "form": "interning",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.intern",
+      "baseForm": "intern",
+      "basePos": "n.",
+      "freqRank": 42789
+    },
+    {
+      "id": "w.parachuting",
+      "form": "parachuting",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.parachute",
+      "baseForm": "parachute",
+      "basePos": "n.",
+      "freqRank": 42904
+    },
+    {
+      "id": "w.vanities",
+      "form": "vanities",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.vanity",
+      "baseForm": "vanity",
+      "basePos": "n.",
+      "freqRank": 42957
+    },
+    {
+      "id": "w.eliminations",
+      "form": "eliminations",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.elimination",
+      "baseForm": "elimination",
+      "basePos": "n.",
+      "freqRank": 43010
+    },
+    {
+      "id": "w.interacts",
+      "form": "interacts",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.interact",
+      "baseForm": "interact",
+      "basePos": "v.",
+      "freqRank": 43131
+    },
+    {
+      "id": "w.schizophrenics",
+      "form": "schizophrenics",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.schizophrenic",
+      "baseForm": "schizophrenic",
+      "basePos": "adj.",
+      "freqRank": 43424
+    },
+    {
+      "id": "w.accorded",
+      "form": "accorded",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.accord",
+      "baseForm": "accord",
+      "basePos": "n.",
+      "freqRank": 43584
+    },
+    {
+      "id": "w.recessed",
+      "form": "recessed",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.recess",
+      "baseForm": "recess",
+      "basePos": "n.",
+      "freqRank": 43608
+    },
+    {
+      "id": "w.accommodated",
+      "form": "accommodated",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.accommodate",
+      "baseForm": "accommodate",
+      "basePos": "v.",
+      "freqRank": 43626
+    },
+    {
+      "id": "w.interpreters",
+      "form": "interpreters",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.interpreter",
+      "baseForm": "interpreter",
+      "basePos": "n.",
+      "freqRank": 43668
+    },
+    {
+      "id": "w.exorcisms",
+      "form": "exorcisms",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.exorcism",
+      "baseForm": "exorcism",
+      "basePos": "n.",
+      "freqRank": 43674
+    },
+    {
+      "id": "w.independents",
+      "form": "independents",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.independent",
+      "baseForm": "independent",
+      "basePos": "adj.",
+      "freqRank": 43733
+    },
+    {
+      "id": "w.organics",
+      "form": "organics",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.organic",
+      "baseForm": "organic",
+      "basePos": "adj.",
+      "freqRank": 43776
+    },
+    {
+      "id": "w.institutes",
+      "form": "institutes",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.institute",
+      "baseForm": "institute",
+      "basePos": "n.",
+      "freqRank": 44304
+    },
+    {
+      "id": "w.summaries",
+      "form": "summaries",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.summary",
+      "baseForm": "summary",
+      "basePos": "n.",
+      "freqRank": 44367
+    },
+    {
+      "id": "w.retailing",
+      "form": "retailing",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.retail",
+      "baseForm": "retail",
+      "basePos": "n.",
+      "freqRank": 44410
+    },
+    {
+      "id": "w.internships",
+      "form": "internships",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.internship",
+      "baseForm": "internship",
+      "basePos": "n.",
+      "freqRank": 44618
+    },
+    {
+      "id": "w.audits",
+      "form": "audits",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.audit",
+      "baseForm": "audit",
+      "basePos": "n.",
+      "freqRank": 44715
+    },
+    {
+      "id": "w.defaults",
+      "form": "defaults",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.default",
+      "baseForm": "default",
+      "basePos": "n.",
+      "freqRank": 44727
+    },
+    {
+      "id": "w.rebounds",
+      "form": "rebounds",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.rebound",
+      "baseForm": "rebound",
+      "basePos": "v.",
+      "freqRank": 44902
+    },
+    {
+      "id": "w.registrations",
+      "form": "registrations",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.registration",
+      "baseForm": "registration",
+      "basePos": "n.",
+      "freqRank": 44938
+    },
+    {
+      "id": "w.uncertainties",
+      "form": "uncertainties",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.uncertainty",
+      "baseForm": "uncertainty",
+      "basePos": "n.",
+      "freqRank": 45096
+    },
+    {
+      "id": "w.approvals",
+      "form": "approvals",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.approval",
+      "baseForm": "approval",
+      "basePos": "n.",
+      "freqRank": 45149
+    },
+    {
+      "id": "w.bankruptcies",
+      "form": "bankruptcies",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.bankruptcy",
+      "baseForm": "bankruptcy",
+      "basePos": "n.",
+      "freqRank": 45519
+    },
+    {
+      "id": "w.acquires",
+      "form": "acquires",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.acquire",
+      "baseForm": "acquire",
+      "basePos": "v.",
+      "freqRank": 45543
+    },
+    {
+      "id": "w.installs",
+      "form": "installs",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.install",
+      "baseForm": "install",
+      "basePos": "v.",
+      "freqRank": 45667
+    },
+    {
+      "id": "w.conditioners",
+      "form": "conditioners",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.conditioner",
+      "baseForm": "conditioner",
+      "basePos": "n.",
+      "freqRank": 45678
+    },
+    {
+      "id": "w.efficiencies",
+      "form": "efficiencies",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.efficiency",
+      "baseForm": "efficiency",
+      "basePos": "n.",
+      "freqRank": 45853
+    },
+    {
+      "id": "w.equities",
+      "form": "equities",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.equity",
+      "baseForm": "equity",
+      "basePos": "n.",
+      "freqRank": 45884
+    },
+    {
+      "id": "w.assigns",
+      "form": "assigns",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.assign",
+      "baseForm": "assign",
+      "basePos": "v.",
+      "freqRank": 45919
+    },
+    {
+      "id": "w.mixtures",
+      "form": "mixtures",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.mixture",
+      "baseForm": "mixture",
+      "basePos": "n.",
+      "freqRank": 46135
+    },
+    {
+      "id": "w.allegiances",
+      "form": "allegiances",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.allegiance",
+      "baseForm": "allegiance",
+      "basePos": "n.",
+      "freqRank": 46397
+    },
+    {
+      "id": "w.automatics",
+      "form": "automatics",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.automatic",
+      "baseForm": "automatic",
+      "basePos": "adj.",
+      "freqRank": 46428
+    },
+    {
+      "id": "w.cataloging",
+      "form": "cataloging",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.catalog",
+      "baseForm": "catalog",
+      "basePos": "n.",
+      "freqRank": 46555
+    },
+    {
+      "id": "w.coroners",
+      "form": "coroners",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.coroner",
+      "baseForm": "coroner",
+      "basePos": "n.",
+      "freqRank": 46638
+    },
+    {
+      "id": "w.councilors",
+      "form": "councilors",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.councilor",
+      "baseForm": "councilor",
+      "basePos": "n.",
+      "freqRank": 46641
+    },
+    {
+      "id": "w.delicates",
+      "form": "delicates",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.delicate",
+      "baseForm": "delicate",
+      "basePos": "adj.",
+      "freqRank": 46701
+    },
+    {
+      "id": "w.diabetics",
+      "form": "diabetics",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.diabetic",
+      "baseForm": "diabetic",
+      "basePos": "adj.",
+      "freqRank": 46725
+    },
+    {
+      "id": "w.discounting",
+      "form": "discounting",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.discount",
+      "baseForm": "discount",
+      "basePos": "n.",
+      "freqRank": 46739
+    },
+    {
+      "id": "w.divining",
+      "form": "divining",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.divine",
+      "baseForm": "divine",
+      "basePos": "adj.",
+      "freqRank": 46753
+    },
+    {
+      "id": "w.dosages",
+      "form": "dosages",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.dosage",
+      "baseForm": "dosage",
+      "basePos": "n.",
+      "freqRank": 46760
+    },
+    {
+      "id": "w.exhausts",
+      "form": "exhausts",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.exhaust",
+      "baseForm": "exhaust",
+      "basePos": "v.",
+      "freqRank": 46817
+    },
+    {
+      "id": "w.inconveniencing",
+      "form": "inconveniencing",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.inconvenience",
+      "baseForm": "inconvenience",
+      "basePos": "n.",
+      "freqRank": 47054
+    },
+    {
+      "id": "w.infidelities",
+      "form": "infidelities",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.infidelity",
+      "baseForm": "infidelity",
+      "basePos": "n.",
+      "freqRank": 47058
+    },
+    {
+      "id": "w.manipulations",
+      "form": "manipulations",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.manipulation",
+      "baseForm": "manipulation",
+      "basePos": "n.",
+      "freqRank": 47150
+    },
+    {
+      "id": "w.minimums",
+      "form": "minimums",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.minimum",
+      "baseForm": "minimum",
+      "basePos": "n.",
+      "freqRank": 47166
+    },
+    {
+      "id": "w.propositioning",
+      "form": "propositioning",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.proposition",
+      "baseForm": "proposition",
+      "basePos": "n.",
+      "freqRank": 47330
+    },
+    {
+      "id": "w.salvaging",
+      "form": "salvaging",
+      "suffix": "-ing",
+      "morphId": "s.ing",
+      "baseId": "w.salvage",
+      "baseForm": "salvage",
+      "basePos": "v.",
+      "freqRank": 47430
+    },
+    {
+      "id": "w.sonics",
+      "form": "sonics",
+      "suffix": "-s",
+      "morphId": "s.plural",
+      "baseId": "w.sonic",
+      "baseForm": "sonic",
+      "basePos": "adj.",
+      "freqRank": 47506
+    },
+    {
+      "id": "w.sororities",
+      "form": "sororities",
+      "suffix": "-ies",
+      "morphId": "s.plural",
+      "baseId": "w.sorority",
+      "baseForm": "sorority",
+      "basePos": "n.",
+      "freqRank": 47508
+    },
+    {
+      "id": "w.waitressed",
+      "form": "waitressed",
+      "suffix": "-ed",
+      "morphId": "s.ed",
+      "baseId": "w.waitress",
+      "baseForm": "waitress",
+      "basePos": "n.",
+      "freqRank": 47682
+    }
+  ]
+}

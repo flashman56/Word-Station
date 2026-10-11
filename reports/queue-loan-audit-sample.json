@@ -1,0 +1,627 @@
+[
+ {
+  "form": "independent",
+  "freqRank": 3284,
+  "pos": "adj.",
+  "etym": "拉丁 in-（否定）+ dependere（悬挂、依赖）+ -ent",
+  "pieces": [
+   {
+    "morph": "p.in",
+    "form": "in",
+    "gloss": "否定"
+   },
+   {
+    "morph": null,
+    "form": "depend",
+    "gloss": "依赖（整体借入，清单无对应词根）"
+   },
+   {
+    "morph": "s.ant",
+    "form": "ent",
+    "gloss": "形容词后缀：…的"
+   }
+  ],
+  "inflectionOnly": false
+ },
+ {
+  "form": "alliance",
+  "freqRank": 3491,
+  "pos": "n.",
+  "etym": "法语 allier(结合) + -ance，源自拉丁 alligare(绑在一起)",
+  "pieces": [
+   {
+    "morph": null,
+    "form": "alli",
+    "gloss": "结合（整体借入词干，清单无对应词根）"
+   },
+   {
+    "morph": "s.ance",
+    "form": "ance",
+    "gloss": "名词后缀：状态、性质"
+   }
+  ],
+  "inflectionOnly": false
+ },
+ {
+  "form": "register",
+  "freqRank": 3430,
+  "pos": "v.",
+  "etym": "拉丁 re- + gerere(携带) 的过去分词 gestus → registrum",
+  "pieces": [
+   {
+    "morph": "p.re",
+    "form": "re",
+    "gloss": "回，再"
+   },
+   {
+    "morph": null,
+    "form": "gister",
+    "gloss": "源自拉丁 gerere/gestus(携带)（清单无对应词根）"
+   }
+  ],
+  "inflectionOnly": false
+ },
+ {
+  "form": "spiritual",
+  "freqRank": 3509,
+  "pos": "adj.",
+  "etym": "拉丁 spiritus(呼吸、精神) + -al → -ual",
+  "pieces": [
+   {
+    "morph": "r.spir",
+    "form": "spirit",
+    "gloss": "呼吸，精神"
+   },
+   {
+    "morph": null,
+    "form": "u",
+    "gloss": "连接字母"
+   },
+   {
+    "morph": "s.ic",
+    "form": "al",
+    "gloss": "形容词后缀：…的"
+   }
+  ],
+  "inflectionOnly": false
+ },
+ {
+  "form": "economy",
+  "freqRank": 3543,
+  "pos": "n.",
+  "etym": "希腊 oikos(家) + nomos(管理) → oikonomia",
+  "pieces": [
+   {
+    "morph": "r.oik",
+    "form": "eco",
+    "gloss": "家，环境"
+   },
+   {
+    "morph": null,
+    "form": "nom",
+    "gloss": "管理、法则（希腊 nomos，清单无对应词根）"
+   },
+   {
+    "morph": "s.cy",
+    "form": "y",
+    "gloss": "状态、性质"
+   }
+  ],
+  "inflectionOnly": false
+ },
+ {
+  "form": "located",
+  "freqRank": 3613,
+  "pos": "v.",
+  "etym": "拉丁 locare(放置) → locate + -ed",
+  "pieces": [
+   {
+    "morph": "r.loc",
+    "form": "loc",
+    "gloss": "地方，位置"
+   },
+   {
+    "morph": "s.ate",
+    "form": "at",
+    "gloss": "使…"
+   },
+   {
+    "morph": "s.ed",
+    "form": "ed",
+    "gloss": "过去式/过去分词"
+   }
+  ],
+  "inflectionOnly": false
+ },
+ {
+  "form": "relations",
+  "freqRank": 3801,
+  "pos": "n.",
+  "etym": "拉丁 relatio → relation + -s",
+  "pieces": [
+   {
+    "morph": null,
+    "form": "relation",
+    "gloss": "关系（整体借入，清单无对应词根）"
+   },
+   {
+    "morph": "s.plural",
+    "form": "s",
+    "gloss": "复数"
+   }
+  ],
+  "inflectionOnly": true
+ },
+ {
+  "form": "observe",
+  "freqRank": 3861,
+  "pos": "v.",
+  "etym": "拉丁 ob-（对着）+ servare（看守、保持）",
+  "pieces": [
+   {
+    "morph": "p.ob",
+    "form": "ob",
+    "gloss": "对着，朝向"
+   },
+   {
+    "morph": "r.serv",
+    "form": "serv",
+    "gloss": "服务；保存"
+   },
+   {
+    "morph": null,
+    "form": "e",
+    "gloss": "连接/词干残段"
+   }
+  ],
+  "inflectionOnly": false
+ },
+ {
+  "form": "locate",
+  "freqRank": 3987,
+  "pos": "v.",
+  "etym": "拉丁 locare(放置) ← locus(地方) + -ate",
+  "pieces": [
+   {
+    "morph": "r.loc",
+    "form": "loc",
+    "gloss": "地方，位置"
+   },
+   {
+    "morph": "s.ate",
+    "form": "ate",
+    "gloss": "使…；动词后缀"
+   }
+  ],
+  "inflectionOnly": false
+ },
+ {
+  "form": "strictly",
+  "freqRank": 3932,
+  "pos": "adv.",
+  "etym": "拉丁 strictus(拉紧) + -ly",
+  "pieces": [
+   {
+    "morph": "r.strict",
+    "form": "strict",
+    "gloss": "拉紧，束缚"
+   },
+   {
+    "morph": "s.ly",
+    "form": "ly",
+    "gloss": "以…方式"
+   }
+  ],
+  "inflectionOnly": false
+ },
+ {
+  "form": "identical",
+  "freqRank": 4960,
+  "pos": "adj.",
+  "etym": "拉丁 identitas(同一) + -ical",
+  "pieces": [
+   {
+    "morph": null,
+    "form": "ident",
+    "gloss": "同一（整体借入，清单无对应词根）"
+   },
+   {
+    "morph": "s.ic",
+    "form": "ic",
+    "gloss": "…的"
+   },
+   {
+    "morph": null,
+    "form": "al",
+    "gloss": "形容词后缀（清单无 -al）"
+   }
+  ],
+  "inflectionOnly": false
+ },
+ {
+  "form": "villagers",
+  "freqRank": 5235,
+  "pos": "n.",
+  "etym": "拉丁 villa(乡间宅邸) → village + -er + -s",
+  "pieces": [
+   {
+    "morph": null,
+    "form": "villag",
+    "gloss": "村庄（整体借入，清单无对应词根）"
+   },
+   {
+    "morph": "s.er",
+    "form": "er",
+    "gloss": "…的人"
+   },
+   {
+    "morph": "s.plural",
+    "form": "s",
+    "gloss": "复数"
+   }
+  ],
+  "inflectionOnly": false
+ },
+ {
+  "form": "tasted",
+  "freqRank": 5355,
+  "pos": "v.",
+  "etym": "taste（古法语 taster）+ -ed",
+  "pieces": [
+   {
+    "morph": null,
+    "form": "tast",
+    "gloss": "品尝（整体借入，清单无对应词根）"
+   },
+   {
+    "morph": "s.ed",
+    "form": "ed",
+    "gloss": "过去式/过去分词"
+   }
+  ],
+  "inflectionOnly": true
+ },
+ {
+  "form": "federation",
+  "freqRank": 5571,
+  "pos": "n.",
+  "etym": "拉丁 foedus/feder-(盟约) + -ation",
+  "pieces": [
+   {
+    "morph": null,
+    "form": "feder",
+    "gloss": "盟约（整体借入，清单无对应词根）"
+   },
+   {
+    "morph": "s.tion",
+    "form": "ation",
+    "gloss": "名词后缀：动作、过程、结果"
+   }
+  ],
+  "inflectionOnly": false
+ },
+ {
+  "form": "semester",
+  "freqRank": 6101,
+  "pos": "n.",
+  "etym": "拉丁 sex（六）+ mensis（月）→ 德语 Semester",
+  "pieces": [
+   {
+    "morph": "p.semi",
+    "form": "se",
+    "gloss": "半，部分"
+   },
+   {
+    "morph": null,
+    "form": "mester",
+    "gloss": "拉丁 mensis=月（清单无对应词根）"
+   }
+  ],
+  "inflectionOnly": false
+ },
+ {
+  "form": "biscuits",
+  "freqRank": 6426,
+  "pos": "n.",
+  "etym": "拉丁 bis（两次）+ coctus（烤）→ 古法语 bescuit，英语 biscuit + 复数 -s",
+  "pieces": [
+   {
+    "morph": null,
+    "form": "biscuit",
+    "gloss": "饼干（整体借入，清单无对应词根）"
+   },
+   {
+    "morph": "s.plural",
+    "form": "s",
+    "gloss": "名词复数"
+   }
+  ],
+  "inflectionOnly": true
+ },
+ {
+  "form": "stereo",
+  "freqRank": 6754,
+  "pos": "n.",
+  "etym": "希腊 stereos(坚固、立体)",
+  "pieces": [
+   {
+    "morph": "r.stere",
+    "form": "stere",
+    "gloss": "立体，坚固"
+   },
+   {
+    "morph": null,
+    "form": "o",
+    "gloss": "连接字母"
+   }
+  ],
+  "inflectionOnly": false
+ },
+ {
+  "form": "embarrassment",
+  "freqRank": 6914,
+  "pos": "n.",
+  "etym": "法语 embarrasser(阻碍) + -ment",
+  "pieces": [
+   {
+    "morph": "p.en",
+    "form": "em",
+    "gloss": "使…进入状态"
+   },
+   {
+    "morph": null,
+    "form": "barrass",
+    "gloss": "阻碍（整体借入，清单无对应词根）"
+   },
+   {
+    "morph": "s.ment",
+    "form": "ment",
+    "gloss": "名词后缀：结果、行为"
+   }
+  ],
+  "inflectionOnly": false
+ },
+ {
+  "form": "genuinely",
+  "freqRank": 7380,
+  "pos": "adv.",
+  "etym": "拉丁 genuinus(天生的) → genuine + -ly",
+  "pieces": [
+   {
+    "morph": null,
+    "form": "genuine",
+    "gloss": "真正的（整体借入，清单无对应词根）"
+   },
+   {
+    "morph": "s.ly",
+    "form": "ly",
+    "gloss": "以…方式"
+   }
+  ],
+  "inflectionOnly": false
+ },
+ {
+  "form": "incapable",
+  "freqRank": 7450,
+  "pos": "adj.",
+  "etym": "拉丁 in-(否定) + capabilis(能抓住的) ← capere(抓) + -abilis",
+  "pieces": [
+   {
+    "morph": "p.in",
+    "form": "in",
+    "gloss": "否定"
+   },
+   {
+    "morph": "r.cap",
+    "form": "cap",
+    "gloss": "抓，取，拿"
+   },
+   {
+    "morph": "s.able",
+    "form": "able",
+    "gloss": "可…的"
+   }
+  ],
+  "inflectionOnly": false
+ },
+ {
+  "form": "automobile",
+  "freqRank": 8191,
+  "pos": "n.",
+  "etym": "希腊 auto-(自己) + 拉丁 mobilis(可动的)",
+  "pieces": [
+   {
+    "morph": "p.auto",
+    "form": "auto",
+    "gloss": "自己，自动"
+   },
+   {
+    "morph": null,
+    "form": "mobile",
+    "gloss": "可动的（整体借入，清单无对应词根）"
+   }
+  ],
+  "inflectionOnly": false
+ },
+ {
+  "form": "cruelty",
+  "freqRank": 8064,
+  "pos": "n.",
+  "etym": "拉丁 crudelis(残忍) → cruel + -ty",
+  "pieces": [
+   {
+    "morph": null,
+    "form": "cruel",
+    "gloss": "残忍的（整体借入，清单无对应词根）"
+   },
+   {
+    "morph": "s.ity",
+    "form": "ty",
+    "gloss": "性质、状态"
+   }
+  ],
+  "inflectionOnly": false
+ },
+ {
+  "form": "tuition",
+  "freqRank": 8082,
+  "pos": "n.",
+  "etym": "拉丁 tueri(看护、保护) → tuit- + -ion",
+  "pieces": [
+   {
+    "morph": null,
+    "form": "tuit",
+    "gloss": "看护、保护（整体借入，清单无对应词根）"
+   },
+   {
+    "morph": "s.tion",
+    "form": "ion",
+    "gloss": "动作、过程、结果"
+   }
+  ],
+  "inflectionOnly": false
+ },
+ {
+  "form": "treacherous",
+  "freqRank": 9166,
+  "pos": "adj.",
+  "etym": "古法语 trecher(欺骗) + -ous",
+  "pieces": [
+   {
+    "morph": null,
+    "form": "treacher",
+    "gloss": "欺骗者（古法语 trecher，清单无对应词根）"
+   },
+   {
+    "morph": "s.ous",
+    "form": "ous",
+    "gloss": "充满…的"
+   }
+  ],
+  "inflectionOnly": false
+ },
+ {
+  "form": "inject",
+  "freqRank": 9448,
+  "pos": "v.",
+  "etym": "拉丁 in-(向内) + jacere(投掷) → inject",
+  "pieces": [
+   {
+    "morph": "p.in",
+    "form": "in",
+    "gloss": "向内、进入"
+   },
+   {
+    "morph": "r.ject",
+    "form": "ject",
+    "gloss": "投，掷"
+   }
+  ],
+  "inflectionOnly": false
+ },
+ {
+  "form": "journalism",
+  "freqRank": 9525,
+  "pos": "n.",
+  "etym": "拉丁 diurnalis(每日的) → journal + -ism",
+  "pieces": [
+   {
+    "morph": null,
+    "form": "journal",
+    "gloss": "日报、期刊（整体借入，清单无对应词根）"
+   },
+   {
+    "morph": "s.ist",
+    "form": "ism",
+    "gloss": "名词后缀：…主义、…行业"
+   }
+  ],
+  "inflectionOnly": false
+ },
+ {
+  "form": "electromagnetic",
+  "freqRank": 10116,
+  "pos": "adj.",
+  "etym": "electro(电，源自希腊 elektron 琥珀) + magnet(磁，源自希腊 magnetis) + -ic",
+  "pieces": [
+   {
+    "morph": null,
+    "form": "electro",
+    "gloss": "电（整体借入，清单无对应词根）"
+   },
+   {
+    "morph": null,
+    "form": "magnet",
+    "gloss": "磁（整体借入，清单无对应词根）"
+   },
+   {
+    "morph": "s.ic",
+    "form": "ic",
+    "gloss": "…的，与…有关"
+   }
+  ],
+  "inflectionOnly": false
+ },
+ {
+  "form": "triad",
+  "freqRank": 11252,
+  "pos": "n.",
+  "etym": "希腊 trias（三合一）= tri-（三）+ -ad",
+  "pieces": [
+   {
+    "morph": "p.tri",
+    "form": "tri",
+    "gloss": "三"
+   },
+   {
+    "morph": null,
+    "form": "ad",
+    "gloss": "名词词尾（整体借入，清单无对应词根）"
+   }
+  ],
+  "inflectionOnly": false
+ },
+ {
+  "form": "dangerously",
+  "freqRank": 11140,
+  "pos": "adv.",
+  "etym": "古法语 dangier(权势) + -ous + -ly",
+  "pieces": [
+   {
+    "morph": null,
+    "form": "danger",
+    "gloss": "危险（古法语 dangier，清单无对应词根）"
+   },
+   {
+    "morph": "s.ous",
+    "form": "ous",
+    "gloss": "充满…的"
+   },
+   {
+    "morph": "s.ly",
+    "form": "ly",
+    "gloss": "以…方式"
+   }
+  ],
+  "inflectionOnly": false
+ },
+ {
+  "form": "theatrical",
+  "freqRank": 11163,
+  "pos": "adj.",
+  "etym": "希腊 theatron(剧场) + -ical",
+  "pieces": [
+   {
+    "morph": null,
+    "form": "theatr",
+    "gloss": "剧场（整体借入，清单无对应词根）"
+   },
+   {
+    "morph": "s.ic",
+    "form": "ical",
+    "gloss": "…的，与…有关"
+   }
+  ],
+  "inflectionOnly": false
+ }
+]
