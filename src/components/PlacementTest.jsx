@@ -54,6 +54,7 @@ export default function PlacementTest({
   running = false,
   done = false,
   result = null,
+  startError = '',
   onStart,
   onAnswer,
   onSubmit,
@@ -95,9 +96,18 @@ export default function PlacementTest({
     const idx = Math.min(answeredCount, items.length - 1)
     const current = items[idx]
     if (!current) {
+      // ★ 别再无限「正在出题…」：出题失败是有原因的（词频分档未就绪 / 词库未加载完）。
+      //   把原因显示出来，并允许返回入口重试，否则用户只能干等。
       return (
-        <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-400">
-          正在出题…
+        <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-5">
+          <div className="text-sm text-amber-800">{startError || '暂时出不了题，请稍后再试。'}</div>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="mt-3 px-3 py-1.5 rounded-lg border border-amber-300 text-amber-800 text-xs hover:bg-amber-100"
+          >
+            返回
+          </button>
         </div>
       )
     }

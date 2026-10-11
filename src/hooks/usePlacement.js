@@ -32,6 +32,8 @@ import { clearPlacement, readPlacement, writePlacement } from '../lib/placementS
 export function usePlacement(words, bands, scope) {
   const stored = useMemo(() => readPlacement(scope), [scope])
   const [session, setSession] = useState(null)
+  /** 出题失败的**可读原因**；空串 = 无。用于把「正在出题…」的永久卡死换成一句可行动的提示。 */
+  const [startError, setStartError] = useState('')
 
   /** 正在进行的这一份（题 + 已答）；null = 没在测 */
   const probe = session || stored || null
@@ -55,7 +57,14 @@ export function usePlacement(words, bands, scope) {
   const start = useCallback(() => {
     if (!Array.isArray(words) || words.length === 0) return
     const p = buildPlacementProbe(words, bands)
-    if (p.items.length === 0) return
+    // ★ 出不来题时**不许静默 return**：那会让界面永远停在「正在出题…」。
+    //   最常见成因是 bands 只剩一档（maxRank 尚未算出时 buildBands(0) = ["全部"]），
+    //   此时 probeBands 为空 ⇒ items 长度 0。宁可给出可读的原因也不要吞掉。
+    if (!p || !Array.isArray(p.items) || p.items.length === 0) {
+      setStartError('暂时出不了题（词频分档还没就绪），请稍后再试或直接用默认档开始。')
+      return
+    }
+    setStartError('')
     setSession({ probe: p, answers: {} })
   }, [words, bands])
 
@@ -91,6 +100,8 @@ export function usePlacement(words, bands, scope) {
   return {
     /** 出题总数（未出题时为 0） */
     size: items.length,
+    /** 出题失败原因（空串 = 无）；供 UI 显示而不是无限「正在出题…」 */
+    startError,
     /** 题目（存的是当时那一份） */
     items,
     /** 已作答数 */
