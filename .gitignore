@@ -41,7 +41,9 @@ scripts/.race-bundle.mjs
 scripts/.qa2-*.mjs
 scripts/.qa2-*.bundle.mjs
 # test:daily-ui 的 esbuild 临时产物（每次运行重建一个目录）
-scripts/.test-daily-ui-tmp/
+# 脚本收尾会把临时目录 rename 成 *.done（避开本机 safe-delete 的批量删除闸门），
+# 所以用 tmp* 一次覆盖 .tmp/ 与 .tmp.done/，否则每次跑完都在 git status 里留垃圾。
+scripts/.test-daily-ui-tmp*/
 
 # vite 构建/开发时生成的临时产物（可达上百 MB）
 vite.config.js.timestamp-*.mjs
