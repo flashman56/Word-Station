@@ -40,6 +40,8 @@ scripts/.race-bundle.mjs
 # QA 复核脚本（qa2-*）打包出来的临时 bundle
 scripts/.qa2-*.mjs
 scripts/.qa2-*.bundle.mjs
+# test:daily-ui 的 esbuild 临时产物（每次运行重建一个目录）
+scripts/.test-daily-ui-tmp/
 
 # vite 构建/开发时生成的临时产物（可达上百 MB）
 vite.config.js.timestamp-*.mjs
