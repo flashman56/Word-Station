@@ -60,7 +60,7 @@ const W = [
   { id: 'w.abandonderiv', form: 'abandonderiv', gloss: '放弃（合成测试词）', morphs: ['m.don', 'm.ment'], chain: [{ form: 'abandon', gloss: '放弃' }], freqRank: 7000, cefr: 'C1' },
   { id: 'w.don', form: 'don', gloss: '穿上', morphs: ['m.don'], chain: [{ form: 'don', gloss: '穿上' }], freqRank: 800, cefr: 'A2' },
   { id: 'w.random', form: 'random', gloss: '随机的', morphs: ['m.rand'], chain: [{ form: 'random', gloss: '随机' }], freqRank: 1500, cefr: 'B1' },
-  // 无词素：走 familyOf 按词形反查
+  // 无词素：无词根 → 不凑同族（见 caseDerivatives）
   { id: 'w.determined', form: 'determined', gloss: '坚决的', morphs: [], chain: [], morphless: true, kind: 'loan', freqRank: 2000, cefr: 'B1', formRep: 'w.determine' },
   { id: 'w.determination', form: 'determination', gloss: '决心', morphs: ['m.rand'], chain: [{ form: 'determin', gloss: '决定' }], freqRank: 2200, cefr: 'B2' },
   // 只有 formRep、没有 lemma 的代表形（determined 的展示代表形，本身不被折叠）
@@ -136,10 +136,12 @@ function caseDerivatives() {
   })
   ok(!ids(excluded).includes('w.abandoner') && !ids(excluded).includes('w.don'), '★ excludeIds 生效')
 
-  // 无词素 → familyOf 按词形反查
+  // ★ 无词素 → familyOf 现在按**词根**分组，morphless 词没有词根 ⇒ 恒为空 ★
+  //   旧口径（按词形反查）会把 determined 和 determination 归为一族，纯粹因为拼写
+  //   都以 "determin" 开头 —— 那是猜测，不是词源。现口径宁缺毋滥：宁可不给。
   const morphless = model.derivativesOf(W.find((w) => w.id === 'w.determined'))
-  ok(ids(morphless).includes('w.determination'), `★ 无词素词按词形反查到 determination（实际 ${ids(morphless).join(',')}）`)
-  ok(!ids(morphless).includes('w.determined'), '无词素词不含自身')
+  ok(ids(morphless).length === 0, `★ 无词素词不再按词形凑同族（实际 ${ids(morphless).join(',') || '空'}）`)
+  ok(!ids(morphless).includes('w.determination'), '★ 不再把拼写相近的 determination 硬塞进来')
 
   ok(model.derivativesOf(null).length === 0, 'null → 派生词为空（不抛错）')
 }

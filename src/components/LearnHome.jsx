@@ -1,20 +1,22 @@
 import React from 'react'
 import { STATUS, STATS_SCOPE } from '../lib/derive.js'
 import { describeMigrationReport } from '../lib/migrationCopy.js'
+import DailyTask from './DailyTask.jsx'
 import VocabCard from './VocabCard.jsx'
 
 /**
  * 学习首页（进入「学习」页签默认看到的）。
  *
- * 三张统计卡（未知 / 待复习 / 已掌握，数字来自 useLearn.stats，去重口径）；
- * 掌握进度条（已知 / 全量 310）；
- * 主按钮：有待复习时「优先复习（N）」，否则「开始学习（N）」，副按钮可手动切另一模式；
- * 空状态与迁移提示。
+ * ★ 第一块是 DailyTask（「今天该做什么」），不是统计卡 ★
+ * 三张统计卡（未知 / 待复习 / 已掌握，数字来自 useLearn.stats，去重口径）紧随其后；
+ * 掌握进度条（已知 / 全量 310）；难度分档与成组开关；空状态与迁移提示。
  *
  * props:
- *   stats           useLearn.stats { unknown, review, known, total }
+ *   stats           useLearn.stats { unknown, review, known, total, scheduled }
  *   learnQueue      useLearn.learnQueue
  *   reviewQueue     useLearn.reviewQueue
+ *   daily           useLearn.daily（今天该做什么：到期数 / 新学数 / 预计分钟 /
+ *                   已排期 / 24h 内到期）。**不传则退回 FallbackActions**（旧行为）。
  *   onStartLearn    () => void
  *   onStartReview   () => void
  *   migrationReport 迁移报告 { known, review, unknown, ... } 或 null
@@ -39,6 +41,7 @@ export default function LearnHome({
   reviewQueue = [],
   onStartLearn,
   onStartReview,
+  daily = null,
   migrationReport = null,
   band = 'all',
   bands = [],
@@ -59,10 +62,6 @@ export default function LearnHome({
   const total = stats.total || STATS_SCOPE
   const knownPct = total > 0 ? Math.round((stats.known / total) * 100) : 0
 
-  const hasReview = reviewQueue.length > 0
-  const hasLearn = learnQueue.length > 0
-  const isEmpty = !hasReview && !hasLearn
-
   /* 迁移提示：措辞由 lib/migrationCopy.js 统一产出（Sidebar 共用同一份）。
      ★ 判据不是「有没有 report」，而是「有没有值得说的话」——
        inheritFreqKnown 关掉且无旧版数据时返回 null，此时整块不渲染，
@@ -78,6 +77,22 @@ export default function LearnHome({
 
   return (
     <div className="max-w-3xl mx-auto py-2">
+      {/* ★ 第一块是「今天该做什么」，不是统计 ★
+          原来这块位置放的是三张统计卡（未知 / 待复习 / 已掌握）—— 用户得先在
+          三个数字里自己判断该点哪个按钮。「今天该复习 N 个、约 M 分钟」把这个判断
+          直接给出结论，并按「先清到期复习、再学新词」的顺序排序动作。
+          daily 为 null 时（如未接线的调用方）整块不渲染，下面的旧操作区兜底。 */}
+      {daily ? (
+        <DailyTask daily={daily} onStartReview={onStartReview} onStartLearn={onStartLearn} />
+      ) : (
+        <FallbackActions
+          learnQueue={learnQueue}
+          reviewQueue={reviewQueue}
+          onStartLearn={onStartLearn}
+          onStartReview={onStartReview}
+        />
+      )}
+
       {/* 三态统计卡 */}
       <div className="grid grid-cols-3 gap-3">
         {cards.map(({ key, value }) => {
@@ -254,49 +269,63 @@ export default function LearnHome({
         </div>
       )}
 
-      {/* 主操作区 */}
-      <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-6 text-center">
-        {isEmpty ? (
-          <p className="text-sm text-slate-500">
-            暂无待学 / 待复习词，去词库里挑几个标「记得」吧。
-          </p>
-        ) : (
-          <div className="flex flex-col items-center gap-3">
-            {hasReview ? (
-              <button
-                onClick={onStartReview}
-                className="w-full max-w-xs py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-medium transition-colors"
-              >
-                优先复习（{reviewQueue.length}）
-              </button>
-            ) : (
-              <button
-                onClick={onStartLearn}
-                className="w-full max-w-xs py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors"
-              >
-                开始学习（{learnQueue.length}）
-              </button>
-            )}
-
-            {/* 副按钮：手动切另一模式（仅当另一模式有词时） */}
-            {hasReview && hasLearn && (
-              <button
-                onClick={onStartLearn}
-                className="w-full max-w-xs py-2.5 rounded-xl border border-blue-200 text-blue-600 hover:bg-blue-50 text-sm font-medium transition-colors"
-              >
-                改为开始学习（{learnQueue.length}）
-              </button>
-            )}
-          </div>
-        )}
-      </div>
-
       {/* 迁移提示 */}
       {migrationNote && (
         <p className="mt-4 text-xs text-slate-400 text-center">
           {migrationNote.text}
         </p>
       )}
+    </div>
+  )
+}
+
+/**
+ * 没有 `daily` 时的兜底操作区（= 本模块接入前的原样行为）。
+ *
+ * ★ 为什么保留而不是直接删 ★
+ *   LearnHome 被两处复用（学习页 / StationLearn），任一调用方漏传 daily 时，
+ *   若只剩统计卡，用户会发现「今天没有任何入口能开始学习」—— 一个比旧行为
+ *   明显更差的结果。保留它让漏传退化为「没有新功能」，而不是「功能消失」。
+ */
+function FallbackActions({ learnQueue, reviewQueue, onStartLearn, onStartReview }) {
+  const hasReview = reviewQueue.length > 0
+  const hasLearn = learnQueue.length > 0
+  if (!hasReview && !hasLearn) {
+    return (
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 text-center">
+        <p className="text-sm text-slate-500">暂无待学 / 待复习词，去词库里挑几个标「记得」吧。</p>
+      </div>
+    )
+  }
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-6 text-center">
+      <div className="flex flex-col items-center gap-3">
+        {hasReview ? (
+          <button
+            onClick={onStartReview}
+            className="w-full max-w-xs py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-medium transition-colors"
+          >
+            优先复习（{reviewQueue.length}）
+          </button>
+        ) : (
+          <button
+            onClick={onStartLearn}
+            className="w-full max-w-xs py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors"
+          >
+            开始学习（{learnQueue.length}）
+          </button>
+        )}
+
+        {/* 副按钮：手动切另一模式（仅当另一模式有词时） */}
+        {hasReview && hasLearn && (
+          <button
+            onClick={onStartLearn}
+            className="w-full max-w-xs py-2.5 rounded-xl border border-blue-200 text-blue-600 hover:bg-blue-50 text-sm font-medium transition-colors"
+          >
+            改为开始学习（{learnQueue.length}）
+          </button>
+        )}
+      </div>
     </div>
   )
 }

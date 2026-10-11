@@ -41,6 +41,55 @@ import {
 } from '../lib/migrate.js'
 import { countScheduled } from '../lib/scheduled.js'
 import { buildFoldView } from '../lib/lemmaFold.js'
+import { buildDailyTask, nextDueChangeAt } from '../lib/daily.js'
+
+/**
+ * 到期时钟（dueNow）的最大回跳间隔。
+ *
+ * ★ 为什么需要它 ★
+ *   到期判定（isReviewDue）读的是 `new Date()`，而本文件所有派生都被 useMemo 缓存 ——
+ *   没有时钟推进，页面开着不动，「今天该复习 N 个」就会停在上次渲染那一刻。
+ *   `nextDueAt` 只在**答错**时写（唯一调度规则 = +24h），所以到期集合真正发生变化的
+ *   时刻是**可预知的**：就是记录里那个 nextDueAt。定时器按那一刻精确唤醒，
+ *   不做轮询。
+ *
+ * ★ 为什么还有 10 分钟兜底 ★
+ *   后台标签页的 setTimeout 会被浏览器节流，恢复时可能晚几分钟才触发；系统时钟
+ *   被手动改动也会让已排的唤醒点失真。10 分钟一次的重校准把这类漂移的上界压到
+ *   10 分钟 —— 代价是每小时至多 4 次额外渲染，每次只重算到期相关的那几个 memo，
+ *   不是渲染风暴（对比：每答一题本来就会触发同样规模的 countByStatus 重算）。
+ */
+export const DUE_CLOCK_MAX_MS = 10 * 60 * 1000
+
+/**
+ * 到期时钟 hook —— 给「凡是独立派生到期相关数字的组件」用。
+ *
+ * 返回一个随时间推进的 ISO 字符串。**不是** Date 对象：它要作为 useMemo 的依赖，
+ * 必须是可比较的值类型。
+ *
+ * ★ 为什么单独抽出来 ★
+ *   useLearn 与 StationLearn 各有一套折叠视图与抽词池，但到期语义完全一样。
+ *   两者共用这一个 hook，「今天该复习几个」在两处就必然同口径 —— 若各自写一份
+ *   定时器，迟早会出现学习页说 7 个、小站说 6 个（同一条记录、同一套判据）。
+ *
+ * @param {Array}  words    词表（用于找下一次到期时刻）
+ * @param {object} records  学习记录
+ * @returns {string} 当前时间（ISO 8601）
+ */
+export function useDueClock(words, records) {
+  const [dueNow, setDueNow] = useState(() => new Date().toISOString())
+  useEffect(() => {
+    const nowMs = Date.now()
+    const changeAt = nextDueChangeAt(words, records, new Date(nowMs).toISOString())
+    const waitMs = Math.min(
+      DUE_CLOCK_MAX_MS,
+      changeAt == null ? DUE_CLOCK_MAX_MS : Math.max(1000, changeAt - nowMs + 1000),
+    )
+    const timer = setTimeout(() => setDueNow(new Date().toISOString()), waitMs)
+    return () => clearTimeout(timer)
+  }, [words, records, dueNow])
+  return dueNow
+}
 
 /**
  * 难度分档常量（区间语义）：
@@ -554,6 +603,23 @@ export function useLearn(
   )
 
   /**
+   * 三态去重计数（不含「已排期」）。
+   *
+   * ★ 单独拆一个 memo，是为了让时钟推进不重跑它 ★
+   *   countByStatus 要给 6 万个词各分配一个 getRecord 补全对象，是本文件最贵的一遍。
+   *   它只看 status、**与时间无关** —— 若把它和 countScheduled 放进同一个 memo，
+   *   每 10 分钟一次的时钟校准就会连带重跑它。拆开后，dueNow 变化只重跑
+   *   countScheduled（不分配对象）与下面的 daily。
+   */
+  const statusCounts = useMemo(() => countByStatus(foldStatWords, foldRecords), [foldStatWords, foldRecords])
+
+  /**
+   * 到期时钟：本 hook 内**唯一**的「现在」（实现见文件顶部的 useDueClock）。
+   * 唤醒策略：精确到下一次到期时刻 + DUE_CLOCK_MAX_MS 兜底重校准，不做轮询。
+   */
+  const dueNow = useDueClock(foldStatWords, foldRecords)
+
+  /**
    * 三态统计 + 「已排期」。
    *
    * ★★ 为什么 `scheduled` 挂在 stats 对象里，而不是单独 return 一个字段 ★★
@@ -578,12 +644,13 @@ export function useLearn(
    *   折叠后 total 自然收缩到「学习单元数」，学习页进度条分母（stats.total）随之变小；
    *   STATS_SCOPE 常量保持「词库总量」语义，仅作空态兜底（见 derive.js 注释）。
    *
-   * 成本：比原先多一遍 6 万词的遍历，但与 stats 共用同一组依赖
-   * （foldStatWords / foldRecords），只在二者变化时重算，不进渲染热路径。
+   * ★ now 显式传 dueNow（不再让 countScheduled 自读时钟）★
+   *   队列、统计、日行三者共用同一个时间点，避免「已排期 / 待复习 / 今天要复习」
+   *   三个数字来自三个不同瞬间。
    */
   const stats = useMemo(
-    () => ({ ...countByStatus(foldStatWords, foldRecords), scheduled: countScheduled(foldStatWords, foldRecords) }),
-    [foldStatWords, foldRecords],
+    () => ({ ...statusCounts, scheduled: countScheduled(foldStatWords, foldRecords, dueNow) }),
+    [statusCounts, foldStatWords, foldRecords, dueNow],
   )
   // 难度分档只收窄学习抽词池；复习队列仍取全库（选档不影响已加入待复习的词）。
   // ★ 两者都走折叠视图：队列单元即代表形，与统计口径一致。
@@ -605,10 +672,36 @@ export function useLearn(
     [learnPool, foldRecords, roundSize, groupByFamily, familyKeyOf],
   )
   // 复习队列：只排已到期词（nextDueAt 为空 / 已过期；未到期不排，答错 +1 天）
+  //
+  // ★ now 从 dueNow 取，不再各自 new Date() ★
+  //   原先这一行与 scheduled.js:33 各读一次系统时钟：两次采样之间若跨过到期边界，
+  //   「待复习总数」与「已排期」会同时属于两个时间点，出现「已排期 3，待复习 0」
+  //   这类自相矛盾的显示（scheduled.js 的注释已经把它列为必须避免的反例）。
+  //   统一到同一个 dueNow 之后，子集关系由构造保证。
   const reviewQueue = useMemo(
-    () => buildReviewQueue(foldStatWords, foldRecords, roundSize, new Date().toISOString()),
-    [foldStatWords, foldRecords, roundSize],
+    () => buildReviewQueue(foldStatWords, foldRecords, roundSize, dueNow),
+    [foldStatWords, foldRecords, roundSize, dueNow],
   )
+
+  /**
+   * 「今天这一轮」：到期数 / 新学数 / 本轮各取几个 / 预计分钟 / 已排期 / 24h 内到期数。
+   *
+   * 复用既有池与既有判据，不新增数据：dueTotal 与 reviewQueue 同源（同一个
+   * foldStatWords + foldRecords + dueNow），newTotal 与 learnQueue 同源（同一个
+   * learnPool），scheduled 走 countScheduled。
+   */
+  const daily = useMemo(
+    () =>
+      buildDailyTask({
+        reviewPool: foldStatWords,
+        learnPool,
+        records: foldRecords,
+        now: dueNow,
+        roundSize,
+      }),
+    [foldStatWords, learnPool, foldRecords, dueNow, roundSize],
+  )
+
   // ★ recordOf 对外仍走**未折叠** records（与 learn.records 同口径）★
   //   卡片展示的是代表形自身记录；跨词形的合并进度只体现在队列与统计里。
   const recordOf = useCallback((wordId) => getRecord(records, wordId), [records])
@@ -619,6 +712,12 @@ export function useLearn(
     scope: scopeRef.current,
     statWords,
     stats,
+    /**
+     * 「今天这一轮」。**刻意不塞进 stats** —— stats 是「三态计数」这个概念的
+     * 单一数据源，混入时间预估会让它的语义变浑；daily 独立成字段，语义自洽。
+     * App.jsx 需显式透传（见 App.jsx 的 daily={learn.daily}），本文件不碰 App.jsx。
+     */
+    daily,
     learnQueue,
     reviewQueue,
     answer,

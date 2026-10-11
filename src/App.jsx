@@ -19,6 +19,7 @@ import { buildWordForms } from './lib/wordForms.js'
 import { phoneticsOfAsync } from './lib/dict.js'
 import { shouldShowPhoneticPending } from './lib/phoneticDisplay.js'
 import { estimateVocabulary } from './lib/vocab.js'
+import { buildWeeklySummary, rewindNewlyMastered } from './lib/daily.js'
 import { MAX_VOCAB_PRIVATE_WORDS } from './lib/derive.js'
 import { useSettings } from './hooks/useSettings.js'
 import { buildBands, normalizeBand } from './hooks/useLearn.js'
@@ -32,6 +33,7 @@ import { useUserWords } from './hooks/useUserWords.js'
 import Sidebar from './components/Sidebar.jsx'
 import LearnHome from './components/LearnHome.jsx'
 import StudySession from './components/StudySession.jsx'
+import WeeklySummary from './components/WeeklySummary.jsx'
 import WordRow from './components/WordRow.jsx'
 import SpeakerButton from './components/SpeakerButton.jsx'
 import EtymologyPanel from './components/EtymologyPanel.jsx'
@@ -321,6 +323,30 @@ function AppShell({ words, auth, stations, sync }) {
   const vocabIncludesPrivate = userWords.words.length <= MAX_VOCAB_PRIVATE_WORDS
   const vocabInput = vocabIncludesPrivate ? learn.statWords : words
   const vocab = useMemo(() => estimateVocabulary(vocabInput, learn.records), [vocabInput, learn.records])
+
+  /**
+   * 最近 7 天小结（纯本地；无网络、无新数据）。
+   *
+   * ★ 为什么「上周的词汇量估算」是**反事实**而不是快照 ★
+   *   学习记录是就地覆盖的，每次答题重写同一条，本地不留历史版本 ——
+   *   7 天前那份估算无从重算。所以这里做的唯一诚实的事是：把「本周新增掌握」
+   *   这一个事件回退掉，再跑一遍**同一个** vocab.js 估算器（vocab.js 本身零改动），
+   *   得到一个明确定义的假设值。UI 上照实标注「假设…」，不冒充历史。
+   *
+   * ★ 为什么两次估算共用 vocabInput ★
+   *   必须与上面那个 vocab 走**完全相同**的输入词表（含 B-8 私有词回退护栏），
+   *   否则「从 → 到」的两端口径不同，算出来的差值毫无意义。
+   *
+   * ★ 成本 ★
+   *   vocab.js 每次约 55ms（6.4 万词 × 2 遍），与已有的 vocab 同为
+   *   「records 变化才重算」，不进渲染热路径。
+   */
+  const weekly = useMemo(() => {
+    const now = learn.daily ? learn.daily.now : new Date().toISOString()
+    const rewind = rewindNewlyMastered(learn.records, now)
+    const vocabBefore = estimateVocabulary(vocabInput, rewind.records)
+    return buildWeeklySummary({ records: learn.records, now, vocab, vocabBefore })
+  }, [vocabInput, learn.records, learn.daily, vocab])
 
   const bandCounts = useMemo(() => {
     const counts = {}
@@ -706,6 +732,7 @@ function AppShell({ words, auth, stations, sync }) {
                 stats={learn.stats}
                 learnQueue={learn.learnQueue}
                 reviewQueue={learn.reviewQueue}
+                daily={learn.daily}
                 onStartLearn={startLearn}
                 onStartReview={startReview}
                 migrationReport={learn.migrationReport}
@@ -726,6 +753,13 @@ function AppShell({ words, auth, stations, sync }) {
                 privateCount={userWords.words.length}
                 vocabIncludesPrivate={vocabIncludesPrivate}
               />
+
+              {/* 周报独立成块而不是塞进 LearnHome：它只在「学习」页签渲染，
+                  而 LearnHome 还被小站复用 —— 小站用户看到的应是本站的今日任务，
+                  不该混进一份全库口径的周报。 */}
+              <div className="max-w-3xl mx-auto">
+                <WeeklySummary summary={weekly} />
+              </div>
             </div>
           )}
 
@@ -741,6 +775,7 @@ function AppShell({ words, auth, stations, sync }) {
                 onViewInCloud={openWordFromStudy}
                 autoSpeak={filters.autoSpeak === true}
                 relatedOf={wordForms.relatedFor}
+                daily={learn.daily}
               />
             </div>
           )}
@@ -1216,9 +1251,11 @@ function WordDetail({
           </div>
           {/* ★ 同族词互链 ★
               无拆解词没有词素锚点，点不出任何内容 —— 这是「空面板」的第二层原因。
-              这里按词形反查同族词（索引在 AppShell 建好），给的每个 chip 都是
+              这里按**词根**反查同族词（索引在 AppShell 建好），给的每个 chip 都是
               「有真实拆解」的词，点进去能看到构词拆解，不会又撞回空面板。
-              只有确实找不到同族词时，才只剩上面那行 amber 提示。 */}
+              ★ 只有「有词根」的词才查得到：无词根的词一律返回空、不按拼写凑 ——
+                宁缺毋滥，一个拼写相近但不同源的词比没有更伤。
+                找不到时只剩上面那行 amber 提示。 */}
           {stemFamily.length > 0 && (
             <div className="mt-2">
               <div className="text-xs text-slate-500 mb-1">该词无词根拆解，但同族词：</div>

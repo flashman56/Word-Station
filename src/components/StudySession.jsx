@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import StudyCard from './StudyCard.jsx'
+import { describeNextAppointment } from '../lib/daily.js'
 
 /**
  * 一轮学习 / 复习会话容器（受 roundSize 控制，默认 10 词）。
@@ -21,6 +22,7 @@ import StudyCard from './StudyCard.jsx'
  *   onExit      () => void  返回学习首页
  *   onViewInCloud (word) => void  在词云中查看当前词（会话暂停但进度保留）
  *   relatedOf   (word) => { forms, derivatives }  常见变形 / 派生词反查（透传给 StudyCard）
+ *   daily       useLearn.daily —— 仅用于总结页的「下一次预约」一行（见 Summary）
  */
 export default function StudySession({
   mode = 'learn',
@@ -31,6 +33,7 @@ export default function StudySession({
   onViewInCloud,
   autoSpeak = false,
   relatedOf,
+  daily = null,
 }) {
   const [round] = useState(() => (Array.isArray(queue) ? queue.slice() : []))
   const [index, setIndex] = useState(0)
@@ -65,7 +68,7 @@ export default function StudySession({
   const goNext = () => setIndex((i) => i + 1)
 
   if (finished) {
-    return <Summary mode={mode} round={round} results={results} onExit={onExit} />
+    return <Summary mode={mode} round={round} results={results} onExit={onExit} daily={daily} />
   }
 
   // 已完成比例（已作答的词数 / 本轮总数）
@@ -108,7 +111,7 @@ export default function StudySession({
  *   lastStudiedAt，见 lib/learning.js::markKnown），但已不是「盲点一下就毕业」，
  *   故保留在「新增掌握」里、与答对达标并列，不另立口径。
  */
-function Summary({ mode, round, results, onExit }) {
+function Summary({ mode, round, results, onExit, daily = null }) {
   const remembered = results.filter((r) => r && (r.result === 'known' || r.result === 'correct')).length
   const forgot = results.filter((r) => r && r.result === 'incorrect').length
   const mastered = results.filter(
@@ -143,6 +146,14 @@ function Summary({ mode, round, results, onExit }) {
           </div>
         ))}
       </div>
+
+      {/* ★ 下一次预约：让用户带着「明天还有事做」离开 ★
+          数字来自 daily.upcoming24h / daily.scheduled，二者都由记录里的真实
+          nextDueAt 现算（daily.js::countUpcomingDue），不是写死的鼓励语。
+          daily 为 null（调用方未接线）时整块不渲染 —— 宁可没有，也不用假话占位。 */}
+      {daily && (daily.upcoming24h > 0 || daily.scheduled > 0) && (
+        <p className="mt-5 text-sm text-slate-500 leading-relaxed">{describeNextAppointment(daily).text}</p>
+      )}
 
       <button
         onClick={onExit}
