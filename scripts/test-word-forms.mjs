@@ -19,7 +19,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import morphemes from '../src/data/morphemes.js'
 import { buildIndex } from '../src/lib/derive.js'
-import { buildStemIndex } from '../src/lib/stemFamily.js'
+import { buildStemIndex, familyOf } from '../src/lib/stemFamily.js'
 import { isFolded } from '../src/lib/lemmaFold.js'
 import { FORMS_BY_ID } from '../src/data/words-forms.js'
 import { LEMMA_BY_ID } from '../src/data/words-lemma.js'
@@ -144,6 +144,98 @@ function caseDerivatives() {
   ok(!ids(morphless).includes('w.determination'), '★ 不再把拼写相近的 determination 硬塞进来')
 
   ok(model.derivativesOf(null).length === 0, 'null → 派生词为空（不抛错）')
+}
+
+// ================================================================ ②b 同族词：按词根分组（正向路径）
+
+/**
+ * ★ 为什么这一段单独存在 ★
+ *   上面的合成夹具**没有任何一个词是 familyOf 的正向输入**：主夹具里带 `morphs`
+ *   的 7 个词各自共享词素，走的是 derivativesOf 的 morphs 分支；而 familyOf 只在
+ *   `morphs` 为空时才被调用 —— 那批词按新口径恒返回 `[]`。
+ *   换句话说：**改动前 stemFamily.js 的正向逻辑（分桶 / 取根 / 去重）从未被跑过。**
+ *   如果有人改坏「取根规则」或「多词根去重」，既有断言全绿 —— 这正是本段存在的理由。
+ *
+ * ★ 刻意不复用主夹具 ★
+ *   主夹具的词素 id 形如 `m.don`，而 stemFamily 的词根判据是**命名空间**
+ *   （非 `p.` / `s.` / `x.` 即为词根），`m.don` 会被当成词根用。这里另起一套
+ *   与真实词库同构的 `r.*` / `p.*` 夹具，让「词缀不是词根」这条规则可测。
+ *
+ * ★ 不 import 词库 ★
+ *   stemFamily 必须保持纯函数、不拖 28MB 数据进首屏 chunk；测试同理自带夹具。
+ */
+function caseStemFamilyRoots() {
+  console.log('\n— ②b 同族词按**词根**分组（正向路径 + 误报防线）')
+
+  const stem = (id, form, gloss, roots, chainMorphs, freqRank) => ({
+    id,
+    form,
+    gloss,
+    freqRank,
+    morphs: roots,
+    chain: [{ form, gloss }, ...chainMorphs.map((m) => ({ morph: m, form: m.slice(2), gloss: m }))],
+  })
+
+  const R = [
+    // —— r.spect 族：应互相看得见 ——
+    stem('w.spectator', 'spectator', '观众', ['r.spect'], [], 100),
+    stem('w.aspect', 'aspect', '方面', ['r.spect'], [], 200),
+    stem('w.inspect', 'inspect', '检查', ['r.spect'], [], 300),
+    // —— 误报防线：suspect / suspend 共享**前缀 p.sub**，但词根不同 ——
+    //    旧实现按拼写前缀分桶会把这两个归成一族（这正是本次修的 bug）。
+    stem('w.suspect', 'suspect', '怀疑', ['p.sub', 'r.spect'], [], 150),
+    stem('w.suspend', 'suspend', '暂停', ['p.sub', 'r.pend'], [], 160),
+    stem('w.pendulum', 'pendulum', '摆', ['r.pend'], [], 170),
+    // —— 多词根词：jurisdiction = r.jur + r.dict，两族都该看到它 ——
+    stem('w.jurisdiction', 'jurisdiction', '管辖权', ['r.jur', 'r.dict'], [], 400),
+    stem('w.juror', 'juror', '陪审员', ['r.jur'], [], 500),
+    stem('w.dictate', 'dictate', '命令', ['r.dict'], [], 600),
+    // ★ 与 jurisdiction **共享同样两个词根**的词：它同时落在 r.jur 与 r.dict 两个桶里，
+    //   是「同一次结果内去重」唯一可观测的场景 —— 只查 jurisdiction 的话，
+    //   juror 和 dictate 分属不同桶，各出现一次，去重逻辑根本不会被触发。
+    stem('w.juridict', 'juridict', '双根合成测试词', ['r.jur', 'r.dict'], [], 450),
+    // —— 词根**只登记在 chain 里**（morphs 只有前缀）：premise 形态 ——
+    stem('w.premise', 'premise', '前提', ['p.pre'], ['r.mit'], 700),
+    stem('w.commit', 'commit', '承诺', ['r.mit'], [], 800),
+    // —— 只有词缀、无词根：不该被凑出任何族 ——
+    stem('w.undo', 'undo', '撤销', ['p.un'], [], 900),
+    stem('w.undertake', 'undertake', '承担', ['p.un'], [], 950),
+  ]
+
+  const S = buildStemIndex(R)
+  const famOf = (id, cap = 50) => familyOf(S, R.find((w) => w.id === id), cap).map((w) => w.id)
+  const okSet = (got, want, msg) => ok(got.slice().sort().join(',') === want.slice().sort().join(','), `${msg}（实际 ${got.join(',') || '空'}）`)
+
+  // —（1）同词根 ⇒ 同族；不含自身；无重复 —
+  okSet(famOf('w.spectator'), ['w.aspect', 'w.inspect', 'w.suspect'], '★ r.spect 三兄弟互为同族（含 suspect，它也带 r.spect）')
+  ok(!famOf('w.spectator').includes('w.spectator'), '★ 同族结果不含自身')
+
+  // —（2）误报防线：共享前缀 p.sub 但词根不同 ⇒ 不同族 —
+  ok(!famOf('w.suspect').includes('w.suspend'), '★ suspect 不同族 suspend（共享的只是前缀 p.sub）')
+  ok(!famOf('w.suspend').includes('w.suspect'), '★ suspend 不同族 suspect（同上，反向）')
+  ok(famOf('w.suspect').includes('w.spectator'), '★ suspect 仍与 r.spect 同族')
+  okSet(famOf('w.suspend'), ['w.pendulum'], '★ suspend 归入 r.pend 族')
+
+  // —（3）多词根 = 多归属，且并集去重 —
+  okSet(famOf('w.jurisdiction'), ['w.dictate', 'w.juridict', 'w.juror'], '★ 多词根词归属**每个**词根族（并集去重，无重复）')
+  // ★ 真正能观测到去重的查询：juridict 与 jurisdiction 共享 r.jur + r.dict，
+  //   会在两个桶里各命中一次 —— 若去重失效，jurisdiction 会出现两遍。
+  const dbl = famOf('w.juridict')
+  ok(new Set(dbl).size === dbl.length, `★ 同一次结果内无重复 id（实际 ${dbl.join(',')}）`)
+  ok(dbl.filter((id) => id === 'w.jurisdiction').length === 1, `★ 跨桶重复只出现一次（实际出现 ${dbl.filter((id) => id === 'w.jurisdiction').length} 次）`)
+  ok(famOf('w.juror').includes('w.jurisdiction') && famOf('w.dictate').includes('w.jurisdiction'), '★ 关系对称：juror / dictate 都看得到 jurisdiction')
+
+  // —（4）词根并集：只在 chain 里登记的词根也算数 —
+  ok(famOf('w.premise').includes('w.commit'), '★ premise 取到 chain 里的词根 r.mit（morphs 只有 p.pre）')
+
+  // —（5）只有词缀 ⇒ 恒空，绝不按拼写凑 —
+  okSet(famOf('w.undo'), ['w.undertake'].filter(() => false), '★ 只有前缀的 undo 返回空（不与 undertake 按拼写凑族）')
+  okSet(famOf('w.undertake'), [], '★ 只有前缀的 undertake 同样返回空')
+
+  // —（6）鲁棒性 ——
+  ok(familyOf(S, null).length === 0, 'null 词 → 空')
+  ok(familyOf(null, R[0]).length === 0, 'null 索引 → 空')
+  ok(familyOf(S, { id: 'w.nomorp' }).length === 0, '无词素词条 → 空')
 }
 
 // ================================================================ ③ relatedFor 去重链
@@ -406,6 +498,7 @@ async function caseRealData() {
 console.log('[test:word-forms] 常见变形 / 派生词反查模型验证\n')
 caseForms()
 caseDerivatives()
+caseStemFamilyRoots()
 caseRelatedFor()
 caseFormRep()
 caseCache()
