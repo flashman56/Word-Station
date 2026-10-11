@@ -209,6 +209,39 @@ export function morphlessKindLabel(word) {
 }
 
 /**
+ * 把一条 chain 的每个分段 gloss 收敛到词素表的权威释义（单一信源）。
+ * ------------------------------------------------------------------
+ * 背景：chain 里的 gloss 是「拆解当时」写死的，词素表后来被修订/规范化后两者
+ * 就会漂移。实测数万段里约 24~26.6% 与词素表不一致，而 UI（StudyCard /
+ * App / FocusView / EtymologyPanel / WordRow …）直接读 chain[].gloss，会显示
+ * 陈旧释义。本函数让「展示用的 gloss」永远以词素表为准，**只改展示用 gloss**，
+ * 绝不碰 morphs / morphless / 学习记录等红线字段。
+ *   - 分段带 morph id 且词素表里该 id 有非空 gloss → 用表里的；
+ *   - morph 为 null（整体借入段）或表里没有 / 为空 → 保留原 gloss 兜底。
+ *
+ * ★ 不修改入参：仅在确实发生替换时返回新数组，否则原样返回原引用。★
+ *
+ * @param {Array} chain 词条 chain（可能含 morph:null 的整体借入段）
+ * @param {Map<string,string>} glossById 词素 id -> 权威 gloss
+ * @returns {Array} 收敛后的 chain（未变则原引用）
+ */
+export function chainWithCanonicalGloss(chain, glossById) {
+  if (!Array.isArray(chain) || chain.length === 0 || !glossById) return chain
+  let changed = false
+  const out = chain.map((s) => {
+    if (s && s.morph && glossById.has(s.morph)) {
+      const g = glossById.get(s.morph)
+      if (typeof g === 'string' && g.length > 0 && g !== s.gloss) {
+        changed = true
+        return { ...s, gloss: g }
+      }
+    }
+    return s
+  })
+  return changed ? out : chain
+}
+
+/**
  * 建索引：词素 id -> 词素；词素 id -> 其下单词数组；单词 id -> 单词。
  * 一个单词可以挂在多个词素下（网状结构的关键）。
  */

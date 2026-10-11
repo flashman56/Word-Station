@@ -16,6 +16,7 @@ import wordsMonoExtra from './words-mono-extra.js'
 import wordsMonoSeed from './words-mono-seed.js'
 import morphemes from './morphemes.js'
 import wordsRemorph from './words-remorph.js'
+import { chainWithCanonicalGloss } from '../lib/derive.js'
 import wordsLemma, { LEMMA_BY_ID } from './words-lemma.js'
 import wordsForms, { FORMS_BY_ID } from './words-forms.js'
 
@@ -45,6 +46,8 @@ export const WORD_FILES = [
  */
 const REMORPH = new Map(wordsRemorph.map((p) => [p.id, p]))
 const MORPH_IDS = new Set(morphemes.map((m) => m.id))
+// 词素 id -> 权威 gloss（单一信源）。chain 分段 gloss 一律收敛到表里，消除漂移。
+const GLOSS_BY_ID = new Map(morphemes.map((m) => [m.id, m.gloss]))
 
 const rawWords = WORD_FILES.flat()
 export const words = rawWords.map((w) => {
@@ -56,8 +59,16 @@ export const words = rawWords.map((w) => {
   //    只带 formRep、不带 remorph / lemma 的词（如 determined / blown / cleared）
   //    若漏了它，会在这一行被原样 return w，永远拿不到字段 —— 卡面也就永远不显示
   //    它的常见变形。这是本补丁最容易漏的一处。
-  if (hints.length === 0 && !lemma && !formRep) return w
+  if (hints.length === 0 && !lemma && !formRep) {
+    // 早退词也可能自带 chain（base 文件里写死的），同样收敛 gloss
+    if (w.chain && w.chain.length) {
+      const nc = chainWithCanonicalGloss(w.chain, GLOSS_BY_ID)
+      if (nc !== w.chain) return { ...w, chain: nc }
+    }
+    return w
+  }
   const out = hints.length === 0 ? { ...w } : { ...w, morphs: [...(w.morphs || []), ...hints], chain: patch.chain }
+  if (out.chain && out.chain.length) out.chain = chainWithCanonicalGloss(out.chain, GLOSS_BY_ID)
   if (lemma) out.lemma = lemma
   if (formRep) out.formRep = formRep
   return out
