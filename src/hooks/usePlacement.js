@@ -18,6 +18,7 @@ import { useCallback, useMemo, useState } from 'react'
 import {
   PLACEMENT_SAMPLE_SIZE,
   buildPlacementProbe,
+  emptyPlacement,
   scorePlacement,
 } from '../lib/placement.js'
 import { clearPlacement, readPlacement, writePlacement } from '../lib/placementStore.js'
@@ -29,14 +30,10 @@ import { clearPlacement, readPlacement, writePlacement } from '../lib/placementS
  * @returns {object} 见文件末尾的返回值说明
  */
 export function usePlacement(words, bands, scope) {
+  const stored = useMemo(() => readPlacement(scope), [scope])
   const [session, setSession] = useState(null)
   /** 出题失败的**可读原因**；空串 = 无。用于把「正在出题…」的永久卡死换成一句可行动的提示。 */
   const [startError, setStartError] = useState('')
-  // ★ tick：落盘 / 清盘后强制重读 storage。stored 只依赖 scope，不 bump 的话，
-  //   交卷后 session 被清空、但 storage 已写入，memo 因 scope 未变仍读到旧(null)值，
-  //   于是 result 瞬间变 null → 结果表单闪没、又退回入口态。这是线上的老 bug。
-  const [tick, setTick] = useState(0)
-  const stored = useMemo(() => readPlacement(scope), [scope, tick])
 
   /** 正在进行的这一份（题 + 已答）；null = 没在测 */
   const probe = session || stored || null
@@ -47,10 +44,7 @@ export function usePlacement(words, bands, scope) {
    * words 未加载完时返回空结果（组件据此显示「加载中」，而不是给一个 0）。
    */
   const result = useMemo(() => {
-    // ★ 没有 probe（没测过 / 交卷后 storage 尚未就绪）就返回 null，而不是 emptyPlacement()。
-    //   emptyPlacement() 是个 truthy 对象，会让组件入口态的 `!result` 判据失效 ——
-    //   首访时用户看到的不是「从哪一档开始背」入口，而是「这次的作答太薄」结果卡。
-    if (!probe || !Array.isArray(probe.items) || probe.items.length === 0) return null
+    if (!probe || !Array.isArray(probe.items) || probe.items.length === 0) return emptyPlacement()
     if (!Array.isArray(words) || words.length === 0) return null
     return scorePlacement({ items: probe.items, answers, words, bands })
   }, [probe, answers, words, bands])
@@ -58,12 +52,6 @@ export function usePlacement(words, bands, scope) {
   const items = probe && Array.isArray(probe.items) ? probe.items : []
   const answeredCount = answers ? Object.keys(answers).length : 0
   const done = answeredCount >= items.length && items.length > 0
-
-  /** 是否具备开测条件：词库已加载 + 词频分档已就绪（>1 档，排除 maxRank=0 的「全部」单档）。 */
-  const canStart = Boolean(
-    Array.isArray(words) && words.length > 0 &&
-    Array.isArray(bands) && bands.length > 1,
-  )
 
   /** 开测：出题并进入作答态（不落盘 —— 半份作答不该留下持久痕迹） */
   const start = useCallback(() => {
@@ -93,7 +81,6 @@ export function usePlacement(words, bands, scope) {
     setSession((prev) => {
       if (!prev) return prev
       writePlacement(prev.probe, prev.answers, scope)
-      setTick((t) => t + 1) // ★ 触发 stored 重读，否则交卷后 result 闪没
       return null
     })
   }, [scope])
@@ -101,7 +88,6 @@ export function usePlacement(words, bands, scope) {
   /** 重测：清掉当前 scope 的历史结果，重新出题 */
   const retake = useCallback(() => {
     clearPlacement(scope)
-    setTick((t) => t + 1) // ★ 清盘后也让 stored 重读（读到 null）
     setSession(null)
     if (!Array.isArray(words) || words.length === 0) return
     const p = buildPlacementProbe(words, bands)
@@ -126,9 +112,7 @@ export function usePlacement(words, bands, scope) {
     running: Boolean(session),
     /** 已答满 */
     done,
-    /** 是否具备开测条件（词库 + 分档就绪）；入口态按钮据此 disable */
-    canStart,
-    /** 评分结果；没有 probe 或 words 未加载完时为 null（入口态据此显示） */
+    /** 评分结果；words 未加载完时为 null */
     result,
     /** 是否已有可展示的历史结果（已交卷且已算分） */
     hasResult: Boolean(result && (result.sampleSize > 0 || result.itemCount > 0)),
