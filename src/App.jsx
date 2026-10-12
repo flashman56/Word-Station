@@ -807,7 +807,6 @@ function AppShell({ words, auth, stations, sync }) {
                   done={placement.done}
                   result={placement.result}
                   hasResult={placement.hasResult}
-                  canStart={placement.canStart}
                   startError={placement.startError}
                   onStart={placement.start}
                   onAnswer={placement.answer}

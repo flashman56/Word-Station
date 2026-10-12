@@ -55,7 +55,6 @@ export default function PlacementTest({
   done = false,
   result = null,
   startError = '',
-  canStart = true,
   onStart,
   onAnswer,
   onSubmit,
@@ -80,21 +79,10 @@ export default function PlacementTest({
           只做参考，<span className="font-medium text-slate-600">不会改动你的学习记录</span>，
           也不会替你标「已掌握」。
         </p>
-        {/* ★ 出题失败的可读原因：start() 提前 return 时不进作答态（形态 2），
-            琥珀色告警框反而够不到，所以入口态也要把 startError 摆出来 */}
-        {startError && (
-          <div className="mt-3 rounded-md bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-800">
-            {startError}
-          </div>
-        )}
-        {/* 词库 / 分档未就绪：按钮禁用并给一句可行动提示，而不是永久转圈 */}
-        {!canStart && !startError && (
-          <p className="mt-3 text-xs text-slate-400">词库还在加载，稍等片刻就能开始。</p>
-        )}
         <button
           type="button"
           onClick={onStart}
-          disabled={!onStart || !canStart}
+          disabled={!onStart || size === 0}
           className="mt-3 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:hover:bg-blue-600 text-white text-sm font-medium transition-colors"
         >
           开始
