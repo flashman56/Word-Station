@@ -22,6 +22,7 @@ import wordsMonoExtra from './words-mono-extra.js'
 import wordsMonoSeed from './words-mono-seed.js'
 import phonetics, { phoneticsOf } from './phonetics.js'
 import wordsRemorph from './words-remorph.js'
+import wordsBookmorph from './words-bookmorph.js'
 import wordsLemma, { LEMMA_BY_ID } from './words-lemma.js'
 import wordsForms, { FORMS_BY_ID } from './words-forms.js'
 
@@ -38,13 +39,14 @@ export const WORD_FILES = [wordsLatin, wordsGreek, wordsAffix, wordsExtra, words
  *      「常见变形」，不参与折叠 —— 展示与折叠是两件事，见该文件头部注释。
  */
 const REMORPH = new Map(wordsRemorph.map((p) => [p.id, p]))
+const BOOKMORPH = new Map(wordsBookmorph.map((p) => [p.id, p]))
 const MORPH_IDS = new Set(morphemes.map((m) => m.id))
 // 词素 id -> 权威 gloss（单一信源）。chain 分段 gloss 一律收敛到表里，消除漂移。
 const GLOSS_BY_ID = new Map(morphemes.map((m) => [m.id, m.gloss]))
 
 const rawWords = WORD_FILES.flat()
 export const words = rawWords.map((w) => {
-  const patch = REMORPH.get(w.id)
+  const patch = BOOKMORPH.get(w.id) || REMORPH.get(w.id)
   const lemma = LEMMA_BY_ID.get(w.id)
   const formRep = FORMS_BY_ID.get(w.id)
   const hints = patch ? patch.morphHints.filter((mid) => MORPH_IDS.has(mid)) : []
