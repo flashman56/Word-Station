@@ -655,6 +655,23 @@ export function useLearn(
     () => ({ ...statusCounts, scheduled: countScheduled(foldStatWords, foldRecords, dueNow) }),
     [statusCounts, foldStatWords, foldRecords, dueNow],
   )
+  // 词素 id → type 映射：词族键优先取词根（r.*），与词云的「词根为干、单词为叶」口径一致。
+  // ★ 必须放在 familyKeyOf 之前：familyKeyOf 的 useCallback 工厂直接读它。
+  const morphTypes = useMemo(() => {
+    const map = new Map()
+    ;(morphemes || []).forEach((m) => {
+      if (m && m.id) map.set(m.id, m.type)
+    })
+    return map
+  }, [morphemes])
+  // 词族键（词根优先）。★ 必须放在 learnPool 之前 ——
+  // learnPool 的 useMemo 工厂同步调用 familyKeyOf，而 const 在声明行之前处于 TDZ，
+  // 若晚于 learnPool 定义，首屏渲染即 ReferenceError 白屏（线上事故根因：
+  // 01e35be 把它挪到了 learnPool 之后，导致整站「打不开」）。
+  const familyKeyOf = useCallback(
+    (w) => defaultFamilyKeyOf(w, (id) => morphTypes.get(id)),
+    [morphTypes],
+  )
   // 难度分档只收窄学习抽词池；复习队列仍取全库（选档不影响已加入待复习的词）。
   // ★ 两者都走折叠视图：队列单元即代表形，与统计口径一致。
   // 自选词根（selectedRoots）：仅 groupByFamily 时生效，按词族键再收窄新学抽词池；
@@ -668,14 +685,6 @@ export function useLearn(
       return key && set.has(key)
     })
   }, [foldUnits, band, groupByFamily, selectedRoots, familyKeyOf])
-  // 词素 id → type 映射：词族键优先取词根（r.*），与词云的「词根为干、单词为叶」口径一致
-  const morphTypes = useMemo(() => {
-    const map = new Map()
-    ;(morphemes || []).forEach((m) => {
-      if (m && m.id) map.set(m.id, m.type)
-    })
-    return map
-  }, [morphemes])
   // 词素 id → 整条词素对象（取展示形 / 释义用）
   const morphById = useMemo(() => {
     const map = new Map()
@@ -684,10 +693,6 @@ export function useLearn(
     })
     return map
   }, [morphemes])
-  const familyKeyOf = useCallback(
-    (w) => defaultFamilyKeyOf(w, (id) => morphTypes.get(id)),
-    [morphTypes],
-  )
   /**
    * 可选词根目录（仅 groupByFamily 时有意义）：列出当前学习池里出现的全部词根，
    * 供「按词族成组学习」模式下用户自选要学的词族。
