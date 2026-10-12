@@ -65,8 +65,10 @@ const DEFAULT_FILTERS = {
   hideAutoKnown: true,
   // 背单词难度分档（词频区间）：'all' = 全库；区间对象 { id, lo, hi } 随 settings v2 持久化。
   learnBand: 'all',
-  // 需求1：新学队列按词族成组出题（默认开，可关回退乱序/原排序）
+  // 需求1：新学队列按词族成组学习（默认开，可关回退乱序/原排序）
   groupByFamily: true,
+  // 按词族成组学习时自选词根（词素 id 数组）；空 = 学全部词根
+  selectedRoots: [],
   // 增量：学习卡进入新词时自动朗读单词（默认关，仅朗读单词、不读例句）
   autoSpeak: false,
   // 专有名词开关：**默认必须关** —— 全库约 1.4 万个（占 21%），
@@ -211,6 +213,7 @@ function AppShell({ words, auth, stations, sync }) {
     learnOpts: {
       band: activeBand,
       groupByFamily: filters.groupByFamily !== false,
+      selectedRoots: filters.selectedRoots,
       morphemes,
       excludeProper,
     },
@@ -766,8 +769,19 @@ function AppShell({ words, auth, stations, sync }) {
                 onChangeBand={(band) => setFilters((prev) => ({ ...prev, learnBand: band }))}
                 groupByFamily={filters.groupByFamily !== false}
                 onToggleGroupByFamily={() =>
-                  setFilters((prev) => ({ ...prev, groupByFamily: prev.groupByFamily === false }))
+                  setFilters((prev) => ({ ...prev, groupByFamily: prev.groupByFamily === false, selectedRoots: [] }))
                 }
+                roots={learn.rootOptions}
+                selectedRoots={filters.selectedRoots}
+                onToggleRoot={(id) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    selectedRoots: prev.selectedRoots.includes(id)
+                      ? prev.selectedRoots.filter((x) => x !== id)
+                      : [...prev.selectedRoots, id],
+                  }))
+                }
+                onClearRoots={() => setFilters((prev) => ({ ...prev, selectedRoots: [] }))}
                 excludeProper={excludeProper}
                 onToggleExcludeProper={() =>
                   setFilters((prev) => ({ ...prev, excludeProper: prev.excludeProper !== true }))

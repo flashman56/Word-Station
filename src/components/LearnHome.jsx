@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { STATUS, STATS_SCOPE } from '../lib/derive.js'
 import { describeMigrationReport } from '../lib/migrationCopy.js'
 import DailyTask from './DailyTask.jsx'
@@ -24,8 +24,13 @@ import VocabCard from './VocabCard.jsx'
  *   bands           动态档位列表 [{ id, lo, hi, label }]，首项为「全部」
  *   bandCounts      每档实际可用词数 { all: n, '0-3000': n, ... }，按 band.id 取
  *   onChangeBand    (band) => void，band 为 bands 中的档位对象
- *   groupByFamily   需求1：按词族成组出题开关（默认 true）
+ *   groupByFamily   需求1：按词族成组学习开关（默认 true）
  *   onToggleGroupByFamily () => void 切换开关
+ *   roots          按词族成组学习时可选词根目录（useLearn.rootOptions：
+ *                  [{ id, form, display, gloss, count }]）；空数组或不传则不渲染查找器
+ *   selectedRoots   已选词根 id 数组（空 = 全部）
+ *   onToggleRoot    (rootId) => void 切换某个词的选中态
+ *   onClearRoots    () => void 清空选择（回到学全部词根）
  *   vocab            词汇量预测结果（不传则不渲染该区块）
  *   showSharedNote   是否显示「小站复习与学习复习是同一份记录」说明（B-5，默认 false）
  *   privateCount     私有词数量；>0 时在词汇量区块下渲染「含 N 个私有词」（B-3）
@@ -49,6 +54,10 @@ export default function LearnHome({
   onChangeBand,
   groupByFamily = true,
   onToggleGroupByFamily,
+  roots = [],
+  selectedRoots = [],
+  onToggleRoot,
+  onClearRoots,
   vocab = null,
   showSharedNote = false,
   privateCount = 0,
@@ -210,14 +219,14 @@ export default function LearnHome({
         </p>
       </div>
 
-      {/* 按词族成组出题开关（需求1）：词根为干、单词为叶，同族词连续出 */}
+      {/* 按词族成组学习开关（需求1）：词根为干、单词为叶，同族词连续学 */}
       <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-5">
         <div className="flex items-center justify-between gap-4">
           <div className="min-w-0">
-            <div className="text-sm font-medium text-slate-600">按词族成组出题</div>
+            <div className="text-sm font-medium text-slate-600">按词族成组学习</div>
             <div className="text-xs text-slate-400 mt-0.5 leading-relaxed">
-              开启后，新学队列按词根家族连续出词（如学完 spect 家族再进下一族）；
-              关闭则回退为按词频排序抽词。
+              开启后，新学队列按词根家族成组学习（如学完 spect 家族再进下一族）；
+              关闭则回退为按词频排序逐词学习。
             </div>
           </div>
           <button
@@ -237,6 +246,18 @@ export default function LearnHome({
           </button>
         </div>
       </div>
+
+      {/* 自选词根查找器（仅按词族成组学习时、且确有词根可选时渲染）。
+          ★ 不选 = 学全部词族；选了 = 新学抽词池只留所选词根的词族 ★
+          与难度分档同一语义：只收窄新学、不动复习队列与统计。 */}
+      {groupByFamily && roots && roots.length > 0 && (
+        <RootPicker
+          roots={roots}
+          selectedRoots={selectedRoots}
+          onToggleRoot={onToggleRoot}
+          onClearRoots={onClearRoots}
+        />
+      )}
 
       {/* 排除专有名词开关（人名 / 地名 / 品牌）。
           ★ 只在传了 handler 时渲染 ★：StationLearn 复用本组件但它没有这个设置，
@@ -273,6 +294,98 @@ export default function LearnHome({
       {migrationNote && (
         <p className="mt-4 text-xs text-slate-400 text-center">
           {migrationNote.text}
+        </p>
+      )}
+    </div>
+  )
+}
+
+/**
+ * 自选词根查找器：在「按词族成组学习」下，让用户挑要学的词根（可多选 + 查找）。
+ *
+ * ★ 为什么是独立子组件 ★
+ *   它自己持有查找输入框的本地状态（rootQuery），不放进 LearnHome 主组件——
+ *   避免查找输入这种高频变更触发 LearnHome 整块重渲染（统计卡 / 进度条都在里面）。
+ *
+ * ★ 渲染判据 ★
+ *   父组件已用 `groupByFamily && roots?.length > 0` 包住，这里只管渲染。
+ *   空选择（selectedRoots 为空）表示「学全部词根」，「全部词根」按钮高亮。
+ */
+function RootPicker({ roots, selectedRoots, onToggleRoot, onClearRoots }) {
+  const [query, setQuery] = useState('')
+  const q = query.trim().toLowerCase()
+  const filtered = q
+    ? roots.filter(
+        (r) =>
+          r.form.toLowerCase().includes(q) ||
+          (r.display && r.display.toLowerCase().includes(q)) ||
+          (r.gloss && r.gloss.toLowerCase().includes(q)),
+      )
+    : roots
+  const selected = selectedRoots || []
+  const allActive = selected.length === 0
+  return (
+    <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-5">
+      <div className="flex items-center justify-between gap-4">
+        <div className="min-w-0">
+          <div className="text-sm font-medium text-slate-600">选择词根（可选）</div>
+          <div className="text-xs text-slate-400 mt-0.5 leading-relaxed">
+            只学选中的词根家族；不选则按全部词根成组学习。
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={onClearRoots}
+          className={`shrink-0 px-3 py-1.5 rounded-full text-sm border transition-colors ${
+            allActive
+              ? 'bg-blue-600 border-blue-600 text-white'
+              : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+          }`}
+        >
+          全部词根
+        </button>
+      </div>
+
+      <input
+        type="text"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="查找词根，如 spect / 看 / 说"
+        className="mt-3 w-full px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-700 outline-none focus:border-blue-400"
+      />
+
+      <div className="mt-3 max-h-56 overflow-y-auto flex flex-wrap gap-2 content-start">
+        {filtered.length === 0 ? (
+          <p className="text-xs text-slate-400">没有匹配「{query}」的词根。</p>
+        ) : (
+          filtered.map((r) => {
+            const active = selected.includes(r.id)
+            return (
+              <button
+                key={r.id}
+                type="button"
+                onClick={() => onToggleRoot && onToggleRoot(r.id)}
+                title={r.gloss ? `${r.form} · ${r.gloss}` : r.form}
+                className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                  active
+                    ? 'bg-blue-600 border-blue-600 text-white'
+                    : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                {r.form}
+                {r.gloss ? <span className={active ? 'text-blue-100' : 'text-slate-400'}> · {r.gloss}</span> : null}
+                <span className={`text-xs ml-1 ${active ? 'text-blue-100' : 'text-slate-400'}`}>
+                  {r.count} 词
+                </span>
+              </button>
+            )
+          })
+        )}
+      </div>
+
+      {selected.length > 0 && (
+        <p className="mt-2.5 text-xs text-slate-400">
+          已选 {selected.length} 个词根，新学队列只从这些家族抽取（复习队列不受影响）。
         </p>
       )}
     </div>

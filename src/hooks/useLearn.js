@@ -204,7 +204,9 @@ export const BULK_SELECT_CAP = 2000
  * @param {Array}  [opts.privateWords] 私有词视图对象（默认 []）—— 只进统计与复习队列，不进新学队列
  * @param {number} [opts.roundSize] 每轮词数
  * @param {'all'|{id,lo,hi}} [opts.band] 难度分档（只收窄学习抽词池）
- * @param {boolean} [opts.groupByFamily] 需求1：新学队列按词族成组出题（默认开）
+ * @param {boolean} [opts.groupByFamily] 需求1：新学队列按词族成组学习（默认开）
+ * @param {Array<string>} [opts.selectedRoots] 按词族成组学习时自选词根（词素 id 数组）；
+ *   为空 / null 表示学全部词根；仅在 groupByFamily 为 true 时生效，只收窄新学抽词池。
  * @param {Array} [opts.morphemes] 词素数组（用于识别词根 → 词族键）
  * @param {(keys: string[]) => void} [opts.onDirty] 写操作回调（云端同步据此标记 dirty，纯函数层不受影响）
  * @param {(err: {code: string, message: string}|null) => void} [opts.onStorageError] 写盘失败回调（A-12）
@@ -221,6 +223,7 @@ export function useLearn(
     roundSize = DEFAULT_ROUND_SIZE,
     band = 'all',
     groupByFamily = true,
+    selectedRoots = null,
     morphemes = null,
     onDirty = null,
     onStorageError = null,
@@ -654,7 +657,17 @@ export function useLearn(
   )
   // 难度分档只收窄学习抽词池；复习队列仍取全库（选档不影响已加入待复习的词）。
   // ★ 两者都走折叠视图：队列单元即代表形，与统计口径一致。
-  const learnPool = useMemo(() => bandFilter(foldUnits, band), [foldUnits, band])
+  // 自选词根（selectedRoots）：仅 groupByFamily 时生效，按词族键再收窄新学抽词池；
+  // 与选档同一语义——只影响新学、不动复习队列与统计。0 个 / null 选择表示全部词根。
+  const learnPool = useMemo(() => {
+    const banded = bandFilter(foldUnits, band)
+    if (!groupByFamily || !selectedRoots || selectedRoots.length === 0) return banded
+    const set = new Set(selectedRoots)
+    return banded.filter((w) => {
+      const key = familyKeyOf(w)
+      return key && set.has(key)
+    })
+  }, [foldUnits, band, groupByFamily, selectedRoots, familyKeyOf])
   // 词素 id → type 映射：词族键优先取词根（r.*），与词云的「词根为干、单词为叶」口径一致
   const morphTypes = useMemo(() => {
     const map = new Map()
@@ -663,10 +676,52 @@ export function useLearn(
     })
     return map
   }, [morphemes])
+  // 词素 id → 整条词素对象（取展示形 / 释义用）
+  const morphById = useMemo(() => {
+    const map = new Map()
+    ;(morphemes || []).forEach((m) => {
+      if (m && m.id) map.set(m.id, m)
+    })
+    return map
+  }, [morphemes])
   const familyKeyOf = useCallback(
     (w) => defaultFamilyKeyOf(w, (id) => morphTypes.get(id)),
     [morphTypes],
   )
+  /**
+   * 可选词根目录（仅 groupByFamily 时有意义）：列出当前学习池里出现的全部词根，
+   * 供「按词族成组学习」模式下用户自选要学的词族。
+   * 每条：{ id（词素 id）, form（展示形）, display, gloss（释义）, count（该族剩余未知词数） }。
+   * 排序：剩余未知词数降序 → 展示形字母序，让用户先看到还有最多词可学的族。
+   */
+  const rootOptions = useMemo(() => {
+    if (!groupByFamily) return []
+    const byKey = new Map()
+    foldUnits.forEach((w) => {
+      const key = familyKeyOf(w)
+      if (!key) return
+      let e = byKey.get(key)
+      if (!e) {
+        e = { id: key, count: 0 }
+        byKey.set(key, e)
+      }
+      if (getRecord(foldRecords, w.id).status === 'unknown') e.count += 1
+    })
+    const out = []
+    byKey.forEach((e) => {
+      const m = morphById.get(e.id)
+      const form = (m && (m.display || m.form)) || e.id.replace(/^r\./, '')
+      out.push({
+        id: e.id,
+        form,
+        display: (m && (m.display || m.form)) || form,
+        gloss: (m && m.gloss) || '',
+        count: e.count,
+      })
+    })
+    out.sort((a, b) => b.count - a.count || String(a.form).localeCompare(String(b.form), 'en'))
+    return out
+  }, [foldUnits, foldRecords, familyKeyOf, morphById, groupByFamily])
   const learnQueue = useMemo(
     () => buildLearnQueue(learnPool, foldRecords, roundSize, { groupByFamily, familyKeyOf }),
     [learnPool, foldRecords, roundSize, groupByFamily, familyKeyOf],
@@ -720,6 +775,8 @@ export function useLearn(
     daily,
     learnQueue,
     reviewQueue,
+    /** 可选词根目录（仅 groupByFamily 时非空）：供学习首页渲染「自选词根」查找器 */
+    rootOptions,
     answer,
     markKnown,
     retreat,
