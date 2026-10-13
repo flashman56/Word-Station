@@ -6,8 +6,8 @@
   "description": "基于词根词缀的个人单词云 —— 词素为父节点、单词为叶子的网状词群",
   "scripts": {
     "dev": "vite",
-    "build": "npm run split:data && vite build",
-    "build:skip-data": "vite build",
+    "build": "npm run split:data && vite build && node scripts/clean-vite-temp.mjs",
+    "build:skip-data": "vite build && node scripts/clean-vite-temp.mjs",
     "preview": "vite preview",
     "validate": "node scripts/validate-data.mjs",
     "test:quality": "node scripts/check-quality-gate.mjs",
