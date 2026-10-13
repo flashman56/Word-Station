@@ -480,7 +480,10 @@ export default function AddWordsPanel({ ownerId, stationId, existingKeys, online
         </div>
       )}
 
-      <div className="mt-3 flex items-center gap-3">
+      {/* ★ flex-wrap 是必需项，不是样式偏好 ★
+          这一行现在可能同时渲染多条长提示（游客登录说明 / 未选站 / 索引未就绪 / 离线），
+          任意两条并存时 nowrap 会让它们在窄屏互相挤压或溢出容器。 */}
+      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
         <button
           onClick={submit}
           disabled={!canSubmit}

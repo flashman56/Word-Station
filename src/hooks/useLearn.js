@@ -645,7 +645,7 @@ export function useLearn(
    *
    * ★★ 为什么走折叠视图（Step-2）★★
    *   折叠后 total 自然收缩到「学习单元数」，学习页进度条分母（stats.total）随之变小；
-   *   STATS_SCOPE 常量保持「词库总量」语义，仅作空态兜底（见 derive.js 注释）。
+   *   STATS_SCOPE 常量保持「词库总量」语义，**已不参与任何显示分母**（见 derive.js 注释）。
    *
    * ★ now 显式传 dueNow（不再让 countScheduled 自读时钟）★
    *   队列、统计、日行三者共用同一个时间点，避免「已排期 / 待复习 / 今天要复习」
