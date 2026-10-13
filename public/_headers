@@ -1,27 +1,35 @@
 # 词根词缀单词云 —— 缓存策略
 #
-# 规则按「具体程度」匹配，越具体的优先于越宽泛的。
+# ★ 关键机制（实测踩过的坑，改本文件前务必读完）★
+#   Cloudflare Pages 的 _headers 不是「最具体规则胜出」，而是把**所有命中规则**的
+#   Cache-Control 拼接起来。若这里保留一条 `/*  no-cache`，它会同时命中 /data/*，
+#   拼出 `public, max-age=300, must-revalidate, no-cache` —— 而 HTTP 语义里
+#   `no-cache` 压过 `max-age`，缓存直接失效（看起来配好了，实际毫无作用）。
+#   因此：**不要用 `/*` 通配兜底**，只对真正需要每次校验的具体路径显式声明。
+#
+# 本应用是单页无路由（页签切换，非 URL 路由），入口只有 `/`，故只需覆盖这两个。
 
-# ① 带内容哈希的静态资源（JS/CSS/数据分片）：永久缓存，文件名变了浏览器自然换新
+# ① 带内容哈希的静态资源：永久缓存。文件名带哈希，内容变了文件名就变，天然安全。
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
 
 # ② 字典分片（/data/v1/**：44 片词库 + 27 片音标 + 523 片用法 + 索引 + manifest）
 #   ★ 为什么不能 immutable ★
 #     分片文件名是 w-<字母>.json / p-<字母>.json，**不带内容哈希**。
-#     一旦 immutable（1 年），将来修正数据却沿用同名文件时，
+#     一旦 immutable（缓存 1 年），将来修正数据却沿用同名文件时，
 #     用户会在一年里一直吃到旧音标/旧例句，且没有任何手段能自愈。
 #   ★ 为什么给 300 秒 ★
-#     现状落到 ③ 的 no-cache —— 每个词查音标/例句都要回源校验一次，
-#     在移动网络上是实打实的额外往返（响应虽小，但延迟叠加）。
-#     这些数据由 scripts/split-data.mjs 在构建期生成，极少变动，
-#     5 分钟的新鲜度损失无业务影响；must-revalidate 保证过期后必须回源，
-#     部署后最多 5 分钟全量生效，不会出现「改了不生效」。
+#     这些数据由 scripts/split-data.mjs 在构建期生成，极少变动，5 分钟新鲜度
+#     损失无业务影响；查词路径（dict.js）默认先读 IndexedDB，本次改动主要收益是
+#     省掉「IndexedDB 未命中且刚更新过」那次回源往返。must-revalidate 保证
+#     过期后必须回源校验，部署后最多 5 分钟全量生效，不会「改了不生效」。
 /data/*
   Cache-Control: public, max-age=300, must-revalidate
 
-# ③ HTML 入口及其余一切请求：每次都回源校验，
-#   确保部署后用户立刻拿到指向新资源的 index.html。
-#   否则浏览器/CDN 会一直喂旧的 index.html -> 旧的 words-data 哈希 -> 看到「没更新」。
-/*
+# ③ HTML 入口：每次回源校验，确保部署后用户立刻拿到指向新资源的 index.html。
+#   否则浏览器/CDN 会一直喂旧 index.html -> 旧 words-data 哈希 -> 看到「没更新」。
+/index.html
+  Cache-Control: no-cache
+
+/
   Cache-Control: no-cache
