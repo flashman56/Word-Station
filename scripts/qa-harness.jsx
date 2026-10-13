@@ -27,6 +27,16 @@ import { buildIndex } from '../src/lib/derive.js'
 import { buildStemIndex } from '../src/lib/stemFamily.js'
 import { buildWordForms } from '../src/lib/wordForms.js'
 
+// ★ 专名 id 集合（2026-10-13）★
+//   「排除专有名词」默认值改为 true 后，**左栏统计会按 kind==='proper' 过滤，
+//   而 localStorage 里的记录不会消失**（迁移给 freqRank<=2500 的专名建过记录）。
+//   于是「左栏计数 == localStorage 记录数」这个等式不再成立——
+//   它此前成立只是因为两边都含专名。断言必须各用各的口径，否则就是拿错误基线比。
+const PROPER_IDS = new Set(words.filter((w) => w && w.kind === 'proper').map((w) => w.id))
+/** learnMap 里落在当前口径内（排除专名）的某状态记录数 */
+const recordsInScope = (status) =>
+  Object.entries(learnMap()).filter(([id, r]) => r && r.status === status && !PROPER_IDS.has(id)).length
+
 const { document, window } = globalThis
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 const flush = async (ms = 30) => {
@@ -290,6 +300,10 @@ export async function run() {
   ok(barText.includes('清除学习记录'), '有「清除学习记录」按钮')
   ok(barText.includes('取消选择'), '有「取消选择」按钮')
 
+  // ★ 基线取 localStorage 自己的 known 数，而不是左栏「已掌握」★
+  //   要验的不变量是「标记 2 个词 → 恰好新增 2 条 known 记录」，与 UI 口径无关；
+  //   拿左栏数当基线会在 excludeProper 过滤生效时误报（详见 PROPER_IDS 处注释）。
+  const knownBefore = Object.values(learnMap()).filter((r) => r && r.status === 'known').length
   click(byText('button', '我会了'))
   // ★ QA 修复（e98bb93 验收，P2）：原为 click 后固定 `sleep 150ms` 再查 flash —— 与 React 提交
   //   存在时序竞态（4× CPU 负载下曾稳定假红 2/2）。改为**轮询等待** flash 出现（上限 2000ms）：
@@ -319,7 +333,7 @@ export async function run() {
   ok(lm[idOf(word0)] && lm[idOf(word0)].status === 'known', `分区 learn[${idOf(word0)}].status === 'known'`)
   ok(lm[idOf(word1)] && lm[idOf(word1)].status === 'known', `分区 learn[${idOf(word1)}].status === 'known'`)
   const knownCount = Object.values(lm).filter((r) => r.status === 'known').length
-  ok(knownCount === before.已掌握 + 2, `已知记录数从基线 ${before.已掌握} 增至 ${knownCount}（+2）`)
+  ok(knownCount === knownBefore + 2, `已知记录数从 localStorage 基线 ${knownBefore} 增至 ${knownCount}（+2）`)
 
   const btnAfter = rowButtons(rowOf(findBox(word0)))
   log(`  第 1 行(勾选词 ${word0})操作后按钮态：${JSON.stringify(btnAfter)}`)
@@ -496,7 +510,13 @@ export async function run() {
     reviewN === ac2,
     `全部 ${ac2} 个选中词被标为 review（当前 review 记录数 ${reviewN}）`,
   )
-  ok(stats().待复习 === ac2, `左栏「待复习」= ${stats().待复习}（应为 ${ac2}）`)
+  // 选中词里含专名（浏览视图不过滤专名），而左栏「待复习」按 excludeProper 过滤，
+  // 所以期望值必须是**口径内**的 review 记录数，不是 ac2（= 选中数）。
+  const reviewInScope = recordsInScope('review')
+  ok(
+    stats().待复习 === reviewInScope,
+    `左栏「待复习」= ${stats().待复习}（应为口径内 ${reviewInScope}，选中 ${ac2} 个中含专名）`,
+  )
 
   click(byText('button', '清除学习记录'))
   await flush(180)

@@ -274,7 +274,8 @@ export default function LearnHome({
             <div className="min-w-0">
               <div className="text-sm font-medium text-slate-600">排除专有名词（人名 / 地名 / 品牌）</div>
               <div className="text-xs text-slate-400 mt-0.5 leading-relaxed">
-                开启后不再新学这类词（当前词库约 1.4 万）
+                默认已开启——它们会挤在新手队列最前面（实测约占前 1000 词的 19%），
+                人名既非学习目标也无词根可拆；要学人名/地名可以在这里关掉
               </div>
             </div>
             <button

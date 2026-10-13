@@ -71,11 +71,25 @@ const DEFAULT_FILTERS = {
   selectedRoots: [],
   // 增量：学习卡进入新词时自动朗读单词（默认关，仅朗读单词、不读例句）
   autoSpeak: false,
-  // 专有名词开关：**默认必须关** —— 全库约 1.4 万个（占 21%），
-  // 默认开启会让绝大多数用户莫名其妙地「少了一批常见词」。
+  // 专有名词开关：**默认开**（2026-10-13 由关改开，依据是实测队列构成，不是偏好）
+  //
+  // 实测（折叠视图，新手队列 freqRank>2500）：**前 1000 个词里 19.2% 是专名，
+  // 排在前面的具体是 randy / harvey / ann / jonathan / dennis / dylan / eva /
+  // francisco / jess / jennifer / anthony / cooper / boston / ron / wednesday /
+  // batman / virginia / vince —— 即英文人名占用了最宝贵的头几次学习会话。
+  // 这些词既非学习目标、又无词根可拆。默认关（曾一度设为 false）会让
+  // 「按词根学词」这个核心卖点在新手前 1000 词上对 72.8% 的词失效。
+  //
   // 判定只用 word.kind === 'proper'（不按 origin / 首字母大写：sandwich、boycott
   // 这类 eponym 是普通词）。读老 settings 用 === true 兜底（老用户该字段 undefined）。
-  excludeProper: false,
+  //
+  // ★ 影响面（useSettings.js:28-32「存储值覆盖默认值」）★
+  //   改的只是**默认值**：从未改过任何设置的用户拿到 true；
+  //   碰过任意设置的用户 v2 里已落 `excludeProper:false`，**不受本次影响**。
+  //   这是刻意的：单个布尔值无法区分「用户主动选关」与「默认值被写入」，
+  //   若做迁移强行翻转，就会覆盖掉真正想学人名/地名的用户（如留学备考）。
+  //   想打开的用户在「难度分档」下方那个开关里随时可开，两秒可逆。
+  excludeProper: true,
 }
 
 /** WordDetail 的 addToStationProps 缺省值：空对象 = 按钮不渲染（默认行为不变） */
