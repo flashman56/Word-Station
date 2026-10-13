@@ -1,9 +1,27 @@
 # 词根词缀单词云 —— 缓存策略
+#
+# 规则按「具体程度」匹配，越具体的优先于越宽泛的。
+
 # ① 带内容哈希的静态资源（JS/CSS/数据分片）：永久缓存，文件名变了浏览器自然换新
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
 
-# ② HTML 入口：每次都重新校验，确保部署后用户立刻拿到指向新资源的 index.html
-#   否则浏览器/CDN 会一直喂旧的 index.html -> 旧的 words-data 哈希 -> 看到「没更新」
+# ② 字典分片（/data/v1/**：44 片词库 + 27 片音标 + 523 片用法 + 索引 + manifest）
+#   ★ 为什么不能 immutable ★
+#     分片文件名是 w-<字母>.json / p-<字母>.json，**不带内容哈希**。
+#     一旦 immutable（1 年），将来修正数据却沿用同名文件时，
+#     用户会在一年里一直吃到旧音标/旧例句，且没有任何手段能自愈。
+#   ★ 为什么给 300 秒 ★
+#     现状落到 ③ 的 no-cache —— 每个词查音标/例句都要回源校验一次，
+#     在移动网络上是实打实的额外往返（响应虽小，但延迟叠加）。
+#     这些数据由 scripts/split-data.mjs 在构建期生成，极少变动，
+#     5 分钟的新鲜度损失无业务影响；must-revalidate 保证过期后必须回源，
+#     部署后最多 5 分钟全量生效，不会出现「改了不生效」。
+/data/*
+  Cache-Control: public, max-age=300, must-revalidate
+
+# ③ HTML 入口及其余一切请求：每次都回源校验，
+#   确保部署后用户立刻拿到指向新资源的 index.html。
+#   否则浏览器/CDN 会一直喂旧的 index.html -> 旧的 words-data 哈希 -> 看到「没更新」。
 /*
   Cache-Control: no-cache
