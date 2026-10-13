@@ -376,6 +376,9 @@ function RootPicker({ roots, selectedRoots, onToggleRoot, onClearRoots }) {
                 {r.gloss ? <span className={active ? 'text-blue-100' : 'text-slate-400'}> · {r.gloss}</span> : null}
                 <span className={`text-xs ml-1 ${active ? 'text-blue-100' : 'text-slate-400'}`}>
                   {r.count} 词
+                  {r.remaining > 0 && r.remaining < r.count ? (
+                    <span className="opacity-80"> · 剩 {r.remaining}</span>
+                  ) : null}
                 </span>
               </button>
             )

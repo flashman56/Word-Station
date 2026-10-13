@@ -707,10 +707,13 @@ export function useLearn(
       if (!key) return
       let e = byKey.get(key)
       if (!e) {
-        e = { id: key, count: 0 }
+        e = { id: key, count: 0, remaining: 0 }
         byKey.set(key, e)
       }
-      if (getRecord(foldRecords, w.id).status === 'unknown') e.count += 1
+      // count = 该词根词族覆盖的「代表形」总数（衡量这个词根能教多少词，扩充后立即可见）；
+      // remaining = 其中尚未学习的词数（给已学过一些词的老用户一个进度提示）。
+      e.count += 1
+      if (getRecord(foldRecords, w.id).status === 'unknown') e.remaining += 1
     })
     const out = []
     byKey.forEach((e) => {
@@ -722,6 +725,7 @@ export function useLearn(
         display: (m && (m.display || m.form)) || form,
         gloss: (m && m.gloss) || '',
         count: e.count,
+        remaining: e.remaining,
       })
     })
     out.sort((a, b) => b.count - a.count || String(a.form).localeCompare(String(b.form), 'en'))

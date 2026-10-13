@@ -1,0 +1,9 @@
+# 词根词缀单词云 —— 缓存策略
+# ① 带内容哈希的静态资源（JS/CSS/数据分片）：永久缓存，文件名变了浏览器自然换新
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# ② HTML 入口：每次都重新校验，确保部署后用户立刻拿到指向新资源的 index.html
+#   否则浏览器/CDN 会一直喂旧的 index.html -> 旧的 words-data 哈希 -> 看到「没更新」
+/*
+  Cache-Control: no-cache
