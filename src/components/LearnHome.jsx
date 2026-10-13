@@ -31,6 +31,9 @@ import VocabCard from './VocabCard.jsx'
  *   selectedRoots   已选词根 id 数组（空 = 全部）
  *   onToggleRoot    (rootId) => void 切换某个词的选中态
  *   onClearRoots    () => void 清空选择（回到学全部词根）
+ *   weakRoots      「我的薄弱词根」榜（useLearn.weakRoots：
+ *                  [{ id, form, display, gloss, stuck, touched, rate }]，已按薄弱程度排序）；
+ *                  空数组 / 不传则整块不渲染——没有卡住的词时不显示空洞的 0
  *   vocab            词汇量预测结果（不传则不渲染该区块）
  *   showSharedNote   是否显示「小站复习与学习复习是同一份记录」说明（B-5，默认 false）
  *   privateCount     私有词数量；>0 时在词汇量区块下渲染「含 N 个私有词」（B-3）
@@ -58,6 +61,7 @@ export default function LearnHome({
   selectedRoots = [],
   onToggleRoot,
   onClearRoots,
+  weakRoots = [],
   vocab = null,
   showSharedNote = false,
   privateCount = 0,
@@ -253,6 +257,22 @@ export default function LearnHome({
         </div>
       </div>
 
+      {/* 我的薄弱词根（本产品的差异化特性）：
+          把「词族分组 × 学习记录 × 词素释义」三块已有数据串起来——
+          「你在 r.act 这个词根下卡住了 N 个词」→ 按薄弱程度排序 → 一键定向刷这个族。
+          ★ 判据是用户本人的失败记录，不是词频 ★
+            按词频从易到难给所有人同一条路径；这里的排序来自**你答错过什么**，
+            而这条能力依赖本项目特有的词素数据结构（每个词都能归到某个词根族）。
+          ★ 无数据整块不渲染 ★
+            一个卡住的词都没有时返回空数组——显示「卡住 0 个」只是噪声。
+          ★ 仅在 groupByFamily 开启时渲染 ★
+            选中词根只收窄新学抽词池，而该收窄仅在成组学习时生效（useLearn.learnPool）。
+            关掉时渲染出来会是一排点了没反应的按钮——与「排除专有名词」开关同一条惯例：
+            死开关比不显示更糟。 */}
+      {groupByFamily && weakRoots && weakRoots.length > 0 && (
+        <WeakRoots roots={weakRoots} selectedRoots={selectedRoots} onToggleRoot={onToggleRoot} />
+      )}
+
       {/* 自选词根查找器（仅按词族成组学习时、且确有词根可选时渲染）。
           ★ 不选 = 学全部词族；选了 = 新学抽词池只留所选词根的词族 ★
           与难度分档同一语义：只收窄新学、不动复习队列与统计。 */}
@@ -398,6 +418,72 @@ function RootPicker({ roots, selectedRoots, onToggleRoot, onClearRoots }) {
           已选 {selected.length} 个词根，新学队列只从这些家族抽取（复习队列不受影响）。
         </p>
       )}
+    </div>
+  )
+}
+
+/**
+ * 我的薄弱词根。
+ *
+ * ★ 为什么是独立子组件 ★
+ *   与 RootPicker 同理：这里没有任何本地输入状态需要持有，但拆出来能让
+ *   LearnHome 的区块列表保持「一段注释 = 一块 UI」的可读结构。
+ *
+ * ★ 点击 = 直接选中该词根，从而定向刷这个族 ★
+ *   走的是既有 onToggleRoot / selectedRoots 这条链路，与「自选词根」查找器
+ *   完全同一套状态：选中后新学抽词池只留该词族（复习队列与统计不受影响）。
+ *   已选中时再点一次是取消——与查找器里同一个按钮的行为一致，不给两套语义。
+ *
+ * ★ 数字为什么是「卡住 N 个 · P%」★
+ *   N 是绝对数（决定值不值得先刷），P% = 卡住数 / 该族学过的词数（说明是不是
+ *   一学就错）。只给百分比会让「学过 1 个错了 1 个」的 100% 压过「学过 40 个
+ *   错了 12 个」的 30%，所以绝对数在前。精确口径写在 title 里，鼠标悬停可查。
+ */
+function WeakRoots({ roots, selectedRoots, onToggleRoot }) {
+  const selected = selectedRoots || []
+  return (
+    <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-5">
+      <div className="flex items-center justify-between gap-4">
+        <div className="min-w-0">
+          <div className="text-sm font-medium text-slate-600">我的薄弱词根</div>
+          <div className="text-xs text-slate-400 mt-0.5 leading-relaxed">
+            这些词根下你答错过、至今还没掌握。点一下即只学这个族。
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-3 flex flex-wrap gap-2">
+        {roots.map((r) => {
+          const active = selected.includes(r.id)
+          const pct = Math.round(r.rate * 100)
+          return (
+            <button
+              key={r.id}
+              type="button"
+              onClick={() => onToggleRoot && onToggleRoot(r.id)}
+              title={`${r.form}${r.gloss ? ` · ${r.gloss}` : ''}：学过 ${r.touched} 个，其中 ${r.stuck} 个答错过还没掌握`}
+              className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                active
+                  ? 'bg-blue-600 border-blue-600 text-white'
+                  : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              {r.form}
+              {r.gloss ? (
+                <span className={active ? 'text-blue-100' : 'text-slate-400'}> · {r.gloss}</span>
+              ) : null}
+              <span className={`text-xs ml-1 ${active ? 'text-blue-100' : 'text-slate-400'}`}>
+                <span className={active ? 'text-blue-100' : 'text-amber-600'}>卡住 {r.stuck} 个</span>
+                <span className="opacity-80"> · {pct}%</span>
+              </span>
+            </button>
+          )
+        })}
+      </div>
+
+      <p className="mt-2.5 text-xs text-slate-400">
+        口径：答错过且仍在待复习的词，按词根家族聚合；手工标的待复习、还没学过的词不算薄弱。
+      </p>
     </div>
   )
 }

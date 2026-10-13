@@ -42,6 +42,7 @@ import {
 import { countScheduled } from '../lib/scheduled.js'
 import { buildFoldView } from '../lib/lemmaFold.js'
 import { buildDailyTask, nextDueChangeAt } from '../lib/daily.js'
+import { buildWeakRoots } from '../lib/weakRoots.js'
 
 /**
  * 到期时钟（dueNow）的最大回跳间隔。
@@ -731,6 +732,43 @@ export function useLearn(
     out.sort((a, b) => b.count - a.count || String(a.form).localeCompare(String(b.form), 'en'))
     return out
   }, [foldUnits, foldRecords, familyKeyOf, morphById, groupByFamily])
+
+  /**
+   * 「我的薄弱词根」：把「答错过且至今没掌握」的词按词族聚合，按薄弱程度排序。
+   *
+   * ★ 为什么与 rootOptions 走同一套入参（foldUnits + foldRecords + familyKeyOf + morphById）★
+   *   它俩是同一枚硬币的两面：rootOptions 回答「哪些族还有词可学」（按剩余未知词数），
+   *   weakRoots 回答「哪些族你学不会」（按卡住词数）。口径不一致就会出现
+   *   「清单里显示 spect 有 30 词、薄弱榜却说 spect 卡住 0 个」这类对不上账的显示。
+   *
+   * ★ 为什么不受 groupByFamily 开关影响 ★
+   *   薄弱是**已发生的事实**，不是抽词偏好；关掉成组学习只应该改变抽词方式，
+   *   不该让已观测到的薄弱点消失。（是否渲染由 LearnHome 决定——关掉时选中词根
+   *   对新学队列无效，组件按既有惯例整块不渲染，避免点了没反应的死 UI。）
+   *
+   * ★ 纯派生：不新增数据、不请求后端、不写盘 ★
+   *   全部逻辑在 lib/weakRoots.js，冻结文件零改动。
+   */
+  /**
+   * id → 词条 索引。
+   * ★ 单独建、且只依赖 foldUnits ★
+   *   薄弱词根要按 id 反查词条（算族键），但**不能每次答一个词就重建**——
+   *   foldUnits 有 5 万多条，而它只在词库/折叠结果变化时才变。
+   *   放在这里与 weakRoots 分开 memo，答词时只重跑「遍历记录」那一小段。
+   */
+  const wordById = useMemo(() => {
+    const m = new Map()
+    foldUnits.forEach((w) => {
+      if (w && w.id) m.set(w.id, w)
+    })
+    return m
+  }, [foldUnits])
+
+  const weakRoots = useMemo(
+    () => buildWeakRoots({ records: foldRecords, wordById, morphById, familyKeyOf }),
+    [foldRecords, wordById, morphById, familyKeyOf],
+  )
+
   const learnQueue = useMemo(
     () => buildLearnQueue(learnPool, foldRecords, roundSize, { groupByFamily, familyKeyOf }),
     [learnPool, foldRecords, roundSize, groupByFamily, familyKeyOf],
@@ -786,6 +824,8 @@ export function useLearn(
     reviewQueue,
     /** 可选词根目录（仅 groupByFamily 时非空）：供学习首页渲染「自选词根」查找器 */
     rootOptions,
+    /** 「我的薄弱词根」榜（按卡住词数降序）：空数组表示还没有任何卡住的词 */
+    weakRoots,
     answer,
     markKnown,
     retreat,

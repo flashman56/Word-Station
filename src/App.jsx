@@ -786,6 +786,7 @@ function AppShell({ words, auth, stations, sync }) {
                   setFilters((prev) => ({ ...prev, groupByFamily: prev.groupByFamily === false, selectedRoots: [] }))
                 }
                 roots={learn.rootOptions}
+                weakRoots={learn.weakRoots}
                 selectedRoots={filters.selectedRoots}
                 onToggleRoot={(id) =>
                   setFilters((prev) => ({
