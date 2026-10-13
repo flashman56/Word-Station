@@ -10,6 +10,7 @@
     "build:skip-data": "vite build",
     "preview": "vite preview",
     "validate": "node scripts/validate-data.mjs",
+    "test:quality": "node scripts/check-quality-gate.mjs",
     "gen:words": "node scripts/gen-words.mjs",
     "gen:etym": "node scripts/gen-etym.mjs",
     "validate:etym": "node scripts/validate-etym.mjs",
@@ -52,7 +53,7 @@
     "test:a12": "npm run test:a12-ui",
     "test:all-sync": "npm run test:cloud && npm run test:race && npm run test:a12-ui",
     "relations:report": "node scripts/relation-report.mjs",
-    "test:all": "npm run validate && npm run validate:etym && npm run test:learning && npm run test:graph && npm run test:atlas && npm run test:e2e && npm run test:cloud && npm run test:vocab && npm run relations:report"
+    "test:all": "npm run validate && npm run test:quality && npm run validate:etym && npm run test:learning && npm run test:graph && npm run test:atlas && npm run test:e2e && npm run test:cloud && npm run test:vocab && npm run relations:report"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
