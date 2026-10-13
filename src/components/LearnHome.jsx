@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { STATUS, STATS_SCOPE } from '../lib/derive.js'
+import { STATUS } from '../lib/derive.js'
 import { describeMigrationReport } from '../lib/migrationCopy.js'
 import DailyTask from './DailyTask.jsx'
 import VocabCard from './VocabCard.jsx'
@@ -67,8 +67,14 @@ export default function LearnHome({
 }) {
   // 当前选中档位 id（'all' 或 'lo-hi'），用于高亮按钮
   const activeBandId = band === 'all' || band == null ? 'all' : band.id
-  // 分母 = 折叠后的学习单元数（stats.total，动态）；STATS_SCOPE 仅空态兜底，见 derive.js
-  const total = stats.total || STATS_SCOPE
+  // 分母 = 当前范围内的折叠学习单元数（stats.total，运行时动态值）。
+  //
+  // ★ 不再用 STATS_SCOPE 兜底 ★
+  //   这个兜底只在 stats.total === 0 时才会触发，而 total 为 0 恰恰意味着
+  //   「当前范围里一个词都没有」（空小站）。此时拿全库 6.4 万当分母，会把
+  //   一个空站显示成「已知 0 / 64,699」——凭空造出一个并不存在的规模，
+  //   比什么都不显示更具误导性。total 有值时它本身就是真实分母，无需常量兜底。
+  const total = stats.total
   const knownPct = total > 0 ? Math.round((stats.known / total) * 100) : 0
 
   /* 迁移提示：措辞由 lib/migrationCopy.js 统一产出（Sidebar 共用同一份）。
@@ -180,7 +186,7 @@ export default function LearnHome({
           />
         </div>
         <div className="mt-1.5 text-xs text-slate-400 text-right">
-          已知 {stats.known} / {total}
+          {total > 0 ? `已知 ${stats.known} / ${total}` : '还没有可统计的词条'}
         </div>
       </div>
 

@@ -488,7 +488,16 @@ export default function AddWordsPanel({ ownerId, stationId, existingKeys, online
         >
           {submitting ? '处理中…' : `加入小站（${selectedSelectable.length}）`}
         </button>
-        {!ownerId && <span className="text-xs text-amber-700">请先登录</span>}
+        {/* ★ 游客不是死路 ★
+            原先这里只有「请先登录」四个字：按钮 disabled（canSubmit 要求 ownerId），
+            游客点不动，又没有任何解释，等于一堵不讲道理的墙。
+            现在说清楚两件事——为什么需要账号、能得到什么，并指向真实入口
+            （AuthPanel 常驻顶栏，不在这里弹窗）。 */}
+        {!ownerId && (
+          <span className="text-xs text-amber-700">
+            登录后小站词表才存得上云、可跨设备同步（游客的进度只存在这台机器上）——用右上角的登录入口
+          </span>
+        )}
         {ownerId && !stationId && <span className="text-xs text-amber-700">请先新建 / 选择一个小站</span>}
         {/* ★ A-01 第一道防护的可见解释：为什么按钮是灰的 */}
         {ownerId && stationId && !indexReady && (
