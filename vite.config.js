@@ -1,6 +1,19 @@
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
-import devGeneratePlugin from './scripts/dev-generate-plugin.mjs'
+
+/**
+ * ★ 为什么 devGeneratePlugin 改成动态 import（2026-10-13）★
+ *   该插件顶层 `import { createClient } from '@supabase/supabase-js'`。
+ *   vite 每次加载本配置时，会用 esbuild 把配置及其**全部依赖**打成一个临时文件
+ *   `vite.config.js.timestamp-<ms>-<hash>.mjs`；只要这里是静态 import，
+ *   supabase 客户端就会被整体内联进去 —— 实测**每个约 121MB**，
+ *   而 `vite build` 一次会写 2 个。累积 6 个后吃掉 727MB，
+ *   把系统盘撑到可用 0 字节（表现为 esbuild 报 ENOSPC、e2e 出现稳定的假红）。
+ *
+ *   插件本身只在 `npm run dev` 时提供 `/functions/v1/generate-word` 中间件，
+ *   **构建期完全用不到**。所以改成：command==='serve' 时才动态 import。
+ *   动态 import 不会被 esbuild 内联，构建期这份依赖就不会进临时文件。
+ */
 
 /**
  * Vite 配置
@@ -13,11 +26,13 @@ import devGeneratePlugin from './scripts/dev-generate-plugin.mjs'
  *   3) dev 期提供 `/functions/v1/generate-word` 中间件，
  *      复用 Edge Function 的同一份 prompt 逻辑，保证 Supabase CLI 未登录时也能端到端联调。
  */
-export default defineConfig(({ mode }) => {
+export default defineConfig(async ({ mode, command }) => {
   const env = loadEnv(mode, process.cwd(), '')
-  return {
-    plugins: [
-      react(),
+
+  const plugins = [react()]
+  if (command === 'serve') {
+    const { default: devGeneratePlugin } = await import('./scripts/dev-generate-plugin.mjs')
+    plugins.push(
       devGeneratePlugin({
         deepseekKey: env.DEEPSEEK_API_KEY || '',
         supabaseUrl: env.VITE_SUPABASE_URL || '',
@@ -25,7 +40,11 @@ export default defineConfig(({ mode }) => {
         // service role key 只在 Node 侧使用，永不下发前端
         serviceKey: env.SUPABASE_SERVICE_ROLE_KEY || '',
       }),
-    ],
+    )
+  }
+
+  return {
+    plugins,
     server: {
       port: 5199,
       strictPort: false,
