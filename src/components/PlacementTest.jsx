@@ -3,7 +3,7 @@
  * ------------------------------------------------------------------
  * 三种形态，同一张卡：
  *   · 没测过   → 说明 + 「开始」（一句话讲清它干什么、会不会改学习记录）
- *   · 作答中   → 一题一屏 · 认识 / 不认识 / 不确定 · 进度 · 交卷
+ *   · 作答中   → 一题一屏 · 认识 / 不认识 / 不确定 · **二次确认** · 进度 · 放弃
  *   · 出结果   → 建议档 + 词汇量估计 + **证据与它的限度** + 「用这个档开始」
  *
  * ★ 文案全部来自 lib/placement.js::describePlacement ★
@@ -12,12 +12,19 @@
  * ★ 「用这个档开始」是**唯一**让结果生效的动作 ★
  *   它把推荐档写进 filters.learnBand（与难度分档同一个字段），而 learnBand 已经
  *   在 useLearn 里经 bandFilter() 过滤新学抽词池 —— 即：生效点在
- *   buildLearnQueue 的**上游**（hooks/useLearn.js:657），learning.js 一行未动。
+ *    buildLearnQueue 的**上游**（hooks/useLearn.js），learning.js 一行未动。
+ *
+ * ★ 自适应 + 二次确认（本版新增）★
+ *   每答一题后题目会落在「当前估计的起点边界」附近（见 usePlacement / placement.js
+ *   的 pickNextPlacementWord），直到置信区间够窄才出结果，所以题量不固定（约十几到
+ *   四十题）。点选答案后先进入「二次确认」态：展开释义 / 例句供你核对，再点「确认 →」
+ *   才记入下一题，与背单词（StudyCard）的同款两步确认一致——自评必须先看到答案才有意义。
  *
  * props:
- *   size / items / answeredCount / answers / running / done / result
- *     usePlacement() 的返回值（**不传 result 时只渲染入口态**，便于单独复用）
- *   onStart / onAnswer(wordId, value) / onSubmit / onRetake / onCancel
+ *   size / items / current / pendingValue / answeredCount / answers
+ *     usePlacement() 的返回值
+ *   running / finished / result / startError / canStart
+ *   onStart / onAnswer(wordId, value) / onConfirm / onUndo / onRetake / onCancel
  *   onApplyBand(band)  采用推荐档（由 App 写进 filters.learnBand）
  *   activeBandId        当前难度分档 id，用于「已生效」提示
  */
@@ -29,6 +36,7 @@ const ANSWER_OPTS = [
   { value: 'unknown', label: '不认识', cls: 'border-slate-300 text-slate-600 hover:bg-slate-50' },
   { value: 'unsure', label: '不确定', cls: 'border-amber-300 text-amber-700 hover:bg-amber-50' },
 ]
+const CHOICE_LABEL = { known: '认识', unknown: '不认识', unsure: '不确定' }
 
 /** 单档作答行（结果态的证据表） */
 function BandRow({ row }) {
@@ -49,16 +57,19 @@ function BandRow({ row }) {
 export default function PlacementTest({
   size = 0,
   items = [],
+  current = null,
+  pendingValue = null,
   answeredCount = 0,
   answers = {},
   running = false,
-  done = false,
+  finished = false,
   result = null,
   startError = '',
   canStart = true,
   onStart,
   onAnswer,
-  onSubmit,
+  onConfirm,
+  onUndo,
   onRetake,
   onCancel,
   onApplyBand,
@@ -67,7 +78,7 @@ export default function PlacementTest({
   const [showTable, setShowTable] = useState(false)
 
   // ---------------- 形态 1：入口
-  if (!running && !result) {
+  if (!running && !finished && !result) {
     return (
       <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-5">
         <div className="flex items-center justify-between">
@@ -75,10 +86,11 @@ export default function PlacementTest({
           <span className="text-xs text-slate-400">约 1 分钟</span>
         </div>
         <p className="mt-2 text-xs text-slate-500 leading-relaxed">
-          现在所有人第一天都从同一个词频序号开始。用 {size || 40} 个词量一下，给你一条有依据的起点。
+          现在所有人第一天都从同一个词频序号开始。用自适应抽题（题量按你的作答自动调整，通常十几到四十题）
+          量一下，给你一条有依据的起点。
           <br />
           只做参考，<span className="font-medium text-slate-600">不会改动你的学习记录</span>，
-          也不会替你标「已掌握」。
+          也不会替你标「已掌握」。每题选完会让你看一眼释义再确认。
         </p>
         {/* ★ 出题失败的可读原因：start() 提前 return 时不进作答态（形态 2），
             琥珀色告警框反而够不到，所以入口态也要把 startError 摆出来 */}
@@ -103,13 +115,10 @@ export default function PlacementTest({
     )
   }
 
-  // ---------------- 形态 2：作答中
+  // ---------------- 形态 2：自适应作答中
   if (running) {
-    const idx = Math.min(answeredCount, items.length - 1)
-    const current = items[idx]
+    // current 缺失（理论上不会：finished 才为 null）：兜底提示，不无限转圈
     if (!current) {
-      // ★ 别再无限「正在出题…」：出题失败是有原因的（词频分档未就绪 / 词库未加载完）。
-      //   把原因显示出来，并允许返回入口重试，否则用户只能干等。
       return (
         <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-5">
           <div className="text-sm text-amber-800">{startError || '暂时出不了题，请稍后再试。'}</div>
@@ -123,12 +132,61 @@ export default function PlacementTest({
         </div>
       )
     }
-    const pct = items.length > 0 ? Math.round((answeredCount / items.length) * 100) : 0
+
+    // 二次确认态：展开释义 / 例句供核对，再确认才记入下一题
+    if (pendingValue) {
+      const ex = current.example && (current.example.en || current.example.zh) ? current.example : null
+      return (
+        <div className="mt-5 rounded-2xl border border-blue-200 bg-white p-5">
+          <div className="flex items-center justify-between text-xs text-slate-400">
+            <span>第 {answeredCount + 1} 题 · 已答 {answeredCount}</span>
+            <span>确认你的选择</span>
+          </div>
+          <div className="mt-2 text-2xl font-bold text-slate-800">{current.form}</div>
+          {current.phoneticBr && (
+            <span className="text-sm text-slate-400">/{String(current.phoneticBr).replace(/^\/|\/$/g, '')}/</span>
+          )}
+          <div className="mt-3 rounded-md bg-slate-50 border border-slate-100 px-3 py-2">
+            <p className="text-[11px] text-slate-500">你选了</p>
+            <p className="text-lg font-medium text-slate-800">{CHOICE_LABEL[pendingValue]}</p>
+            {current.gloss ? <p className="mt-1 text-sm text-slate-700">{current.gloss}</p> : null}
+            {ex && ex.en && (
+              <div className="mt-2 pl-3 border-l-2 border-slate-200">
+                <p className="text-slate-700 italic text-sm">{ex.en}</p>
+                {ex.zh && <p className="text-slate-500 text-xs mt-0.5">{ex.zh}</p>}
+              </div>
+            )}
+          </div>
+          <div className="mt-4 flex items-center gap-3">
+            <button
+              type="button"
+              onClick={onConfirm}
+              className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors"
+            >
+              确认 →
+            </button>
+            <button
+              type="button"
+              onClick={onUndo}
+              className="text-xs text-slate-400 hover:text-slate-600"
+            >
+              撤销，重选
+            </button>
+          </div>
+          <p className="mt-2 text-[11px] text-slate-400">
+            看清释义再确认 —— 不确定就选「不确定」，宁可把你估低也不给偏乐观的起点。
+          </p>
+        </div>
+      )
+    }
+
+    // 作答态：问当前词
+    const pct = answeredCount > 0 ? Math.round((answeredCount / Math.max(answeredCount + 1, 12)) * 100) : 0
     return (
       <div className="mt-5 rounded-2xl border border-blue-200 bg-white p-5">
         <div className="flex items-center justify-between text-xs text-slate-400">
           <span>
-            第 {Math.min(answeredCount + 1, items.length)} / {items.length} 个
+            第 {answeredCount + 1} 题 · 已答 {answeredCount}
           </span>
           <span>凭第一反应就好</span>
         </div>
@@ -136,7 +194,7 @@ export default function PlacementTest({
           <div className="h-full bg-blue-500 transition-all" style={{ width: `${pct}%` }} />
         </div>
 
-        <div className="mt-4 text-2xl font-bold text-slate-800">{current.form}</div>
+        <div className="mt-4 text-3xl font-bold text-slate-800">{current.form}</div>
         <div className="text-xs text-slate-400 mt-0.5">词频序号 {current.freqRank}</div>
 
         <div className="mt-4 flex flex-wrap gap-2">
@@ -155,13 +213,9 @@ export default function PlacementTest({
         <div className="mt-4 flex items-center gap-3">
           <button
             type="button"
-            onClick={onSubmit}
-            disabled={!done}
-            className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:hover:bg-emerald-600 text-white text-sm font-medium transition-colors"
+            onClick={onCancel}
+            className="text-xs text-slate-400 hover:text-slate-600"
           >
-            {done ? '交卷，看结果' : `还剩 ${items.length - answeredCount} 个`}
-          </button>
-          <button type="button" onClick={onCancel} className="text-xs text-slate-400 hover:text-slate-600">
             放弃
           </button>
         </div>

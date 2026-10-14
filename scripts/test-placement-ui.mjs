@@ -181,7 +181,7 @@ section('U1. 没测过：入口态')
   })
   ok(txt.includes('从哪一档开始背'), '标题说明这是起点测评')
   ok(txt.includes('不会改动你的学习记录'), '★ 明说不会改学习记录（这是用户最担心的副作用）')
-  ok(txt.includes(String(probe.size)), `明说题量（${probe.size} 题）`)
+  ok(txt.includes('自适应抽题'), '★ 明说自适应抽题（题量按作答自动调整，不再固定 40）')
   ok(findBtn('开始') !== null, '有「开始」按钮')
   ok(!txt.includes('词汇量'), '入口态不出现任何词汇量数字')
   ok(buttons.length === 1, '入口态只有一个可点的东西（不给人乱点的机会）')
@@ -190,51 +190,51 @@ section('U1. 没测过：入口态')
 // ================================================================ 2. 作答中
 section('U2. 作答中')
 {
-  // 只答了前两档（16 题），组件据此定位当前题
+  // 只答了前两档（16 题）：current 指向「下一题」（自适应流程由 current 驱动，不再用 items 推算）
   const twoBands = answersFor([1, 1, 0, 0, 0])
   const firstTwo = probe.items.filter((it) => probe.bandIndexes.indexOf(it.bandIndex) < 2).map((it) => it.id)
   const partial = Object.fromEntries(firstTwo.map((k) => [k, twoBands[k]]))
+  const nextItem = probe.items[firstTwo.length]
   const { txt, findBtn } = await render({
     size: probe.size,
     items: probe.items,
+    current: { id: nextItem.id, form: nextItem.form, freqRank: nextItem.freqRank },
     answeredCount: firstTwo.length,
     answers: partial,
     running: true,
-    done: false,
     result: null,
     onStart: () => {},
     onAnswer: () => {},
-    onSubmit: () => {},
     onCancel: () => {},
   })
-  // answeredCount 不得超过 items.length：组件用 Math.min 夹住，所以末题显示「第 N / N 个」
-  const shown = Math.min(firstTwo.length + 1, probe.size)
-  ok(txt.includes(`第 ${shown} / ${probe.size} 个`), `显示进度（第 ${shown} / ${probe.size} 个）`)
+  // 自适应：进度显示「第 N 题 · 已答 M」，没有固定总题数（题量按作答自动调整）
+  ok(txt.includes(`第 ${firstTwo.length + 1} 题`), `显示当前第几题（第 ${firstTwo.length + 1} 题）`)
+  ok(txt.includes(`已答 ${firstTwo.length}`), `显示已答数（已答 ${firstTwo.length}）`)
   ok(findBtn('认识') !== null && findBtn('不认识') !== null && findBtn('不确定') !== null, '三个作答按钮齐全')
-  ok(findBtn('放弃') !== null, '有「放弃」（可退出，不逼答完 40 题）')
+  ok(findBtn('放弃') !== null, '有「放弃」（可退出，不逼答完）')
   ok(txt.includes('按「不认识」计'), '★ 明说「不确定」按不认识计（解释偏保守的原因）')
-  ok(!findBtn('交卷'), '没答满时没有「交卷」（按钮显示剩余题数）')
+  ok(txt.includes('凭第一反应就好'), '★ 自适应：提示凭第一反应（不鼓励犹豫）')
 }
 
 {
-  // 点「认识」真的回调了 onAnswer
+  // 点「认识」真的回调了 onAnswer（current 是当前在问的那一题）
   let called = null
   let root = null
+  const cur = probe.items[0]
   await act(async () => {
     root = createRoot(container)
     root.render(
       React.createElement(PlacementTest, {
         size: probe.size,
         items: probe.items,
+        current: { id: cur.id, form: cur.form, freqRank: cur.freqRank },
         answeredCount: 0,
         answers: {},
         running: true,
-        done: false,
         result: null,
         onAnswer: (id, v) => {
           called = { id, v }
         },
-        onSubmit: () => {},
         onCancel: () => {},
       }),
     )
@@ -243,7 +243,7 @@ section('U2. 作答中')
   await act(async () => {
     btn.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
   })
-  ok(called && called.id === probe.items[0].id, '点「认识」回调 onAnswer(当前题 id)')
+  ok(called && called.id === cur.id, '点「认识」回调 onAnswer(当前题 id)')
   ok(called && called.v === 'known', '回调值是 known')
   await act(async () => root.unmount())
 }

@@ -95,7 +95,8 @@ function Harness() {
     ...placement,
     onStart: placement.start,
     onAnswer: placement.answer,
-    onSubmit: placement.submit,
+    onConfirm: placement.confirm,
+    onUndo: placement.undo,
     onRetake: placement.retake,
     onCancel: placement.cancel,
     onApplyBand: () => {},
@@ -103,7 +104,7 @@ function Harness() {
   })
 }
 
-section('H1. 点「开始」真的出第一道题（修复前恒卡「暂时出不了题」）')
+section('H1. 点「开始」真的出第一道题（自适应：首题从中段词频开始，不再固定 40 题）')
 {
   const container = document.createElement('div')
   document.body.appendChild(container)
@@ -117,17 +118,17 @@ section('H1. 点「开始」真的出第一道题（修复前恒卡「暂时出�
   const startBtn = [...container.querySelectorAll('button')].find((b) => (b.textContent || '').trim() === '开始')
   ok(Boolean(startBtn), '入口态：有「开始」按钮')
 
-  // 点击「开始」—— 修复前 session 落 {probe:{items}} 但 hook 读 probe.items，
-  // 导致 items 恒为空、running 仍为真，渲染出「暂时出不了题，请稍后再试。」
+  // 点击「开始」—— 自适应流程：start() 用 pickNextPlacementWord 出首题（首题从中段词频起），
+  // current 被设置，running 生效，组件渲染作答态（不再卡「暂时出不了题」）。
   await act(async () => {
     startBtn.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }))
   })
   const txt1 = container.textContent || ''
   ok(!txt1.includes('暂时出不了题'), '★ 点开始后不再卡在「暂时出不了题」')
-  ok(/\d+\s*\/\s*\d+\s*个/.test(txt1), '★ 点开始后进入作答态（显示「第 N / M 个」）')
-  const match = txt1.match(/第\s*(\d+)\s*\/\s*(\d+)\s*个/)
-  ok(match && Number(match[2]) >= 30, `★ 题目数量足够（共 ${match ? match[2] : '?'} 题，期望 ≥30）`)
+  ok(txt1.includes('第 1 题'), '★ 点开始后进入作答态（显示「第 1 题」）')
+  ok(txt1.includes('已答 0'), '★ 已答数为 0（自适应，题量不固定、不预填 40）')
   ok([...container.querySelectorAll('button')].some((b) => (b.textContent || '').includes('认识')), '作答按钮出现（认识/不认识/不确定）')
+  ok(txt1.includes('凭第一反应就好'), '自适应提示：凭第一反应')
 
   await act(async () => root.unmount())
   document.body.removeChild(container)

@@ -816,17 +816,20 @@ function AppShell({ words, auth, stations, sync }) {
                 <PlacementTest
                   size={placement.size}
                   items={placement.items}
+                  current={placement.current}
+                  pendingValue={placement.pendingValue}
                   answeredCount={placement.answeredCount}
                   answers={placement.answers}
                   running={placement.running}
-                  done={placement.done}
+                  finished={placement.finished}
                   result={placement.result}
                   hasResult={placement.hasResult}
                   canStart={placement.canStart}
                   startError={placement.startError}
                   onStart={placement.start}
                   onAnswer={placement.answer}
-                  onSubmit={placement.submit}
+                  onConfirm={placement.confirm}
+                  onUndo={placement.undo}
                   onRetake={placement.retake}
                   onCancel={placement.cancel}
                   onApplyBand={applyPlacementBand}

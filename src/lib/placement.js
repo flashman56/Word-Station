@@ -306,6 +306,167 @@ export function buildPlacementProbe(words, bands, opts = {}) {
   return { items, bandIndexes, bands: probeBands, size: items.length, perBand }
 }
 
+// ---------------------------------------------------------------- 自适应抽题（二分逼近边界）
+
+/**
+ * 自适应（二分式）起点测评的抽题与停止判据。
+ *
+ * ★ 与 buildPlacementProbe 的关系 ★
+ *   buildPlacementProbe 是「一次性预生成 40 题、固定铺在 5 个等距档」的旧实现，仍保留
+ *   （纯函数测试 + 作为可回退路径）。本组函数是**新的主路径**：每答一题后动态选下一题，
+ *   让题目落在「当前估计的 50% 认识率边界」附近，从而用更少的题逼近用户的真实起点档。
+ *
+ * ★ 为什么仍复用 scorePlacement ★
+ *   停止判据直接吃 scorePlacement 的产出（recommend band / estimate / 95% 置信区间 /
+ *   reason）。我们不另造一套统计，避免「算分」与「出题」两套口径漂移；自适应只改变
+ *   **抽题顺序**，不改变**评分模型**。
+ *
+ * ★ 红线不变 ★
+ *   本组函数只读词库、只读已有答案，**绝不**碰 learn.records，也不写任何存储键。
+ */
+
+/** 自适应抽题上限（安全闸：即便置信度迟迟不达标，也最多 40 题） */
+export const PLACEMENT_ADAPTIVE_MAX_Q = 40
+/** 自适应抽题下限（题数没到这个数，即便区间碰巧窄也继续，防止前几题运气好就停） */
+export const PLACEMENT_ADAPTIVE_MIN_Q = 12
+/** 停止的置信度门槛：估计值的 95% 区间相对宽度 ≤ 此值即视为「够准」 */
+export const PLACEMENT_ACCURACY_REL = 0.25
+/** 首题词频序号（数据不足时落点；约在头两个档之间，便于快速判定方向） */
+export const PLACEMENT_SEED_RANK = 8000
+
+/**
+ * 候选池：去掉专有名词 / 折叠形 / 已答，附上「可选题频档下标」bandIndex。
+ * bandIndex 与 scorePlacement 内部的 allBands 下标**同口径**（都用 selectableBands 过滤后）。
+ * @returns {Array<{id,form,freqRank,bandIndex,gloss,example,pos,phoneticBr}>} 按 freqRank 升序
+ */
+function buildPlacementPool(words, bands) {
+  const sel = selectableBands(bands)
+  const pool = []
+  const seen = new Set()
+  ;(Array.isArray(words) ? words : []).forEach((w) => {
+    if (!w || typeof w.id !== 'string' || seen.has(w.id)) return
+    const rank = w.freqRank
+    if (typeof rank !== 'number' || !Number.isFinite(rank)) return
+    if (w.kind === 'proper') return
+    if (isFolded(w)) return
+    let bi = -1
+    for (let i = 0; i < sel.length; i += 1) {
+      const b = sel[i]
+      if (rank > Number(b.lo) && rank <= Number(b.hi)) {
+        bi = i
+        break
+      }
+    }
+    if (bi < 0) return
+    seen.add(w.id)
+    pool.push({
+      id: w.id,
+      form: w.form,
+      freqRank: rank,
+      bandIndex: bi,
+      gloss: w.gloss,
+      example: w.example,
+      pos: w.pos,
+      phoneticBr: w.phoneticBr,
+    })
+  })
+  pool.sort((a, b) => a.freqRank - b.freqRank)
+  return pool
+}
+
+/**
+ * 从 scorePlacement 的结果里读出「认识率跌破 0.5」的边界词频序号。
+ * 找不到（数据不足 / 全 null）时回退：有已答则用已答中位数，否则 null（交给调用方用 seed）。
+ *
+ * @param {object} result scorePlacement 的返回值
+ * @param {Array} answeredItems 已答题目（含 freqRank）
+ * @param {number} maxRank 可选题频档的最大 hi（用于「全认识」时把边界推到最高）
+ * @returns {number|null}
+ */
+function boundaryRankFromResult(result, answeredItems, maxRank) {
+  const rows = (result && result.bands) || []
+  // ★ 没有任何已答时边界无法从统计得出 —— 交还 null，让 pickNextPlacementWord 落回
+  //   PLACEMENT_SEED_RANK（首题从中段开始，比「从最简单词开始」省题；
+  //   也避免「一上来就全认识 → 直接跳到最难 → 立刻饱和」浪费前两题）。
+  //   这一支早于下面的 rows 判据：零作答时 scorePlacement 仍返回 bands（fittedP 全 0），
+  //   若先走 rows 逻辑会误判 boundary=0（最简单词），于是首题永远是 rank≈1。
+  if (!Array.isArray(answeredItems) || answeredItems.length === 0) return null
+  if (rows.length === 0) {
+    const sorted = answeredItems.map((it) => it.freqRank).sort((a, b) => a - b)
+    return sorted[Math.floor(sorted.length / 2)]
+  }
+  for (let i = 0; i < rows.length - 1; i += 1) {
+    const a = rows[i].fittedP
+    const b = rows[i + 1].fittedP
+    if (a != null && b != null && a >= 0.5 && b < 0.5) {
+      const lo = Number(rows[i].lo)
+      const hi = Number(rows[i + 1].hi)
+      const t = (0.5 - a) / (b - a)
+      return lo + t * (hi - lo)
+    }
+  }
+  if (rows[0].fittedP != null && rows[0].fittedP < 0.5) return 0
+  if (rows[rows.length - 1].fittedP != null && rows[rows.length - 1].fittedP >= 0.5) return maxRank
+  return null
+}
+
+/**
+ * 选下一题：给定已答，返回「词频最接近当前边界」的未答词。
+ *
+ * ★ 这就是「二分」的落点 ★：每题把题目推到用户当前估计的起点边界附近，
+ *   认识→边界上移、不认识→边界下移，几题内收敛。不是严格的区间折半，而是
+ *   「用全样本统计出的边界」取最近词，比纯折半更稳（不会因单次误答乱跳）。
+ *
+ * @param {Array} words 词库
+ * @param {Array} bands buildBands 的输出
+ * @param {Array} answeredItems 已答题目 [{id,freqRank,bandIndex}]
+ * @param {object} answers { [id]: 'known'|'unknown'|'unsure' }
+ * @returns {object|null} 候选词（含 form/gloss/example 供确认态展示）；无未答候选返回 null
+ */
+export function pickNextPlacementWord(words, bands, answeredItems, answers) {
+  const pool = buildPlacementPool(words, bands)
+  const answeredIds = new Set((Array.isArray(answeredItems) ? answeredItems : []).map((it) => it.id))
+  const available = pool.filter((p) => !answeredIds.has(p.id))
+  if (available.length === 0) return null
+  const sel = selectableBands(bands)
+  const maxRank = sel.length ? Number(sel[sel.length - 1].hi) : 0
+  const result = scorePlacement({ items: answeredItems, answers, words, bands })
+  let boundary = boundaryRankFromResult(result, answeredItems, maxRank)
+  if (boundary == null) boundary = PLACEMENT_SEED_RANK
+  if (!Number.isFinite(boundary)) boundary = PLACEMENT_SEED_RANK
+  let best = null
+  let bestD = Infinity
+  for (const p of available) {
+    const d = Math.abs(p.freqRank - boundary)
+    if (d < bestD) {
+      bestD = d
+      best = p
+    }
+  }
+  return best
+}
+
+/**
+ * 是否该停：题数到上限，或（题数够 + 置信区间够窄 + scorePlacement 认为 sufficient）。
+ * 饱和（reason='saturated'，几乎全答认识）由调用方单独判定停止 —— 那种情形给不出边界。
+ *
+ * @param {Array} items 已答题目
+ * @param {object} result scorePlacement 返回值
+ * @param {{maxQ?:number, minQ?:number, accuracyRel?:number}} [opts]
+ * @returns {boolean}
+ */
+export function placementShouldStop(items, result, opts = {}) {
+  const maxQ = opts.maxQ != null ? opts.maxQ : PLACEMENT_ADAPTIVE_MAX_Q
+  const minQ = opts.minQ != null ? opts.minQ : PLACEMENT_ADAPTIVE_MIN_Q
+  const accRel = opts.accuracyRel != null ? opts.accuracyRel : PLACEMENT_ACCURACY_REL
+  if (!Array.isArray(items) || items.length >= maxQ) return true
+  if (items.length < minQ) return false
+  if (!result || !result.sufficient) return false
+  const est = result.estimate || 0
+  const width = est > 0 ? (result.high - result.low) / est : Infinity
+  return width <= accRel
+}
+
 // ---------------------------------------------------------------- 库内分档计数
 
 /**

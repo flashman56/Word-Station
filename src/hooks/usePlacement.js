@@ -14,11 +14,12 @@
  *   见 lib/placement.js 头部：写进去会被 vocab.js 读成「实测已知」，
  *   「全答认识」就变成 64,700 词。这是本特性最容易踩、也最不可逆的坑。
  */
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState, useEffect } from 'react'
 import {
   PLACEMENT_SAMPLE_SIZE,
-  buildPlacementProbe,
   scorePlacement,
+  pickNextPlacementWord,
+  placementShouldStop,
 } from '../lib/placement.js'
 import { clearPlacement, readPlacement, writePlacement } from '../lib/placementStore.js'
 
@@ -61,8 +62,15 @@ export function usePlacement(words, bands, scope) {
   // ★ 题目在 `probe.probe.items`：session={probe:p,answers} 与 stored={probe:{items},answers}
   //   两层都把 p 包在 `probe` 下，所以读 items 必须走 `probe.probe.items`（见上方 result 注释）。
   const items = probe && probe.probe && Array.isArray(probe.probe.items) ? probe.probe.items : []
-  const answeredCount = answers ? Object.keys(answers).length : 0
-  const done = answeredCount >= items.length && items.length > 0
+  const answeredCount = items.length
+  /** 当前正在问的那一题（尚未落定为已答）；null = 没有题在问 */
+  const current = session ? session.current : null
+  /** 已选但「待二次确认」的作答 { value }；null = 还没选或已确认 */
+  const pending = session ? session.pending : null
+  /** 是否已自适应收敛结束（题数够 / 置信度够 / 没题可出 / 饱和） */
+  const finished = session ? session.finished : false
+  /** 正在作答（区别于「已测过」的结果态）：有 session 且未结束 */
+  const running = Boolean(session) && !finished
 
   /** 是否具备开测条件：词库已加载 + 词频分档已就绪（>1 档，排除 maxRank=0 的「全部」单档）。 */
   const canStart = Boolean(
@@ -70,78 +78,136 @@ export function usePlacement(words, bands, scope) {
     Array.isArray(bands) && bands.length > 1,
   )
 
-  /** 开测：出题并进入作答态（不落盘 —— 半份作答不该留下持久痕迹） */
+  /** 开测：自适应出第一题（落 {probe:{items:[]}}，current 指向首题；半份作答不落盘） */
   const start = useCallback(() => {
     if (!Array.isArray(words) || words.length === 0) return
-    const p = buildPlacementProbe(words, bands)
+    const first = pickNextPlacementWord(words, bands, [], {})
     // ★ 出不来题时**不许静默 return**：那会让界面永远停在「正在出题…」。
-    //   最常见成因是 bands 只剩一档（maxRank 尚未算出时 buildBands(0) = ["全部"]），
-    //   此时 probeBands 为空 ⇒ items 长度 0。宁可给出可读的原因也不要吞掉。
-    if (!p || !Array.isArray(p.items) || p.items.length === 0) {
+    //   首题都抽不到（词库/分档未就绪）才走到这，给出可读原因而不是吞掉。
+    if (!first) {
       setStartError('暂时出不了题（词频分档还没就绪），请稍后再试或直接用默认档开始。')
       return
     }
     setStartError('')
-    setSession({ probe: p, answers: {} })
+    setSession({
+      probe: { items: [], bandIndexes: [], size: 0 },
+      answers: {},
+      pending: null,
+      current: first,
+      finished: false,
+    })
   }, [words, bands])
 
-  /** 记一次作答 */
+  /** 记一次作答：先进入「待确认」态（pending），不立即入 items，等 confirm 才落定。
+   *  ★ 这是与背单词同款的「二次确认」前置：选了不急着算数，先看释义/例句核对再确认。 */
   const answer = useCallback((wordId, value) => {
     setSession((prev) => {
-      if (!prev) return prev
-      return { ...prev, answers: { ...prev.answers, [wordId]: value } }
+      if (!prev || prev.finished || !prev.current) return prev
+      if (prev.current.id !== wordId) return prev
+      return { ...prev, pending: { value } }
     })
   }, [])
 
-  /** 交卷：把题目与作答一起落盘（此后每次渲染都用这份题算分） */
-  const submit = useCallback(() => {
+  /** 二次确认：把 pending 落定为已答，并据此选下一题或结束（自适应收敛）。 */
+  const confirm = useCallback(() => {
     setSession((prev) => {
-      if (!prev) return prev
-      writePlacement(prev.probe, prev.answers, scope)
-      setTick((t) => t + 1) // ★ 触发 stored 重读，否则交卷后 result 闪没
-      return null
+      if (!prev || prev.finished || !prev.current || !prev.pending) return prev
+      const item = {
+        id: prev.current.id,
+        form: prev.current.form,
+        freqRank: prev.current.freqRank,
+        bandIndex: prev.current.bandIndex,
+      }
+      const newItems = prev.probe.items.concat(item)
+      const newAnswers = { ...prev.answers, [item.id]: prev.pending.value }
+      const newProbe = {
+        items: newItems,
+        bandIndexes: Array.from(new Set(newItems.map((it) => it.bandIndex))).sort((a, b) => a - b),
+        size: newItems.length,
+      }
+      // ★ 复用 scorePlacement 判停：题数够 + 置信区间够窄 + sufficient 即停；饱和也给不出边界 → 停。
+      const res = scorePlacement({ items: newItems, answers: newAnswers, words, bands })
+      const stop = placementShouldStop(newItems, res) || res.reason === 'saturated'
+      if (stop) {
+        return { ...prev, probe: newProbe, answers: newAnswers, pending: null, current: null, finished: true }
+      }
+      const next = pickNextPlacementWord(words, bands, newItems, newAnswers)
+      if (!next) {
+        return { ...prev, probe: newProbe, answers: newAnswers, pending: null, current: null, finished: true }
+      }
+      return { ...prev, probe: newProbe, answers: newAnswers, pending: null, current: next, finished: false }
     })
-  }, [scope])
+  }, [words, bands])
 
-  /** 重测：清掉当前 scope 的历史结果，重新出题 */
+  /** 撤销上一作答选择：回到作答态重选（二次确认的反悔入口） */
+  const undo = useCallback(() => {
+    setSession((prev) => {
+      if (!prev || !prev.pending) return prev
+      return { ...prev, pending: null }
+    })
+  }, [])
+
+  /** 放弃本次作答，回到入口（或历史结果） */
+  const cancel = useCallback(() => setSession(null), [])
+
+  /** 重测：清掉本 scope 历史结果，重新自适应出题 */
   const retake = useCallback(() => {
     clearPlacement(scope)
     setTick((t) => t + 1) // ★ 清盘后也让 stored 重读（读到 null）
     setSession(null)
     if (!Array.isArray(words) || words.length === 0) return
-    const p = buildPlacementProbe(words, bands)
-    if (p.items.length > 0) setSession({ probe: p, answers: {} })
+    const first = pickNextPlacementWord(words, bands, [], {})
+    if (first) {
+      setSession({
+        probe: { items: [], bandIndexes: [], size: 0 },
+        answers: {},
+        pending: null,
+        current: first,
+        finished: false,
+      })
+    }
   }, [scope, words, bands])
 
-  /** 放弃本次作答，回到上次的结果（或「没测过」） */
-  const cancel = useCallback(() => setSession(null), [])
+  // ★ 自适应收敛结束时把题目 + 作答落盘（与旧 submit 同款存储路径；半份作答不落盘）。
+  //   落盘后 tick bump → stored 重读，结果态稳定不闪没。
+  useEffect(() => {
+    if (session && session.finished && Array.isArray(session.probe.items) && session.probe.items.length > 0) {
+      writePlacement(session.probe, session.answers, scope)
+      setTick((t) => t + 1)
+    }
+  }, [session, scope])
 
   return {
-    /** 出题总数（未出题时为 0） */
+    /** 已答数量（自适应：题量不固定，入口态文案用不到固定 40） */
     size: items.length,
     /** 出题失败原因（空串 = 无）；供 UI 显示而不是无限「正在出题…」 */
     startError,
-    /** 题目（存的是当时那一份） */
+    /** 已答题目（存的是当时那一份） */
     items,
+    /** 当前在问的那一题（含 form/gloss/example，供确认态展示） */
+    current,
+    /** 待二次确认的取值（'known'|'unknown'|'unsure'|null） */
+    pendingValue: pending ? pending.value : null,
     /** 已作答数 */
     answeredCount,
     /** 作答表 { wordId: 'known'|'unknown'|'unsure' } */
     answers,
-    /** 是否正在作答（区别于「已测过」） */
-    running: Boolean(session),
-    /** 已答满 */
-    done,
+    /** 是否正在作答（区别于「已测过」的结果态） */
+    running,
+    /** 是否已自适应收敛结束（→ 结果态） */
+    finished,
     /** 是否具备开测条件（词库 + 分档就绪）；入口态按钮据此 disable */
     canStart,
     /** 评分结果；没有 probe 或 words 未加载完时为 null（入口态据此显示） */
     result,
-    /** 是否已有可展示的历史结果（已交卷且已算分） */
+    /** 是否已有可展示的历史结果（已收敛且已算分） */
     hasResult: Boolean(result && (result.sampleSize > 0 || result.itemCount > 0)),
     /** 推荐起点档（无法定位时为 null，由调用方回落默认档） */
     recommendedBand: result ? result.band : null,
     start,
     answer,
-    submit,
+    confirm,
+    undo,
     retake,
     cancel,
   }

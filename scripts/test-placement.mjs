@@ -715,7 +715,7 @@ section('P3. App 层真的接上了（静态）')
   )
   ok(/<PlacementTest/.test(appSrc), 'App 渲染了 PlacementTest')
   ok(appSrc.includes('placement.result'), 'App 把评分结果传给了组件')
-  ok(appSrc.includes('placement.answer') && appSrc.includes('placement.submit'), 'App 接了作答与交卷回调')
+  ok(appSrc.includes('placement.answer') && appSrc.includes('placement.confirm'), 'App 接了作答与二次确认（确认）回调')
 
   /* ★ 隔离红线（源码级）：App 不得把测评结果写进 learn.records ★
    * 本模块最坏的失败模式不是「数字算错」，而是「顺手把自报写进学习记录」，
