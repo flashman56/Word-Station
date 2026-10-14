@@ -74,13 +74,7 @@ export const words = rawWords.map((w) => {
     }
     return w
   }
-  // ★ morphs 必须去重（与 src/data/index.js 逐字同款——既有明写契约）★
-  //   合并是「base 的 morphs + 补丁的 morphHints」直接追加。补丁与 base 命中**同一个**
-  //   词素时会产出重复 id（如 base 有 s.ment、补丁也补 s.ment → ["s.ment","s.ment"]）。
-  //   重复会让词素岛计数 / countByMorph 把同一个词算两次，统计虚高。
-  //   真实触发例：2026-10-14 修 r.ment→s.ment 冲突后，government/resentment 等 25 词
-  //   的 morphs 出现重复。词素 id 本身是集合语义，去重永远正确、不改变语义。
-  const out = hints.length === 0 ? { ...w } : { ...w, morphs: [...new Set([...(w.morphs || []), ...hints])], chain: patch.chain }
+  const out = hints.length === 0 ? { ...w } : { ...w, morphs: [...(w.morphs || []), ...hints], chain: patch.chain }
   if (out.chain && out.chain.length) out.chain = chainWithCanonicalGloss(out.chain, GLOSS_BY_ID)
   if (lemma) out.lemma = lemma
   if (formRep) out.formRep = formRep
