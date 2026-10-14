@@ -50,12 +50,17 @@ export function usePlacement(words, bands, scope) {
     // ★ 没有 probe（没测过 / 交卷后 storage 尚未就绪）就返回 null，而不是 emptyPlacement()。
     //   emptyPlacement() 是个 truthy 对象，会让组件入口态的 `!result` 判据失效 ——
     //   首访时用户看到的不是「从哪一档开始背」入口，而是「这次的作答太薄」结果卡。
-    if (!probe || !Array.isArray(probe.items) || probe.items.length === 0) return null
+    // ★ 题目在 `probe.probe.items`（session / stored 两层都按 { probe:{items}, answers } 落）
+    //   不是 `probe.items` —— 这里曾写错，导致作答态 items 恒为空、永远卡在「暂时出不了题」。
+    const probeItems = probe && probe.probe && Array.isArray(probe.probe.items) ? probe.probe.items : []
+    if (probeItems.length === 0) return null
     if (!Array.isArray(words) || words.length === 0) return null
-    return scorePlacement({ items: probe.items, answers, words, bands })
+    return scorePlacement({ items: probeItems, answers, words, bands })
   }, [probe, answers, words, bands])
 
-  const items = probe && Array.isArray(probe.items) ? probe.items : []
+  // ★ 题目在 `probe.probe.items`：session={probe:p,answers} 与 stored={probe:{items},answers}
+  //   两层都把 p 包在 `probe` 下，所以读 items 必须走 `probe.probe.items`（见上方 result 注释）。
+  const items = probe && probe.probe && Array.isArray(probe.probe.items) ? probe.probe.items : []
   const answeredCount = answers ? Object.keys(answers).length : 0
   const done = answeredCount >= items.length && items.length > 0
 
