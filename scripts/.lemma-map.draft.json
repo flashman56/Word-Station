@@ -25,6 +25,18 @@
   ]
  },
  {
+  "form": "are",
+  "lemma": "be",
+  "type": "v",
+  "src": "AB",
+  "fRank": 24,
+  "lRank": 23,
+  "bucket": "keep",
+  "flags": [
+   "multi-highfreq"
+  ]
+ },
+ {
   "form": "got",
   "lemma": "get",
   "type": "d",
@@ -58,6 +70,18 @@
   "bucket": "audit",
   "flags": [
    "highfreq-before"
+  ]
+ },
+ {
+  "form": "would",
+  "lemma": "will",
+  "type": "v",
+  "src": "AB",
+  "fRank": 64,
+  "lRank": 48,
+  "bucket": "keep",
+  "flags": [
+   "multi-highfreq"
   ]
  },
  {
@@ -118,6 +142,30 @@
   "bucket": "keep",
   "flags": [
    "multi-highfreq"
+  ]
+ },
+ {
+  "form": "more",
+  "lemma": "much",
+  "type": "a",
+  "src": "AB",
+  "fRank": 84,
+  "lRank": 103,
+  "bucket": "audit",
+  "flags": [
+   "highfreq-before"
+  ]
+ },
+ {
+  "form": "should",
+  "lemma": "shall",
+  "type": "v",
+  "src": "AB",
+  "fRank": 95,
+  "lRank": 310,
+  "bucket": "audit",
+  "flags": [
+   "highfreq-before"
   ]
  },
  {
@@ -354,6 +402,18 @@
   ]
  },
  {
+  "form": "might",
+  "lemma": "may",
+  "type": "v",
+  "src": "AB",
+  "fRank": 169,
+  "lRank": 166,
+  "bucket": "keep",
+  "flags": [
+   "multi-highfreq"
+  ]
+ },
+ {
   "form": "talking",
   "lemma": "talk",
   "type": "i",
@@ -433,6 +493,18 @@
   "src": "AB",
   "fRank": 190,
   "lRank": 183,
+  "bucket": "keep",
+  "flags": [
+   "multi-highfreq"
+  ]
+ },
+ {
+  "form": "most",
+  "lemma": "much",
+  "type": "a",
+  "src": "AB",
+  "fRank": 198,
+  "lRank": 103,
   "bucket": "keep",
   "flags": [
    "multi-highfreq"
@@ -854,6 +926,18 @@
   "src": "AB",
   "fRank": 312,
   "lRank": 8412,
+  "bucket": "audit",
+  "flags": [
+   "highfreq-before"
+  ]
+ },
+ {
+  "form": "least",
+  "lemma": "less",
+  "type": "a",
+  "src": "AB",
+  "fRank": 314,
+  "lRank": 458,
   "bucket": "audit",
   "flags": [
    "highfreq-before"
@@ -3510,6 +3594,18 @@
   ]
  },
  {
+  "form": "gotten",
+  "lemma": "get",
+  "type": "v",
+  "src": "AB",
+  "fRank": 1002,
+  "lRank": 6072,
+  "bucket": "audit",
+  "flags": [
+   "highfreq-before"
+  ]
+ },
+ {
   "form": "tells",
   "lemma": "tell",
   "type": "3",
@@ -3708,6 +3804,18 @@
   "src": "AB",
   "fRank": 1047,
   "lRank": 2672,
+  "bucket": "audit",
+  "flags": [
+   "highfreq-before"
+  ]
+ },
+ {
+  "form": "crew",
+  "lemma": "crow",
+  "type": "v",
+  "src": "AB",
+  "fRank": 1053,
+  "lRank": 4266,
   "bucket": "audit",
   "flags": [
    "highfreq-before"
@@ -4425,6 +4533,18 @@
   ]
  },
  {
+  "form": "thousands",
+  "lemma": "thousand",
+  "type": "n",
+  "src": "AB",
+  "fRank": 1221,
+  "lRank": 739,
+  "bucket": "keep",
+  "flags": [
+   "multi-highfreq"
+  ]
+ },
+ {
   "form": "fucked",
   "lemma": "fuck",
   "type": "d",
@@ -4819,6 +4939,18 @@
   "flags": [
    "src-b-only",
    "highfreq-before"
+  ]
+ },
+ {
+  "form": "sooner",
+  "lemma": "soon",
+  "type": "r",
+  "src": "AB",
+  "fRank": 1337,
+  "lRank": 258,
+  "bucket": "keep",
+  "flags": [
+   "multi-highfreq"
   ]
  },
  {
@@ -5534,6 +5666,19 @@
   ]
  },
  {
+  "form": "data",
+  "lemma": "datum",
+  "type": "n",
+  "src": "AB",
+  "fRank": 1487,
+  "lRank": 45521,
+  "bucket": "audit",
+  "flags": [
+   "highfreq-before",
+   "suspect-target"
+  ]
+ },
+ {
   "form": "depends",
   "lemma": "depend",
   "type": "3",
@@ -5636,6 +5781,18 @@
   "src": "AB",
   "fRank": 1505,
   "lRank": 277,
+  "bucket": "keep",
+  "flags": [
+   "multi-highfreq"
+  ]
+ },
+ {
+  "form": "millions",
+  "lemma": "million",
+  "type": "n",
+  "src": "AB",
+  "fRank": 1508,
+  "lRank": 447,
   "bucket": "keep",
   "flags": [
    "multi-highfreq"
@@ -6051,6 +6208,18 @@
   ]
  },
  {
+  "form": "media",
+  "lemma": "medium",
+  "type": "n",
+  "src": "AB",
+  "fRank": 1620,
+  "lRank": 4596,
+  "bucket": "audit",
+  "flags": [
+   "highfreq-before"
+  ]
+ },
+ {
   "form": "dies",
   "lemma": "die",
   "type": "3",
@@ -6314,6 +6483,18 @@
   "flags": [
    "highfreq-before",
    "suspect-target"
+  ]
+ },
+ {
+  "form": "hundreds",
+  "lemma": "hundred",
+  "type": "n",
+  "src": "AB",
+  "fRank": 1686,
+  "lRank": 716,
+  "bucket": "keep",
+  "flags": [
+   "multi-highfreq"
   ]
  },
  {
@@ -6878,6 +7059,18 @@
   "src": "AB",
   "fRank": 1819,
   "lRank": 9569,
+  "bucket": "audit",
+  "flags": [
+   "highfreq-before"
+  ]
+ },
+ {
+  "form": "stairs",
+  "lemma": "stair",
+  "type": "n",
+  "src": "AB",
+  "fRank": 1825,
+  "lRank": 4878,
   "bucket": "audit",
   "flags": [
    "highfreq-before"
@@ -9128,6 +9321,19 @@
   ]
  },
  {
+  "form": "headquarters",
+  "lemma": "headquarter",
+  "type": "v",
+  "src": "AB",
+  "fRank": 2411,
+  "lRank": 27006,
+  "bucket": "audit",
+  "flags": [
+   "highfreq-before",
+   "suspect-target"
+  ]
+ },
+ {
   "form": "phones",
   "lemma": "phone",
   "type": "s",
@@ -10003,6 +10209,16 @@
   "flags": []
  },
  {
+  "form": "traveling",
+  "lemma": "travel",
+  "type": "v",
+  "src": "AB",
+  "fRank": 2628,
+  "lRank": 1092,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "bells",
   "lemma": "bell",
   "type": "s",
@@ -10289,6 +10505,16 @@
   "flags": [
    "highfreq-before"
   ]
+ },
+ {
+  "form": "sales",
+  "lemma": "sale",
+  "type": "n",
+  "src": "AB",
+  "fRank": 2691,
+  "lRank": 1791,
+  "bucket": "auto-fold",
+  "flags": []
  },
  {
   "form": "clouds",
@@ -11350,6 +11576,16 @@
   ]
  },
  {
+  "form": "elder",
+  "lemma": "old",
+  "type": "a",
+  "src": "AB",
+  "fRank": 2949,
+  "lRank": 1320,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "areas",
   "lemma": "area",
   "type": "s",
@@ -11770,6 +12006,18 @@
   "src": "AB",
   "fRank": 3031,
   "lRank": 4245,
+  "bucket": "audit",
+  "flags": [
+   "highfreq-before"
+  ]
+ },
+ {
+  "form": "cookies",
+  "lemma": "cookie",
+  "type": "n",
+  "src": "AB",
+  "fRank": 3032,
+  "lRank": 3191,
   "bucket": "audit",
   "flags": [
    "highfreq-before"
@@ -15815,6 +16063,19 @@
   ]
  },
  {
+  "form": "physics",
+  "lemma": "physic",
+  "type": "v",
+  "src": "AB",
+  "fRank": 4092,
+  "lRank": 47274,
+  "bucket": "audit",
+  "flags": [
+   "highfreq-before",
+   "suspect-target"
+  ]
+ },
+ {
   "form": "sniffs",
   "lemma": "sniff",
   "type": "3",
@@ -17513,6 +17774,18 @@
   ]
  },
  {
+  "form": "oats",
+  "lemma": "oat",
+  "type": "n",
+  "src": "AB",
+  "fRank": 4515,
+  "lRank": 4755,
+  "bucket": "audit",
+  "flags": [
+   "highfreq-before"
+  ]
+ },
+ {
   "form": "carries",
   "lemma": "carry",
   "type": "3",
@@ -17826,6 +18099,16 @@
   ]
  },
  {
+  "form": "traveled",
+  "lemma": "travel",
+  "type": "v",
+  "src": "AB",
+  "fRank": 4586,
+  "lRank": 1092,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "cancelled",
   "lemma": "cancel",
   "type": "d",
@@ -17858,6 +18141,16 @@
   "flags": [
    "highfreq-before"
   ]
+ },
+ {
+  "form": "canceled",
+  "lemma": "cancel",
+  "type": "v",
+  "src": "AB",
+  "fRank": 4597,
+  "lRank": 2371,
+  "bucket": "auto-fold",
+  "flags": []
  },
  {
   "form": "seated",
@@ -18189,6 +18482,16 @@
   "src": "AB",
   "fRank": 4690,
   "lRank": 3071,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "dice",
+  "lemma": "die",
+  "type": "n",
+  "src": "AB",
+  "fRank": 4692,
+  "lRank": 1830,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -18574,6 +18877,16 @@
   "flags": []
  },
  {
+  "form": "tanner",
+  "lemma": "tan",
+  "type": "a",
+  "src": "AB",
+  "fRank": 4792,
+  "lRank": 4352,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "misses",
   "lemma": "miss",
   "type": "3",
@@ -18804,6 +19117,18 @@
   "lRank": 4086,
   "bucket": "auto-fold",
   "flags": []
+ },
+ {
+  "form": "diner",
+  "lemma": "din",
+  "type": "a",
+  "src": "AB",
+  "fRank": 4870,
+  "lRank": 13147,
+  "bucket": "audit",
+  "flags": [
+   "highfreq-before"
+  ]
  },
  {
   "form": "projects",
@@ -19106,6 +19431,16 @@
   "flags": []
  },
  {
+  "form": "dozens",
+  "lemma": "dozen",
+  "type": "n",
+  "src": "AB",
+  "fRank": 4938,
+  "lRank": 2031,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "betting",
   "lemma": "bet",
   "type": "i",
@@ -19188,6 +19523,16 @@
   "src": "AB",
   "fRank": 4952,
   "lRank": 2453,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "billions",
+  "lemma": "billion",
+  "type": "n",
+  "src": "AB",
+  "fRank": 4962,
+  "lRank": 2057,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -19483,6 +19828,19 @@
   "lRank": 3989,
   "bucket": "auto-fold",
   "flags": []
+ },
+ {
+  "form": "clothing",
+  "lemma": "clothe",
+  "type": "v",
+  "src": "AB",
+  "fRank": 5043,
+  "lRank": 24236,
+  "bucket": "audit",
+  "flags": [
+   "form-more-frequent",
+   "suspect-target"
+  ]
  },
  {
   "form": "rebels",
@@ -20950,6 +21308,16 @@
   ]
  },
  {
+  "form": "zombies",
+  "lemma": "zombie",
+  "type": "n",
+  "src": "AB",
+  "fRank": 5425,
+  "lRank": 3908,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "crackling",
   "lemma": "crackle",
   "type": "i",
@@ -22198,6 +22566,18 @@
   "flags": []
  },
  {
+  "form": "dive",
+  "lemma": "diva",
+  "type": "n",
+  "src": "AB",
+  "fRank": 5772,
+  "lRank": 7038,
+  "bucket": "audit",
+  "flags": [
+   "form-more-frequent"
+  ]
+ },
+ {
   "form": "courts",
   "lemma": "court",
   "type": "s",
@@ -23277,6 +23657,16 @@
   ]
  },
  {
+  "form": "goods",
+  "lemma": "good",
+  "type": "n",
+  "src": "AB",
+  "fRank": 6024,
+  "lRank": 270,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "expelled",
   "lemma": "expel",
   "type": "d",
@@ -24290,6 +24680,16 @@
   "flags": []
  },
  {
+  "form": "bitten",
+  "lemma": "bite",
+  "type": "v",
+  "src": "AB",
+  "fRank": 6280,
+  "lRank": 5334,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "saves",
   "lemma": "save",
   "type": "3",
@@ -24986,6 +25386,18 @@
   "src": "AB",
   "fRank": 6467,
   "lRank": 12500,
+  "bucket": "audit",
+  "flags": [
+   "form-more-frequent"
+  ]
+ },
+ {
+  "form": "grandchildren",
+  "lemma": "grandchild",
+  "type": "n",
+  "src": "AB",
+  "fRank": 6472,
+  "lRank": 10445,
   "bucket": "audit",
   "flags": [
    "form-more-frequent"
@@ -25855,6 +26267,19 @@
   "bucket": "audit",
   "flags": [
    "homograph"
+  ]
+ },
+ {
+  "form": "opera",
+  "lemma": "opus",
+  "type": "n",
+  "src": "AB",
+  "fRank": 6711,
+  "lRank": 21110,
+  "bucket": "audit",
+  "flags": [
+   "form-more-frequent",
+   "suspect-target"
   ]
  },
  {
@@ -26850,6 +27275,16 @@
   "flags": []
  },
  {
+  "form": "fewer",
+  "lemma": "few",
+  "type": "a",
+  "src": "AB",
+  "fRank": 6989,
+  "lRank": 244,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "guarding",
   "lemma": "guard",
   "type": "i",
@@ -27319,6 +27754,16 @@
   "src": "AB",
   "fRank": 7094,
   "lRank": 4481,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "eldest",
+  "lemma": "old",
+  "type": "a",
+  "src": "AB",
+  "fRank": 7097,
+  "lRank": 1320,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -27896,6 +28341,16 @@
   "src": "AB",
   "fRank": 7229,
   "lRank": 2320,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "skilled",
+  "lemma": "skill",
+  "type": "v",
+  "src": "AB",
+  "fRank": 7235,
+  "lRank": 3318,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -28922,6 +29377,18 @@
   "flags": []
  },
  {
+  "form": "credentials",
+  "lemma": "credential",
+  "type": "v",
+  "src": "AB",
+  "fRank": 7500,
+  "lRank": 14200,
+  "bucket": "audit",
+  "flags": [
+   "form-more-frequent"
+  ]
+ },
+ {
   "form": "solving",
   "lemma": "solve",
   "type": "i",
@@ -28990,6 +29457,18 @@
   "lRank": 6462,
   "bucket": "auto-fold",
   "flags": []
+ },
+ {
+  "form": "lire",
+  "lemma": "lira",
+  "type": "n",
+  "src": "AB",
+  "fRank": 7517,
+  "lRank": 12030,
+  "bucket": "audit",
+  "flags": [
+   "form-more-frequent"
+  ]
  },
  {
   "form": "chops",
@@ -29448,6 +29927,19 @@
   "lRank": 3479,
   "bucket": "auto-fold",
   "flags": []
+ },
+ {
+  "form": "stove",
+  "lemma": "stave",
+  "type": "v",
+  "src": "AB",
+  "fRank": 7650,
+  "lRank": 33457,
+  "bucket": "audit",
+  "flags": [
+   "form-more-frequent",
+   "suspect-target"
+  ]
  },
  {
   "form": "allied",
@@ -30048,6 +30540,18 @@
   "flags": []
  },
  {
+  "form": "trousers",
+  "lemma": "trouser",
+  "type": "n",
+  "src": "AB",
+  "fRank": 7785,
+  "lRank": 21843,
+  "bucket": "audit",
+  "flags": [
+   "form-more-frequent"
+  ]
+ },
+ {
   "form": "blares",
   "lemma": "blare",
   "type": "3",
@@ -30305,6 +30809,16 @@
   "src": "AB",
   "fRank": 7858,
   "lRank": 1294,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "counseling",
+  "lemma": "counsel",
+  "type": "v",
+  "src": "AB",
+  "fRank": 7862,
+  "lRank": 3533,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -30619,6 +31133,18 @@
   "src": "AB",
   "fRank": 7934,
   "lRank": 14734,
+  "bucket": "audit",
+  "flags": [
+   "form-more-frequent"
+  ]
+ },
+ {
+  "form": "wicked",
+  "lemma": "wick",
+  "type": "v",
+  "src": "AB",
+  "fRank": 7935,
+  "lRank": 13725,
   "bucket": "audit",
   "flags": [
    "form-more-frequent"
@@ -31936,6 +32462,16 @@
   "flags": []
  },
  {
+  "form": "emails",
+  "lemma": "email",
+  "type": "v",
+  "src": "AB",
+  "fRank": 8311,
+  "lRank": 4334,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "dinners",
   "lemma": "dinner",
   "type": "s",
@@ -32113,6 +32649,18 @@
   "lRank": 2010,
   "bucket": "auto-fold",
   "flags": []
+ },
+ {
+  "form": "statistics",
+  "lemma": "statistic",
+  "type": "n",
+  "src": "AB",
+  "fRank": 8362,
+  "lRank": 12800,
+  "bucket": "audit",
+  "flags": [
+   "form-more-frequent"
+  ]
  },
  {
   "form": "shattering",
@@ -33084,6 +33632,16 @@
   "flags": []
  },
  {
+  "form": "billeted",
+  "lemma": "billet",
+  "type": "v",
+  "src": "AB",
+  "fRank": 8601,
+  "lRank": 8598,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "wiser",
   "lemma": "wise",
   "type": "r",
@@ -33446,6 +34004,18 @@
   "flags": []
  },
  {
+  "form": "modeling",
+  "lemma": "model",
+  "type": "v",
+  "src": "AB",
+  "fRank": 8713,
+  "lRank": 8724,
+  "bucket": "audit",
+  "flags": [
+   "form-more-frequent"
+  ]
+ },
+ {
   "form": "sporting",
   "lemma": "sport",
   "type": "i",
@@ -33482,6 +34052,16 @@
   "src": "AB",
   "fRank": 8728,
   "lRank": 772,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "cupcakes",
+  "lemma": "cupcake",
+  "type": "n",
+  "src": "AB",
+  "fRank": 8731,
+  "lRank": 8228,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -35743,6 +36323,16 @@
   ]
  },
  {
+  "form": "maths",
+  "lemma": "math",
+  "type": "n",
+  "src": "AB",
+  "fRank": 9284,
+  "lRank": 2729,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "intimidated",
   "lemma": "intimidate",
   "type": "d",
@@ -37779,6 +38369,16 @@
   "flags": []
  },
  {
+  "form": "aging",
+  "lemma": "age",
+  "type": "v",
+  "src": "AB",
+  "fRank": 9877,
+  "lRank": 516,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "pitching",
   "lemma": "pitch",
   "type": "i",
@@ -37993,6 +38593,16 @@
   "src": "AB",
   "fRank": 9936,
   "lRank": 8773,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "mosquitoes",
+  "lemma": "mosquito",
+  "type": "n",
+  "src": "AB",
+  "fRank": 9939,
+  "lRank": 3136,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -40319,6 +40929,16 @@
   ]
  },
  {
+  "form": "lenses",
+  "lemma": "lens",
+  "type": "v",
+  "src": "AB",
+  "fRank": 10643,
+  "lRank": 6238,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "twisting",
   "lemma": "twist",
   "type": "i",
@@ -40390,6 +41010,16 @@
   "src": "AB",
   "fRank": 10665,
   "lRank": 1250,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "volcanoes",
+  "lemma": "volcano",
+  "type": "n",
+  "src": "AB",
+  "fRank": 10666,
+  "lRank": 7257,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -40594,6 +41224,18 @@
   "flags": []
  },
  {
+  "form": "cola",
+  "lemma": "colon",
+  "type": "n",
+  "src": "AB",
+  "fRank": 10731,
+  "lRank": 11370,
+  "bucket": "audit",
+  "flags": [
+   "form-more-frequent"
+  ]
+ },
+ {
   "form": "founding",
   "lemma": "found",
   "type": "i",
@@ -40624,6 +41266,19 @@
   "lRank": 2898,
   "bucket": "auto-fold",
   "flags": []
+ },
+ {
+  "form": "crossroads",
+  "lemma": "crossroad",
+  "type": "n",
+  "src": "AB",
+  "fRank": 10745,
+  "lRank": 33008,
+  "bucket": "audit",
+  "flags": [
+   "form-more-frequent",
+   "suspect-target"
+  ]
  },
  {
   "form": "pleading",
@@ -41936,6 +42591,16 @@
   "flags": []
  },
  {
+  "form": "torpedoes",
+  "lemma": "torpedo",
+  "type": "n",
+  "src": "AB",
+  "fRank": 11113,
+  "lRank": 8582,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "disgraced",
   "lemma": "disgrace",
   "type": "p",
@@ -42787,6 +43452,16 @@
   ]
  },
  {
+  "form": "weirdest",
+  "lemma": "weird",
+  "type": "a",
+  "src": "AB",
+  "fRank": 11351,
+  "lRank": 5577,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "recordings",
   "lemma": "recording",
   "type": "s",
@@ -43253,6 +43928,18 @@
   "lRank": 3546,
   "bucket": "auto-fold",
   "flags": []
+ },
+ {
+  "form": "brownies",
+  "lemma": "brownie",
+  "type": "n",
+  "src": "AB",
+  "fRank": 11500,
+  "lRank": 12086,
+  "bucket": "audit",
+  "flags": [
+   "form-more-frequent"
+  ]
  },
  {
   "form": "crunching",
@@ -45631,6 +46318,16 @@
   "flags": []
  },
  {
+  "form": "stupidest",
+  "lemma": "stupid",
+  "type": "a",
+  "src": "AB",
+  "fRank": 12109,
+  "lRank": 368,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "displayed",
   "lemma": "display",
   "type": "d",
@@ -46623,6 +47320,18 @@
   "flags": []
  },
  {
+  "form": "liters",
+  "lemma": "liter",
+  "type": "n",
+  "src": "AB",
+  "fRank": 12386,
+  "lRank": 15525,
+  "bucket": "audit",
+  "flags": [
+   "form-more-frequent"
+  ]
+ },
+ {
   "form": "relics",
   "lemma": "relic",
   "type": "s",
@@ -47149,6 +47858,16 @@
   "src": "AB",
   "fRank": 12500,
   "lRank": 12100,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "phonetics",
+  "lemma": "phonetic",
+  "type": "n",
+  "src": "AB",
+  "fRank": 12500,
+  "lRank": 12000,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -47957,6 +48676,16 @@
   "src": "AB",
   "fRank": 12735,
   "lRank": 5265,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "weirder",
+  "lemma": "weird",
+  "type": "a",
+  "src": "AB",
+  "fRank": 12738,
+  "lRank": 5577,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -48894,6 +49623,16 @@
   "flags": []
  },
  {
+  "form": "valuables",
+  "lemma": "valuable",
+  "type": "n",
+  "src": "AB",
+  "fRank": 13006,
+  "lRank": 2341,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "bunnies",
   "lemma": "bunny",
   "type": "s",
@@ -49586,6 +50325,16 @@
   "flags": []
  },
  {
+  "form": "barbed",
+  "lemma": "barb",
+  "type": "v",
+  "src": "AB",
+  "fRank": 13177,
+  "lRank": 6504,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "pledged",
   "lemma": "pledge",
   "type": "d",
@@ -50235,6 +50984,16 @@
   "src": "AB",
   "fRank": 13349,
   "lRank": 3027,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "stabler",
+  "lemma": "stable",
+  "type": "a",
+  "src": "AB",
+  "fRank": 13352,
+  "lRank": 2746,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -51139,6 +51898,16 @@
   "src": "AB",
   "fRank": 13643,
   "lRank": 3103,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "canceling",
+  "lemma": "cancel",
+  "type": "v",
+  "src": "AB",
+  "fRank": 13646,
+  "lRank": 2371,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -52160,6 +52929,16 @@
   "flags": []
  },
  {
+  "form": "pence",
+  "lemma": "penny",
+  "type": "n",
+  "src": "AB",
+  "fRank": 13962,
+  "lRank": 1698,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "accessed",
   "lemma": "access",
   "type": "d",
@@ -52337,6 +53116,16 @@
   "form": "surging",
   "lemma": "surge",
   "type": "i",
+  "src": "AB",
+  "fRank": 14000,
+  "lRank": 12000,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "theaters",
+  "lemma": "theater",
+  "type": "n",
   "src": "AB",
   "fRank": 14000,
   "lRank": 12000,
@@ -52837,6 +53626,16 @@
   "src": "AB",
   "fRank": 14155,
   "lRank": 5043,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "ninjas",
+  "lemma": "ninja",
+  "type": "n",
+  "src": "AB",
+  "fRank": 14158,
+  "lRank": 4019,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -54016,6 +54815,16 @@
   ]
  },
  {
+  "form": "graphics",
+  "lemma": "graphic",
+  "type": "n",
+  "src": "AB",
+  "fRank": 14500,
+  "lRank": 6000,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "illuminating",
   "lemma": "illuminate",
   "type": "i",
@@ -55001,6 +55810,19 @@
   "lRank": 2000,
   "bucket": "auto-fold",
   "flags": []
+ },
+ {
+  "form": "alumni",
+  "lemma": "alumnus",
+  "type": "n",
+  "src": "AB",
+  "fRank": 14762,
+  "lRank": 46401,
+  "bucket": "audit",
+  "flags": [
+   "form-more-frequent",
+   "suspect-target"
+  ]
  },
  {
   "form": "snickering",
@@ -57379,6 +58201,16 @@
   "flags": []
  },
  {
+  "form": "penises",
+  "lemma": "penis",
+  "type": "n",
+  "src": "AB",
+  "fRank": 15352,
+  "lRank": 2854,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "upgraded",
   "lemma": "upgrade",
   "type": "d",
@@ -58034,6 +58866,16 @@
   "flags": [
    "form-more-frequent"
   ]
+ },
+ {
+  "form": "counselors",
+  "lemma": "counselor",
+  "type": "n",
+  "src": "AB",
+  "fRank": 15532,
+  "lRank": 3606,
+  "bucket": "auto-fold",
+  "flags": []
  },
  {
   "form": "revolutionaries",
@@ -58982,6 +59824,16 @@
   "src": "AB",
   "fRank": 15830,
   "lRank": 4784,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "sera",
+  "lemma": "serum",
+  "type": "n",
+  "src": "AB",
+  "fRank": 15831,
+  "lRank": 8168,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -61535,6 +62387,16 @@
   ]
  },
  {
+  "form": "stricken",
+  "lemma": "strike",
+  "type": "v",
+  "src": "AB",
+  "fRank": 16608,
+  "lRank": 1130,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "dials",
   "lemma": "dial",
   "type": "s",
@@ -61669,6 +62531,16 @@
   "flags": []
  },
  {
+  "form": "commons",
+  "lemma": "common",
+  "type": "n",
+  "src": "AB",
+  "fRank": 16650,
+  "lRank": 961,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "waitresses",
   "lemma": "waitress",
   "type": "s",
@@ -61749,6 +62621,16 @@
   "src": "AB",
   "fRank": 16666,
   "lRank": 10174,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "archers",
+  "lemma": "archer",
+  "type": "n",
+  "src": "AB",
+  "fRank": 16669,
+  "lRank": 4426,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -62351,6 +63233,16 @@
   "flags": [
    "form-more-frequent"
   ]
+ },
+ {
+  "form": "inning",
+  "lemma": "inn",
+  "type": "v",
+  "src": "AB",
+  "fRank": 16834,
+  "lRank": 3631,
+  "bucket": "auto-fold",
+  "flags": []
  },
  {
   "form": "alleys",
@@ -65893,6 +66785,16 @@
   "flags": []
  },
  {
+  "form": "meanest",
+  "lemma": "mean",
+  "type": "a",
+  "src": "AB",
+  "fRank": 17837,
+  "lRank": 5496,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "sprinkles",
   "lemma": "sprinkle",
   "type": "3",
@@ -66095,6 +66997,18 @@
   "flags": []
  },
  {
+  "form": "tropics",
+  "lemma": "tropic",
+  "type": "n",
+  "src": "AB",
+  "fRank": 17914,
+  "lRank": 26230,
+  "bucket": "audit",
+  "flags": [
+   "form-more-frequent"
+  ]
+ },
+ {
   "form": "trapping",
   "lemma": "trap",
   "type": "i",
@@ -66234,6 +67148,16 @@
   "flags": []
  },
  {
+  "form": "fueled",
+  "lemma": "fuel",
+  "type": "v",
+  "src": "AB",
+  "fRank": 17968,
+  "lRank": 2311,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "brothels",
   "lemma": "brothel",
   "type": "s",
@@ -66306,6 +67230,16 @@
   "src": "AB",
   "fRank": 17995,
   "lRank": 6408,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "emailed",
+  "lemma": "email",
+  "type": "v",
+  "src": "AB",
+  "fRank": 17999,
+  "lRank": 4334,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -66562,6 +67496,16 @@
   "src": "AB",
   "fRank": 18068,
   "lRank": 11658,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "wasps",
+  "lemma": "wasp",
+  "type": "n",
+  "src": "AB",
+  "fRank": 18069,
+  "lRank": 4377,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -69560,6 +70504,16 @@
   "flags": []
  },
  {
+  "form": "lodgings",
+  "lemma": "lodging",
+  "type": "n",
+  "src": "AB",
+  "fRank": 19057,
+  "lRank": 15450,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "dozed",
   "lemma": "doze",
   "type": "p",
@@ -69850,6 +70804,16 @@
   "flags": []
  },
  {
+  "form": "famed",
+  "lemma": "fame",
+  "type": "v",
+  "src": "AB",
+  "fRank": 19156,
+  "lRank": 3708,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "slew",
   "lemma": "slay",
   "type": "p",
@@ -69962,6 +70926,16 @@
   "src": "AB",
   "fRank": 19188,
   "lRank": 5575,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "rookies",
+  "lemma": "rookie",
+  "type": "n",
+  "src": "AB",
+  "fRank": 19191,
+  "lRank": 6046,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -70568,6 +71542,16 @@
   "flags": []
  },
  {
+  "form": "farthest",
+  "lemma": "far",
+  "type": "a",
+  "src": "AB",
+  "fRank": 19372,
+  "lRank": 1490,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "anointed",
   "lemma": "anoint",
   "type": "d",
@@ -70720,6 +71704,16 @@
   "src": "AB",
   "fRank": 19427,
   "lRank": 253,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "aliases",
+  "lemma": "alias",
+  "type": "v",
+  "src": "AB",
+  "fRank": 19430,
+  "lRank": 13900,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -71293,6 +72287,16 @@
   "src": "AB",
   "fRank": 19608,
   "lRank": 10458,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "particulars",
+  "lemma": "particular",
+  "type": "n",
+  "src": "AB",
+  "fRank": 19611,
+  "lRank": 1468,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -73941,6 +74945,16 @@
   "flags": []
  },
  {
+  "form": "thirds",
+  "lemma": "third",
+  "type": "v",
+  "src": "AB",
+  "fRank": 20426,
+  "lRank": 655,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "cobwebs",
   "lemma": "cobweb",
   "type": "s",
@@ -74229,6 +75243,16 @@
   "src": "AB",
   "fRank": 20526,
   "lRank": 5771,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "commoner",
+  "lemma": "common",
+  "type": "a",
+  "src": "AB",
+  "fRank": 20530,
+  "lRank": 961,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -75931,6 +76955,16 @@
   "flags": []
  },
  {
+  "form": "shat",
+  "lemma": "shit",
+  "type": "v",
+  "src": "AB",
+  "fRank": 21048,
+  "lRank": 203,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "raindrops",
   "lemma": "raindrop",
   "type": "s",
@@ -75971,6 +77005,16 @@
   "src": "AB",
   "fRank": 21067,
   "lRank": 5808,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "optics",
+  "lemma": "optic",
+  "type": "n",
+  "src": "AB",
+  "fRank": 21075,
+  "lRank": 18425,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -76031,6 +77075,16 @@
   "src": "AB",
   "fRank": 21091,
   "lRank": 8248,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "sixties",
+  "lemma": "sixty",
+  "type": "n",
+  "src": "AB",
+  "fRank": 21092,
+  "lRank": 6843,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -76126,6 +77180,16 @@
   "src": "AB",
   "fRank": 21106,
   "lRank": 11289,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "meaner",
+  "lemma": "mean",
+  "type": "a",
+  "src": "AB",
+  "fRank": 21112,
+  "lRank": 5496,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -76354,6 +77418,26 @@
   "src": "AB",
   "fRank": 21188,
   "lRank": 15414,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "quarreled",
+  "lemma": "quarrel",
+  "type": "v",
+  "src": "AB",
+  "fRank": 21190,
+  "lRank": 5805,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "flipper",
+  "lemma": "flip",
+  "type": "a",
+  "src": "AB",
+  "fRank": 21193,
+  "lRank": 8379,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -76868,6 +77952,16 @@
   "flags": []
  },
  {
+  "form": "innings",
+  "lemma": "inning",
+  "type": "n",
+  "src": "AB",
+  "fRank": 21332,
+  "lRank": 16834,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "deserting",
   "lemma": "desert",
   "type": "i",
@@ -77278,6 +78372,16 @@
   "src": "AB",
   "fRank": 21460,
   "lRank": 5663,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "bookies",
+  "lemma": "bookie",
+  "type": "n",
+  "src": "AB",
+  "fRank": 21463,
+  "lRank": 12158,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -77698,6 +78802,16 @@
   "src": "AB",
   "fRank": 21636,
   "lRank": 4119,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "leveled",
+  "lemma": "level",
+  "type": "v",
+  "src": "AB",
+  "fRank": 21642,
+  "lRank": 895,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -78570,6 +79684,16 @@
   "src": "AB",
   "fRank": 21998,
   "lRank": 1450,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "chronics",
+  "lemma": "chronic",
+  "type": "n",
+  "src": "AB",
+  "fRank": 22000,
+  "lRank": 6000,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -79640,6 +80764,16 @@
   "flags": []
  },
  {
+  "form": "lighted",
+  "lemma": "light",
+  "type": "v",
+  "src": "AB",
+  "fRank": 22347,
+  "lRank": 1400,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "shined",
   "lemma": "shine",
   "type": "dp",
@@ -79842,6 +80976,16 @@
   "flags": [
    "lemma-no-gloss"
   ]
+ },
+ {
+  "form": "shoveling",
+  "lemma": "shovel",
+  "type": "v",
+  "src": "AB",
+  "fRank": 22438,
+  "lRank": 5837,
+  "bucket": "auto-fold",
+  "flags": []
  },
  {
   "form": "fathered",
@@ -80302,6 +81446,16 @@
   "src": "AB",
   "fRank": 22593,
   "lRank": 5295,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "signaling",
+  "lemma": "signal",
+  "type": "v",
+  "src": "AB",
+  "fRank": 22594,
+  "lRank": 1282,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -81373,6 +82527,16 @@
   "flags": []
  },
  {
+  "form": "trillions",
+  "lemma": "trillion",
+  "type": "n",
+  "src": "AB",
+  "fRank": 22934,
+  "lRank": 11531,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "alternating",
   "lemma": "alternate",
   "type": "i",
@@ -81929,6 +83093,16 @@
   "flags": [
    "form-more-frequent"
   ]
+ },
+ {
+  "form": "millimeters",
+  "lemma": "millimeter",
+  "type": "n",
+  "src": "AB",
+  "fRank": 23103,
+  "lRank": 12600,
+  "bucket": "auto-fold",
+  "flags": []
  },
  {
   "form": "heaving",
@@ -82507,6 +83681,18 @@
   "flags": []
  },
  {
+  "form": "hemorrhoids",
+  "lemma": "hemorrhoid",
+  "type": "n",
+  "src": "AB",
+  "fRank": 23349,
+  "lRank": 33801,
+  "bucket": "audit",
+  "flags": [
+   "form-more-frequent"
+  ]
+ },
+ {
   "form": "infuriating",
   "lemma": "infuriate",
   "type": "i",
@@ -82774,6 +83960,16 @@
   "src": "AB",
   "fRank": 23453,
   "lRank": 6823,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "nothings",
+  "lemma": "nothing",
+  "type": "n",
+  "src": "AB",
+  "fRank": 23456,
+  "lRank": 111,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -83428,6 +84624,16 @@
   ]
  },
  {
+  "form": "messieurs",
+  "lemma": "monsieur",
+  "type": "n",
+  "src": "AB",
+  "fRank": 23692,
+  "lRank": 8652,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "tailored",
   "lemma": "tailor",
   "type": "d",
@@ -83646,6 +84852,16 @@
   "flags": [
    "form-more-frequent"
   ]
+ },
+ {
+  "form": "unraveling",
+  "lemma": "unravel",
+  "type": "v",
+  "src": "AB",
+  "fRank": 23773,
+  "lRank": 13200,
+  "bucket": "auto-fold",
+  "flags": []
  },
  {
   "form": "recited",
@@ -83937,6 +85153,16 @@
   ]
  },
  {
+  "form": "lucked",
+  "lemma": "luck",
+  "type": "v",
+  "src": "AB",
+  "fRank": 23897,
+  "lRank": 8394,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "droplets",
   "lemma": "droplet",
   "type": "s",
@@ -84097,6 +85323,18 @@
   "flags": []
  },
  {
+  "form": "whirrs",
+  "lemma": "whir",
+  "type": "v",
+  "src": "AB",
+  "fRank": 23969,
+  "lRank": 34212,
+  "bucket": "audit",
+  "flags": [
+   "form-more-frequent"
+  ]
+ },
+ {
   "form": "caverns",
   "lemma": "cavern",
   "type": "s",
@@ -84159,6 +85397,16 @@
   "flags": []
  },
  {
+  "form": "dialling",
+  "lemma": "dial",
+  "type": "v",
+  "src": "AB",
+  "fRank": 23993,
+  "lRank": 3836,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "peacekeepers",
   "lemma": "peacekeeper",
   "type": "s",
@@ -84187,6 +85435,16 @@
   "src": "AB",
   "fRank": 23999,
   "lRank": 4317,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "arthritides",
+  "lemma": "arthritis",
+  "type": "n",
+  "src": "AB",
+  "fRank": 24000,
+  "lRank": 14200,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -84750,6 +86008,16 @@
   "flags": []
  },
  {
+  "form": "quarreling",
+  "lemma": "quarrel",
+  "type": "v",
+  "src": "AB",
+  "fRank": 24172,
+  "lRank": 5805,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "decreasing",
   "lemma": "decrease",
   "type": "i",
@@ -84808,6 +86076,16 @@
   "src": "AB",
   "fRank": 24199,
   "lRank": 10247,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "aliasing",
+  "lemma": "alias",
+  "type": "v",
+  "src": "AB",
+  "fRank": 24200,
+  "lRank": 13900,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -84910,6 +86188,16 @@
   "flags": []
  },
  {
+  "form": "gamer",
+  "lemma": "game",
+  "type": "a",
+  "src": "AB",
+  "fRank": 24225,
+  "lRank": 6246,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "softened",
   "lemma": "soften",
   "type": "d",
@@ -84926,6 +86214,16 @@
   "src": "AB",
   "fRank": 24228,
   "lRank": 1200,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "dishonored",
+  "lemma": "dishonor",
+  "type": "v",
+  "src": "AB",
+  "fRank": 24243,
+  "lRank": 15935,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -85000,6 +86298,16 @@
   "src": "AB",
   "fRank": 24268,
   "lRank": 15000,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "modeled",
+  "lemma": "model",
+  "type": "v",
+  "src": "AB",
+  "fRank": 24271,
+  "lRank": 8724,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -85310,12 +86618,32 @@
   "flags": []
  },
  {
+  "form": "ani",
+  "lemma": "anus",
+  "type": "n",
+  "src": "AB",
+  "fRank": 24381,
+  "lRank": 13306,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "barricaded",
   "lemma": "barricade",
   "type": "d",
   "src": "AB",
   "fRank": 24384,
   "lRank": 15200,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "lattes",
+  "lemma": "latte",
+  "type": "n",
+  "src": "AB",
+  "fRank": 24390,
+  "lRank": 7152,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -85465,6 +86793,16 @@
   "flags": [
    "form-more-frequent"
   ]
+ },
+ {
+  "form": "totaled",
+  "lemma": "total",
+  "type": "v",
+  "src": "AB",
+  "fRank": 24442,
+  "lRank": 1179,
+  "bucket": "auto-fold",
+  "flags": []
  },
  {
   "form": "jinxed",
@@ -85940,6 +87278,16 @@
   "flags": []
  },
  {
+  "form": "makeups",
+  "lemma": "makeup",
+  "type": "n",
+  "src": "AB",
+  "fRank": 24611,
+  "lRank": 2420,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "livers",
   "lemma": "liver",
   "type": "s",
@@ -86306,6 +87654,16 @@
   "src": "AB",
   "fRank": 24738,
   "lRank": 8962,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "mains",
+  "lemma": "main",
+  "type": "n",
+  "src": "AB",
+  "fRank": 24741,
+  "lRank": 969,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -86878,6 +88236,16 @@
   "flags": []
  },
  {
+  "form": "oldies",
+  "lemma": "oldie",
+  "type": "n",
+  "src": "AB",
+  "fRank": 24944,
+  "lRank": 22867,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "puddles",
   "lemma": "puddle",
   "type": "s",
@@ -86904,6 +88272,16 @@
   "src": "AB",
   "fRank": 24954,
   "lRank": 5518,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "midterms",
+  "lemma": "midterm",
+  "type": "n",
+  "src": "AB",
+  "fRank": 24955,
+  "lRank": 13000,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -87480,6 +88858,16 @@
   "flags": []
  },
  {
+  "form": "eighties",
+  "lemma": "eighty",
+  "type": "n",
+  "src": "AB",
+  "fRank": 25166,
+  "lRank": 9577,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "handlers",
   "lemma": "handler",
   "type": "s",
@@ -87732,6 +89120,16 @@
   "src": "AB",
   "fRank": 25243,
   "lRank": 9218,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "stunk",
+  "lemma": "stink",
+  "type": "v",
+  "src": "AB",
+  "fRank": 25246,
+  "lRank": 3520,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -88673,6 +90071,16 @@
   "src": "AB",
   "fRank": 25597,
   "lRank": 734,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "pillared",
+  "lemma": "pillar",
+  "type": "v",
+  "src": "AB",
+  "fRank": 25600,
+  "lRank": 13000,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -89710,6 +91118,16 @@
   "flags": []
  },
  {
+  "form": "diagnostics",
+  "lemma": "diagnostic",
+  "type": "n",
+  "src": "AB",
+  "fRank": 25957,
+  "lRank": 13200,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "zooming",
   "lemma": "zoom",
   "type": "i",
@@ -89760,12 +91178,32 @@
   "flags": []
  },
  {
+  "form": "channeling",
+  "lemma": "channel",
+  "type": "v",
+  "src": "AB",
+  "fRank": 25979,
+  "lRank": 2074,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "wieners",
   "lemma": "wiener",
   "type": "s",
   "src": "AB",
   "fRank": 25982,
   "lRank": 12358,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "cougars",
+  "lemma": "cougar",
+  "type": "n",
+  "src": "AB",
+  "fRank": 25997,
+  "lRank": 13763,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -89790,6 +91228,16 @@
   "flags": []
  },
  {
+  "form": "noblest",
+  "lemma": "noble",
+  "type": "a",
+  "src": "AB",
+  "fRank": 26008,
+  "lRank": 2257,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "wading",
   "lemma": "wade",
   "type": "i",
@@ -89806,6 +91254,16 @@
   "src": "AB",
   "fRank": 26017,
   "lRank": 13000,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "gentler",
+  "lemma": "gentle",
+  "type": "a",
+  "src": "AB",
+  "fRank": 26019,
+  "lRank": 1500,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -89996,6 +91454,16 @@
   "flags": []
  },
  {
+  "form": "sinuses",
+  "lemma": "sinus",
+  "type": "n",
+  "src": "AB",
+  "fRank": 26076,
+  "lRank": 16514,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "spiking",
   "lemma": "spike",
   "type": "i",
@@ -90130,6 +91598,16 @@
   "flags": []
  },
  {
+  "form": "seventies",
+  "lemma": "seventy",
+  "type": "n",
+  "src": "AB",
+  "fRank": 26144,
+  "lRank": 10709,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "institutionalized",
   "lemma": "institutionalize",
   "type": "d",
@@ -90240,6 +91718,16 @@
   ]
  },
  {
+  "form": "denning",
+  "lemma": "den",
+  "type": "v",
+  "src": "AB",
+  "fRank": 26203,
+  "lRank": 4372,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "unfolds",
   "lemma": "unfold",
   "type": "3",
@@ -90296,6 +91784,16 @@
   "src": "AB",
   "fRank": 26232,
   "lRank": 8257,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "littlest",
+  "lemma": "little",
+  "type": "a",
+  "src": "AB",
+  "fRank": 26234,
+  "lRank": 93,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -90364,6 +91862,16 @@
   "flags": [
    "form-more-frequent"
   ]
+ },
+ {
+  "form": "sissies",
+  "lemma": "sissy",
+  "type": "n",
+  "src": "AB",
+  "fRank": 26271,
+  "lRank": 7546,
+  "bucket": "auto-fold",
+  "flags": []
  },
  {
   "form": "zipping",
@@ -90989,6 +92497,16 @@
   "flags": [
    "src-b-only"
   ]
+ },
+ {
+  "form": "vectored",
+  "lemma": "vector",
+  "type": "v",
+  "src": "AB",
+  "fRank": 26500,
+  "lRank": 12100,
+  "bucket": "auto-fold",
+  "flags": []
  },
  {
   "form": "grieved",
@@ -91699,6 +93217,16 @@
   "flags": []
  },
  {
+  "form": "nautili",
+  "lemma": "nautilus",
+  "type": "n",
+  "src": "AB",
+  "fRank": 26800,
+  "lRank": 22100,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "cruises",
   "lemma": "cruise",
   "type": "s",
@@ -91715,6 +93243,16 @@
   "src": "AB",
   "fRank": 26812,
   "lRank": 5628,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "damnedest",
+  "lemma": "damned",
+  "type": "a",
+  "src": "AB",
+  "fRank": 26813,
+  "lRank": 15200,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -91827,6 +93365,16 @@
   "src": "AB",
   "fRank": 26864,
   "lRank": 11365,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "worshiped",
+  "lemma": "worship",
+  "type": "v",
+  "src": "AB",
+  "fRank": 26867,
+  "lRank": 3921,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -92302,6 +93850,16 @@
   "flags": []
  },
  {
+  "form": "stupider",
+  "lemma": "stupid",
+  "type": "a",
+  "src": "AB",
+  "fRank": 27026,
+  "lRank": 368,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "comprised",
   "lemma": "comprise",
   "type": "p",
@@ -92520,6 +94078,16 @@
   "flags": []
  },
  {
+  "form": "grounding",
+  "lemma": "ground",
+  "type": "v",
+  "src": "AB",
+  "fRank": 27079,
+  "lRank": 5664,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "reclaimed",
   "lemma": "reclaim",
   "type": "d",
@@ -92541,6 +94109,16 @@
    "src-b-only",
    "form-more-frequent"
   ]
+ },
+ {
+  "form": "refueling",
+  "lemma": "refuel",
+  "type": "v",
+  "src": "AB",
+  "fRank": 27090,
+  "lRank": 22121,
+  "bucket": "auto-fold",
+  "flags": []
  },
  {
   "form": "manoeuvres",
@@ -92987,6 +94565,16 @@
   "flags": []
  },
  {
+  "form": "hows",
+  "lemma": "how",
+  "type": "n",
+  "src": "AB",
+  "fRank": 27246,
+  "lRank": 46,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "canaries",
   "lemma": "canary",
   "type": "s",
@@ -93043,6 +94631,16 @@
   "src": "AB",
   "fRank": 27275,
   "lRank": 11297,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "antennae",
+  "lemma": "antenna",
+  "type": "n",
+  "src": "AB",
+  "fRank": 27276,
+  "lRank": 9916,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -93267,6 +94865,16 @@
   "src": "AB",
   "fRank": 27339,
   "lRank": 1340,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "cleft",
+  "lemma": "cleave",
+  "type": "v",
+  "src": "AB",
+  "fRank": 27341,
+  "lRank": 21662,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -93889,6 +95497,16 @@
   "flags": []
  },
  {
+  "form": "tornadoes",
+  "lemma": "tornado",
+  "type": "n",
+  "src": "AB",
+  "fRank": 27563,
+  "lRank": 8269,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "saxons",
   "lemma": "saxon",
   "type": "s",
@@ -93961,6 +95579,16 @@
   "src": "AB",
   "fRank": 27595,
   "lRank": 5082,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "fames",
+  "lemma": "fame",
+  "type": "v",
+  "src": "AB",
+  "fRank": 27600,
+  "lRank": 3708,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -94125,6 +95753,16 @@
   "flags": []
  },
  {
+  "form": "dueling",
+  "lemma": "duel",
+  "type": "v",
+  "src": "AB",
+  "fRank": 27676,
+  "lRank": 5453,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "overthrown",
   "lemma": "overthrow",
   "type": "d",
@@ -94275,6 +95913,16 @@
   "src": "AB",
   "fRank": 27759,
   "lRank": 26255,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "buffaloes",
+  "lemma": "buffalo",
+  "type": "n",
+  "src": "AB",
+  "fRank": 27760,
+  "lRank": 4552,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -95268,6 +96916,36 @@
   "flags": []
  },
  {
+  "form": "misspelled",
+  "lemma": "misspell",
+  "type": "v",
+  "src": "AB",
+  "fRank": 28127,
+  "lRank": 17400,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "stiller",
+  "lemma": "still",
+  "type": "a",
+  "src": "AB",
+  "fRank": 28129,
+  "lRank": 110,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "loca",
+  "lemma": "locus",
+  "type": "n",
+  "src": "AB",
+  "fRank": 28131,
+  "lRank": 23000,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "thunderstorms",
   "lemma": "thunderstorm",
   "type": "s",
@@ -95304,6 +96982,16 @@
   "src": "AB",
   "fRank": 28144,
   "lRank": 15392,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "rerouted",
+  "lemma": "reroute",
+  "type": "v",
+  "src": "AB",
+  "fRank": 28145,
+  "lRank": 23095,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -95626,6 +97314,16 @@
   "flags": []
  },
  {
+  "form": "payed",
+  "lemma": "pay",
+  "type": "v",
+  "src": "AB",
+  "fRank": 28283,
+  "lRank": 6015,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "strengthens",
   "lemma": "strengthen",
   "type": "3",
@@ -95828,6 +97526,16 @@
   "src": "AB",
   "fRank": 28357,
   "lRank": 12200,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "signaled",
+  "lemma": "signal",
+  "type": "v",
+  "src": "AB",
+  "fRank": 28359,
+  "lRank": 1282,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -96060,6 +97768,16 @@
   "flags": [
    "lemma-no-gloss"
   ]
+ },
+ {
+  "form": "kitties",
+  "lemma": "kitty",
+  "type": "n",
+  "src": "AB",
+  "fRank": 28439,
+  "lRank": 2245,
+  "bucket": "auto-fold",
+  "flags": []
  },
  {
   "form": "commenced",
@@ -96973,6 +98691,16 @@
   "src": "AB",
   "fRank": 28797,
   "lRank": 10776,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "reals",
+  "lemma": "real",
+  "type": "n",
+  "src": "AB",
+  "fRank": 28806,
+  "lRank": 193,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -97983,6 +99711,16 @@
   "flags": []
  },
  {
+  "form": "groveling",
+  "lemma": "grovel",
+  "type": "v",
+  "src": "AB",
+  "fRank": 29182,
+  "lRank": 20302,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "backfires",
   "lemma": "backfire",
   "type": "3",
@@ -98286,6 +100024,16 @@
   "flags": []
  },
  {
+  "form": "jackasses",
+  "lemma": "jackass",
+  "type": "n",
+  "src": "AB",
+  "fRank": 29309,
+  "lRank": 6254,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "poppies",
   "lemma": "poppy",
   "type": "s",
@@ -98354,6 +100102,16 @@
   "src": "AB",
   "fRank": 29338,
   "lRank": 29299,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "monies",
+  "lemma": "money",
+  "type": "n",
+  "src": "AB",
+  "fRank": 29346,
+  "lRank": 6003,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -99122,6 +100880,16 @@
   "flags": []
  },
  {
+  "form": "saviors",
+  "lemma": "savior",
+  "type": "n",
+  "src": "AB",
+  "fRank": 29674,
+  "lRank": 6103,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "resents",
   "lemma": "resent",
   "type": "3",
@@ -99158,6 +100926,16 @@
   "src": "AB",
   "fRank": 29687,
   "lRank": 21055,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "omelets",
+  "lemma": "omelet",
+  "type": "n",
+  "src": "AB",
+  "fRank": 29691,
+  "lRank": 3288,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -99444,6 +101222,16 @@
   "flags": []
  },
  {
+  "form": "chiseled",
+  "lemma": "chisel",
+  "type": "v",
+  "src": "AB",
+  "fRank": 29819,
+  "lRank": 17518,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "shallows",
   "lemma": "shallow",
   "type": "s",
@@ -99494,6 +101282,16 @@
   "flags": []
  },
  {
+  "form": "nobler",
+  "lemma": "noble",
+  "type": "a",
+  "src": "AB",
+  "fRank": 29849,
+  "lRank": 2257,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "purging",
   "lemma": "purge",
   "type": "i",
@@ -99540,6 +101338,16 @@
   "src": "AB",
   "fRank": 29864,
   "lRank": 15203,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "spiraling",
+  "lemma": "spiral",
+  "type": "v",
+  "src": "AB",
+  "fRank": 29865,
+  "lRank": 8688,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -99838,6 +101646,18 @@
   "lRank": 16140,
   "bucket": "auto-fold",
   "flags": []
+ },
+ {
+  "form": "tangier",
+  "lemma": "tangy",
+  "type": "a",
+  "src": "AB",
+  "fRank": 29979,
+  "lRank": 36008,
+  "bucket": "audit",
+  "flags": [
+   "form-more-frequent"
+  ]
  },
  {
   "form": "vos",
@@ -100557,6 +102377,16 @@
   "flags": []
  },
  {
+  "form": "deader",
+  "lemma": "dead",
+  "type": "a",
+  "src": "AB",
+  "fRank": 30273,
+  "lRank": 1660,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "rowed",
   "lemma": "row",
   "type": "p",
@@ -100575,6 +102405,18 @@
   "lRank": 3889,
   "bucket": "auto-fold",
   "flags": []
+ },
+ {
+  "form": "shriveled",
+  "lemma": "shrivel",
+  "type": "v",
+  "src": "AB",
+  "fRank": 30289,
+  "lRank": 30681,
+  "bucket": "audit",
+  "flags": [
+   "form-more-frequent"
+  ]
  },
  {
   "form": "cheetahs",
@@ -101138,6 +102980,16 @@
   "src": "AB",
   "fRank": 30595,
   "lRank": 16031,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "mustaches",
+  "lemma": "mustache",
+  "type": "n",
+  "src": "AB",
+  "fRank": 30599,
+  "lRank": 5767,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -102142,6 +103994,16 @@
   "src": "AB",
   "fRank": 31025,
   "lRank": 8000,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "genies",
+  "lemma": "genie",
+  "type": "n",
+  "src": "AB",
+  "fRank": 31027,
+  "lRank": 8705,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -103250,6 +105112,16 @@
   ]
  },
  {
+  "form": "wooded",
+  "lemma": "wood",
+  "type": "v",
+  "src": "AB",
+  "fRank": 31443,
+  "lRank": 4671,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "amendments",
   "lemma": "amendment",
   "type": "s",
@@ -103577,6 +105449,16 @@
   "flags": []
  },
  {
+  "form": "oddest",
+  "lemma": "odd",
+  "type": "a",
+  "src": "AB",
+  "fRank": 31576,
+  "lRank": 5508,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "pursues",
   "lemma": "pursue",
   "type": "3",
@@ -103759,6 +105641,16 @@
   "src": "AB",
   "fRank": 31649,
   "lRank": 4548,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "restrooms",
+  "lemma": "restroom",
+  "type": "n",
+  "src": "AB",
+  "fRank": 31651,
+  "lRank": 7979,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -104203,6 +106095,16 @@
   "src": "AB",
   "fRank": 31831,
   "lRank": 3502,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "fueling",
+  "lemma": "fuel",
+  "type": "v",
+  "src": "AB",
+  "fRank": 31834,
+  "lRank": 2311,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -104960,6 +106862,16 @@
   "flags": []
  },
  {
+  "form": "leveling",
+  "lemma": "level",
+  "type": "v",
+  "src": "AB",
+  "fRank": 32196,
+  "lRank": 895,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "blundering",
   "lemma": "blunder",
   "type": "i",
@@ -105291,6 +107203,18 @@
   "bucket": "audit",
   "flags": [
    "lemma-proper"
+  ]
+ },
+ {
+  "form": "yodeling",
+  "lemma": "yodel",
+  "type": "v",
+  "src": "AB",
+  "fRank": 32320,
+  "lRank": 34372,
+  "bucket": "audit",
+  "flags": [
+   "form-more-frequent"
   ]
  },
  {
@@ -105901,6 +107825,16 @@
   "flags": []
  },
  {
+  "form": "stiffed",
+  "lemma": "stiff",
+  "type": "v",
+  "src": "AB",
+  "fRank": 32549,
+  "lRank": 5541,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "balling",
   "lemma": "ball",
   "type": "i",
@@ -105949,6 +107883,16 @@
   ]
  },
  {
+  "form": "emailing",
+  "lemma": "email",
+  "type": "v",
+  "src": "AB",
+  "fRank": 32568,
+  "lRank": 4334,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "selections",
   "lemma": "selection",
   "type": "s",
@@ -105979,6 +107923,16 @@
   "flags": [
    "form-more-frequent"
   ]
+ },
+ {
+  "form": "channeled",
+  "lemma": "channel",
+  "type": "v",
+  "src": "AB",
+  "fRank": 32580,
+  "lRank": 2074,
+  "bucket": "auto-fold",
+  "flags": []
  },
  {
   "form": "caesars",
@@ -107233,6 +109187,16 @@
   "flags": []
  },
  {
+  "form": "yeses",
+  "lemma": "yes",
+  "type": "n",
+  "src": "AB",
+  "fRank": 33127,
+  "lRank": 58,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "persisted",
   "lemma": "persist",
   "type": "p",
@@ -108053,6 +110017,16 @@
   "flags": []
  },
  {
+  "form": "juiced",
+  "lemma": "juice",
+  "type": "v",
+  "src": "AB",
+  "fRank": 33462,
+  "lRank": 1796,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "thunderbirds",
   "lemma": "thunderbird",
   "type": "s",
@@ -108348,6 +110322,16 @@
   "flags": []
  },
  {
+  "form": "clove",
+  "lemma": "cleave",
+  "type": "v",
+  "src": "AB",
+  "fRank": 33558,
+  "lRank": 21662,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "lodges",
   "lemma": "lodge",
   "type": "s",
@@ -108612,6 +110596,16 @@
   "flags": []
  },
  {
+  "form": "firsts",
+  "lemma": "first",
+  "type": "n",
+  "src": "AB",
+  "fRank": 33677,
+  "lRank": 107,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "regimes",
   "lemma": "regime",
   "type": "s",
@@ -108648,6 +110642,16 @@
   "src": "AB",
   "fRank": 33709,
   "lRank": 9845,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "boners",
+  "lemma": "boner",
+  "type": "n",
+  "src": "AB",
+  "fRank": 33711,
+  "lRank": 10473,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -109329,6 +111333,16 @@
   "flags": []
  },
  {
+  "form": "freebies",
+  "lemma": "freebie",
+  "type": "n",
+  "src": "AB",
+  "fRank": 33996,
+  "lRank": 24774,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "illustrates",
   "lemma": "illustrate",
   "type": "3",
@@ -109407,6 +111421,16 @@
   "src": "AB",
   "fRank": 34041,
   "lRank": 1282,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "tsunamis",
+  "lemma": "tsunami",
+  "type": "n",
+  "src": "AB",
+  "fRank": 34042,
+  "lRank": 2736,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -109561,6 +111585,16 @@
   "src": "AB",
   "fRank": 34141,
   "lRank": 9959,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "jewelers",
+  "lemma": "jeweler",
+  "type": "n",
+  "src": "AB",
+  "fRank": 34142,
+  "lRank": 17896,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -110556,6 +112590,16 @@
   "flags": []
  },
  {
+  "form": "skeptics",
+  "lemma": "skeptic",
+  "type": "n",
+  "src": "AB",
+  "fRank": 34606,
+  "lRank": 28083,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "bulgarians",
   "lemma": "bulgarian",
   "type": "s",
@@ -110810,6 +112854,16 @@
   "src": "AB",
   "fRank": 34724,
   "lRank": 18961,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "hyped",
+  "lemma": "hype",
+  "type": "v",
+  "src": "AB",
+  "fRank": 34728,
+  "lRank": 14727,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -111702,12 +113756,32 @@
   "flags": []
  },
  {
+  "form": "juicing",
+  "lemma": "juice",
+  "type": "v",
+  "src": "AB",
+  "fRank": 35102,
+  "lRank": 1796,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "belles",
   "lemma": "belle",
   "type": "s",
   "src": "AB",
   "fRank": 35103,
   "lRank": 4859,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "rainier",
+  "lemma": "rainy",
+  "type": "a",
+  "src": "AB",
+  "fRank": 35108,
+  "lRank": 8043,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -111840,6 +113914,16 @@
   "src": "AB",
   "fRank": 35197,
   "lRank": 12519,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "bended",
+  "lemma": "bend",
+  "type": "v",
+  "src": "AB",
+  "fRank": 35199,
+  "lRank": 5379,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -113592,6 +115676,18 @@
   "flags": []
  },
  {
+  "form": "pincers",
+  "lemma": "pincer",
+  "type": "n",
+  "src": "AB",
+  "fRank": 35969,
+  "lRank": 43169,
+  "bucket": "audit",
+  "flags": [
+   "form-more-frequent"
+  ]
+ },
+ {
   "form": "altitudes",
   "lemma": "altitude",
   "type": "s",
@@ -113844,6 +115940,16 @@
   "src": "AB",
   "fRank": 36073,
   "lRank": 4740,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "attendings",
+  "lemma": "attending",
+  "type": "n",
+  "src": "AB",
+  "fRank": 36082,
+  "lRank": 5407,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -114246,6 +116352,16 @@
   "flags": []
  },
  {
+  "form": "caroling",
+  "lemma": "carol",
+  "type": "v",
+  "src": "AB",
+  "fRank": 36237,
+  "lRank": 2061,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "legionnaires",
   "lemma": "legionnaire",
   "type": "s",
@@ -114498,6 +116614,16 @@
   "src": "AB",
   "fRank": 36383,
   "lRank": 13030,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "posses",
+  "lemma": "posse",
+  "type": "n",
+  "src": "AB",
+  "fRank": 36387,
+  "lRank": 9895,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -115030,6 +117156,16 @@
   "flags": []
  },
  {
+  "form": "midwives",
+  "lemma": "midwife",
+  "type": "v",
+  "src": "AB",
+  "fRank": 36631,
+  "lRank": 11929,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "mons",
   "lemma": "mon",
   "type": "s",
@@ -115116,6 +117252,16 @@
   "src": "AB",
   "fRank": 36677,
   "lRank": 18202,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "prairies",
+  "lemma": "prairie",
+  "type": "n",
+  "src": "AB",
+  "fRank": 36683,
+  "lRank": 10754,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -115385,6 +117531,16 @@
   "flags": []
  },
  {
+  "form": "whitest",
+  "lemma": "white",
+  "type": "a",
+  "src": "AB",
+  "fRank": 36792,
+  "lRank": 1290,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "financiers",
   "lemma": "financier",
   "type": "s",
@@ -115477,6 +117633,16 @@
   "src": "AB",
   "fRank": 36812,
   "lRank": 14000,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "grayer",
+  "lemma": "gray",
+  "type": "a",
+  "src": "AB",
+  "fRank": 36815,
+  "lRank": 2538,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -115635,6 +117801,16 @@
   "flags": []
  },
  {
+  "form": "worshiping",
+  "lemma": "worship",
+  "type": "v",
+  "src": "AB",
+  "fRank": 36879,
+  "lRank": 3921,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "gutting",
   "lemma": "gut",
   "type": "i",
@@ -115713,6 +117889,16 @@
   "src": "AB",
   "fRank": 36911,
   "lRank": 2640,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "campuses",
+  "lemma": "campus",
+  "type": "n",
+  "src": "AB",
+  "fRank": 36918,
+  "lRank": 3892,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -116427,12 +118613,32 @@
   "flags": []
  },
  {
+  "form": "pasts",
+  "lemma": "past",
+  "type": "n",
+  "src": "AB",
+  "fRank": 37227,
+  "lRank": 417,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "submissions",
   "lemma": "submission",
   "type": "s",
   "src": "AB",
   "fRank": 37232,
   "lRank": 13000,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "tunneling",
+  "lemma": "tunnel",
+  "type": "v",
+  "src": "AB",
+  "fRank": 37239,
+  "lRank": 2225,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -116477,6 +118683,16 @@
   "src": "AB",
   "fRank": 37251,
   "lRank": 8306,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "labeling",
+  "lemma": "label",
+  "type": "v",
+  "src": "AB",
+  "fRank": 37268,
+  "lRank": 4351,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -116777,6 +118993,16 @@
   "flags": []
  },
  {
+  "form": "pucks",
+  "lemma": "puck",
+  "type": "n",
+  "src": "AB",
+  "fRank": 37405,
+  "lRank": 10262,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "contradicted",
   "lemma": "contradict",
   "type": "d",
@@ -116865,6 +119091,16 @@
   "src": "AB",
   "fRank": 37450,
   "lRank": 18703,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "ricocheting",
+  "lemma": "ricochet",
+  "type": "v",
+  "src": "AB",
+  "fRank": 37451,
+  "lRank": 25385,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -118895,6 +121131,16 @@
   "flags": []
  },
  {
+  "form": "personals",
+  "lemma": "personal",
+  "type": "n",
+  "src": "AB",
+  "fRank": 38282,
+  "lRank": 610,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "ached",
   "lemma": "ache",
   "type": "p",
@@ -120123,6 +122369,16 @@
   "flags": []
  },
  {
+  "form": "kayaking",
+  "lemma": "kayak",
+  "type": "v",
+  "src": "AB",
+  "fRank": 38882,
+  "lRank": 25265,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "radiates",
   "lemma": "radiate",
   "type": "3",
@@ -120710,12 +122966,32 @@
   "flags": []
  },
  {
+  "form": "coloreds",
+  "lemma": "colored",
+  "type": "n",
+  "src": "AB",
+  "fRank": 39142,
+  "lRank": 6510,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "buffoons",
   "lemma": "buffoon",
   "type": "s",
   "src": "AB",
   "fRank": 39145,
   "lRank": 17757,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "chilies",
+  "lemma": "chili",
+  "type": "n",
+  "src": "AB",
+  "fRank": 39152,
+  "lRank": 5561,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -120830,6 +123106,16 @@
   "flags": []
  },
  {
+  "form": "yuppies",
+  "lemma": "yuppie",
+  "type": "n",
+  "src": "AB",
+  "fRank": 39238,
+  "lRank": 27772,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "pelicans",
   "lemma": "pelican",
   "type": "s",
@@ -120866,6 +123152,16 @@
   "src": "AB",
   "fRank": 39242,
   "lRank": 15502,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "unraveled",
+  "lemma": "unravel",
+  "type": "v",
+  "src": "AB",
+  "fRank": 39243,
+  "lRank": 13200,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -121082,6 +123378,16 @@
   "src": "AB",
   "fRank": 39328,
   "lRank": 13500,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "advices",
+  "lemma": "advice",
+  "type": "n",
+  "src": "AB",
+  "fRank": 39339,
+  "lRank": 1011,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -121573,6 +123879,16 @@
   "flags": []
  },
  {
+  "form": "rerouting",
+  "lemma": "reroute",
+  "type": "v",
+  "src": "AB",
+  "fRank": 39606,
+  "lRank": 23095,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "critiques",
   "lemma": "critique",
   "type": "s",
@@ -121629,6 +123945,16 @@
   "src": "AB",
   "fRank": 39642,
   "lRank": 6188,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "behinds",
+  "lemma": "behind",
+  "type": "n",
+  "src": "AB",
+  "fRank": 39643,
+  "lRank": 333,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -121821,6 +124147,16 @@
   "src": "AB",
   "fRank": 39769,
   "lRank": 5055,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "counseled",
+  "lemma": "counsel",
+  "type": "v",
+  "src": "AB",
+  "fRank": 39770,
+  "lRank": 3533,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -122263,6 +124599,18 @@
   "flags": []
  },
  {
+  "form": "lefts",
+  "lemma": "left",
+  "type": "n",
+  "src": "AB",
+  "fRank": 40010,
+  "lRank": 161,
+  "bucket": "audit",
+  "flags": [
+   "homograph"
+  ]
+ },
+ {
   "form": "cooperates",
   "lemma": "cooperate",
   "type": "3",
@@ -122279,6 +124627,16 @@
   "src": "AB",
   "fRank": 40025,
   "lRank": 2733,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "gentlest",
+  "lemma": "gentle",
+  "type": "a",
+  "src": "AB",
+  "fRank": 40039,
+  "lRank": 1500,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -122369,6 +124727,16 @@
   "src": "AB",
   "fRank": 40074,
   "lRank": 6464,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "reis",
+  "lemma": "real",
+  "type": "n",
+  "src": "AB",
+  "fRank": 40083,
+  "lRank": 193,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -122515,6 +124883,16 @@
   "src": "AB",
   "fRank": 40165,
   "lRank": 29106,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "bookshelves",
+  "lemma": "bookshelf",
+  "type": "n",
+  "src": "AB",
+  "fRank": 40175,
+  "lRank": 26638,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -123017,6 +125395,16 @@
   "flags": []
  },
  {
+  "form": "fetuses",
+  "lemma": "fetus",
+  "type": "n",
+  "src": "AB",
+  "fRank": 40377,
+  "lRank": 12272,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "levelled",
   "lemma": "level",
   "type": "d",
@@ -123213,6 +125601,26 @@
   "flags": []
  },
  {
+  "form": "wheres",
+  "lemma": "where",
+  "type": "n",
+  "src": "AB",
+  "fRank": 40470,
+  "lRank": 66,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "centerpieces",
+  "lemma": "centerpiece",
+  "type": "n",
+  "src": "AB",
+  "fRank": 40474,
+  "lRank": 26690,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "pampers",
   "lemma": "pamper",
   "type": "3",
@@ -123235,12 +125643,32 @@
   ]
  },
  {
+  "form": "narcs",
+  "lemma": "narc",
+  "type": "n",
+  "src": "AB",
+  "fRank": 40492,
+  "lRank": 18222,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "coasting",
   "lemma": "coast",
   "type": "i",
   "src": "AB",
   "fRank": 40496,
   "lRank": 1747,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "pummeled",
+  "lemma": "pummel",
+  "type": "v",
+  "src": "AB",
+  "fRank": 40501,
+  "lRank": 39069,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -123301,6 +125729,16 @@
   "src": "AB",
   "fRank": 40537,
   "lRank": 18600,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "soonest",
+  "lemma": "soon",
+  "type": "r",
+  "src": "AB",
+  "fRank": 40540,
+  "lRank": 258,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -125333,6 +127771,16 @@
   "flags": []
  },
  {
+  "form": "bellyaching",
+  "lemma": "bellyache",
+  "type": "v",
+  "src": "AB",
+  "fRank": 41505,
+  "lRank": 37518,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "costumed",
   "lemma": "costume",
   "type": "p",
@@ -125581,6 +128029,16 @@
   "src": "AB",
   "fRank": 41605,
   "lRank": 8151,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "barreling",
+  "lemma": "barrel",
+  "type": "v",
+  "src": "AB",
+  "fRank": 41608,
+  "lRank": 7713,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -125923,6 +128381,16 @@
   "flags": []
  },
  {
+  "form": "yesterdays",
+  "lemma": "yesterday",
+  "type": "n",
+  "src": "AB",
+  "fRank": 41791,
+  "lRank": 479,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "leant",
   "lemma": "lean",
   "type": "pd",
@@ -125955,12 +128423,32 @@
   "flags": []
  },
  {
+  "form": "babysat",
+  "lemma": "babysit",
+  "type": "v",
+  "src": "AB",
+  "fRank": 41815,
+  "lRank": 9625,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "deformities",
   "lemma": "deformity",
   "type": "s",
   "src": "AB",
   "fRank": 41820,
   "lRank": 29381,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "heartaches",
+  "lemma": "heartache",
+  "type": "n",
+  "src": "AB",
+  "fRank": 41825,
+  "lRank": 12941,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -126334,6 +128822,16 @@
   "src": "AB",
   "fRank": 42003,
   "lRank": 30983,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "tuitions",
+  "lemma": "tuition",
+  "type": "n",
+  "src": "AB",
+  "fRank": 42024,
+  "lRank": 8082,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -126762,6 +129260,16 @@
   "flags": []
  },
  {
+  "form": "waked",
+  "lemma": "wake",
+  "type": "v",
+  "src": "AB",
+  "fRank": 42236,
+  "lRank": 6399,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "dcs",
   "lemma": "dc",
   "type": "s",
@@ -126773,6 +129281,16 @@
    "lemma-proper",
    "lemma-no-gloss"
   ]
+ },
+ {
+  "form": "parolees",
+  "lemma": "parolee",
+  "type": "n",
+  "src": "AB",
+  "fRank": 42254,
+  "lRank": 39931,
+  "bucket": "auto-fold",
+  "flags": []
  },
  {
   "form": "babylonians",
@@ -127267,6 +129785,16 @@
   "flags": []
  },
  {
+  "form": "scoping",
+  "lemma": "scope",
+  "type": "v",
+  "src": "AB",
+  "fRank": 42578,
+  "lRank": 7282,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "ranged",
   "lemma": "range",
   "type": "p",
@@ -127473,6 +130001,16 @@
   "src": "AB",
   "fRank": 42695,
   "lRank": 4608,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "baseballs",
+  "lemma": "baseball",
+  "type": "n",
+  "src": "AB",
+  "fRank": 42703,
+  "lRank": 2141,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -128752,6 +131290,18 @@
   "flags": []
  },
  {
+  "form": "stoners",
+  "lemma": "stoner",
+  "type": "n",
+  "src": "AB",
+  "fRank": 43376,
+  "lRank": 17155,
+  "bucket": "audit",
+  "flags": [
+   "lemma-no-gloss"
+  ]
+ },
+ {
   "form": "netted",
   "lemma": "net",
   "type": "p",
@@ -129481,6 +132031,16 @@
   "flags": []
  },
  {
+  "form": "hove",
+  "lemma": "heave",
+  "type": "v",
+  "src": "AB",
+  "fRank": 43740,
+  "lRank": 9221,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "headstones",
   "lemma": "headstone",
   "type": "s",
@@ -130130,6 +132690,16 @@
   "flags": [
    "form-more-frequent"
   ]
+ },
+ {
+  "form": "naturals",
+  "lemma": "natural",
+  "type": "n",
+  "src": "AB",
+  "fRank": 44184,
+  "lRank": 1046,
+  "bucket": "auto-fold",
+  "flags": []
  },
  {
   "form": "scripting",
@@ -131074,6 +133644,16 @@
   "flags": []
  },
  {
+  "form": "advisories",
+  "lemma": "advisory",
+  "type": "n",
+  "src": "AB",
+  "fRank": 44815,
+  "lRank": 20679,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "indexing",
   "lemma": "index",
   "type": "i",
@@ -131417,6 +133997,16 @@
   "src": "AB",
   "fRank": 44993,
   "lRank": 22075,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "informations",
+  "lemma": "information",
+  "type": "n",
+  "src": "AB",
+  "fRank": 45002,
+  "lRank": 400,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -131913,6 +134503,16 @@
   "flags": []
  },
  {
+  "form": "caching",
+  "lemma": "cache",
+  "type": "v",
+  "src": "AB",
+  "fRank": 45325,
+  "lRank": 6915,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "redistributed",
   "lemma": "redistribute",
   "type": "d",
@@ -132141,6 +134741,16 @@
   "src": "AB",
   "fRank": 45480,
   "lRank": 19206,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "megapixels",
+  "lemma": "megapixel",
+  "type": "n",
+  "src": "AB",
+  "fRank": 45494,
+  "lRank": 44433,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -132720,6 +135330,16 @@
   "flags": []
  },
  {
+  "form": "campgrounds",
+  "lemma": "campground",
+  "type": "n",
+  "src": "AB",
+  "fRank": 45828,
+  "lRank": 14900,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "densities",
   "lemma": "density",
   "type": "s",
@@ -133042,6 +135662,16 @@
   ]
  },
  {
+  "form": "closeouts",
+  "lemma": "closeout",
+  "type": "n",
+  "src": "AB",
+  "fRank": 46060,
+  "lRank": 45213,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "cavaliers",
   "lemma": "cavalier",
   "type": "s",
@@ -133182,12 +135812,32 @@
   "flags": []
  },
  {
+  "form": "homepages",
+  "lemma": "homepage",
+  "type": "n",
+  "src": "AB",
+  "fRank": 46149,
+  "lRank": 43823,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "subdivisions",
   "lemma": "subdivision",
   "type": "s",
   "src": "AB",
   "fRank": 46150,
   "lRank": 40284,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "totaling",
+  "lemma": "total",
+  "type": "v",
+  "src": "AB",
+  "fRank": 46151,
+  "lRank": 1179,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -133238,6 +135888,16 @@
   "src": "AB",
   "fRank": 46193,
   "lRank": 36069,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "optimizations",
+  "lemma": "optimization",
+  "type": "n",
+  "src": "AB",
+  "fRank": 46201,
+  "lRank": 42901,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -133649,6 +136309,16 @@
   "flags": []
  },
  {
+  "form": "anesthetics",
+  "lemma": "anesthetic",
+  "type": "n",
+  "src": "AB",
+  "fRank": 46408,
+  "lRank": 16800,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "annoyances",
   "lemma": "annoyance",
   "type": "s",
@@ -133781,6 +136451,16 @@
   "flags": []
  },
  {
+  "form": "ballplayers",
+  "lemma": "ballplayer",
+  "type": "n",
+  "src": "AB",
+  "fRank": 46437,
+  "lRank": 29664,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "bankrolled",
   "lemma": "bankroll",
   "type": "p",
@@ -133853,6 +136533,16 @@
   "flags": []
  },
  {
+  "form": "beepers",
+  "lemma": "beeper",
+  "type": "n",
+  "src": "AB",
+  "fRank": 46452,
+  "lRank": 17569,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "bellhops",
   "lemma": "bellhop",
   "type": "s",
@@ -133881,6 +136571,16 @@
   "src": "AB",
   "fRank": 46460,
   "lRank": 41432,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "bicuspids",
+  "lemma": "bicuspid",
+  "type": "n",
+  "src": "AB",
+  "fRank": 46463,
+  "lRank": 21400,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -134340,6 +137040,26 @@
   "flags": []
  },
  {
+  "form": "chiles",
+  "lemma": "chili",
+  "type": "n",
+  "src": "AB",
+  "fRank": 46579,
+  "lRank": 5561,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "chiseling",
+  "lemma": "chisel",
+  "type": "v",
+  "src": "AB",
+  "fRank": 46580,
+  "lRank": 17518,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "chloroformed",
   "lemma": "chloroform",
   "type": "p",
@@ -134422,12 +137142,32 @@
   "flags": []
  },
  {
+  "form": "cloven",
+  "lemma": "cleave",
+  "type": "v",
+  "src": "AB",
+  "fRank": 46598,
+  "lRank": 21662,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "cluttering",
   "lemma": "clutter",
   "type": "i",
   "src": "AB",
   "fRank": 46603,
   "lRank": 21259,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "coeds",
+  "lemma": "coed",
+  "type": "n",
+  "src": "AB",
+  "fRank": 46606,
+  "lRank": 30183,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -134552,6 +137292,16 @@
   "src": "AB",
   "fRank": 46638,
   "lRank": 4985,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "councilors",
+  "lemma": "councilor",
+  "type": "n",
+  "src": "AB",
+  "fRank": 46641,
+  "lRank": 15130,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -135433,12 +138183,32 @@
   "flags": []
  },
  {
+  "form": "fifths",
+  "lemma": "fifth",
+  "type": "n",
+  "src": "AB",
+  "fRank": 46838,
+  "lRank": 2214,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "finalizing",
   "lemma": "finalize",
   "type": "i",
   "src": "AB",
   "fRank": 46841,
   "lRank": 12400,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "finessed",
+  "lemma": "finesse",
+  "type": "v",
+  "src": "AB",
+  "fRank": 46842,
+  "lRank": 6690,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -136111,6 +138881,16 @@
   "flags": []
  },
  {
+  "form": "hoboes",
+  "lemma": "hobo",
+  "type": "n",
+  "src": "AB",
+  "fRank": 47006,
+  "lRank": 14260,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "hocking",
   "lemma": "hock",
   "type": "i",
@@ -136209,6 +138989,16 @@
   "src": "AB",
   "fRank": 47024,
   "lRank": 15291,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "hugest",
+  "lemma": "huge",
+  "type": "a",
+  "src": "AB",
+  "fRank": 47025,
+  "lRank": 696,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -136367,6 +139157,16 @@
   "flags": []
  },
  {
+  "form": "interfacing",
+  "lemma": "interface",
+  "type": "v",
+  "src": "AB",
+  "fRank": 47068,
+  "lRank": 12507,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "intimated",
   "lemma": "intimate",
   "type": "d",
@@ -136455,6 +139255,16 @@
   "src": "AB",
   "fRank": 47086,
   "lRank": 22629,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "kneed",
+  "lemma": "knee",
+  "type": "v",
+  "src": "AB",
+  "fRank": 47101,
+  "lRank": 5283,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -136651,6 +139461,16 @@
   "flags": []
  },
  {
+  "form": "marveling",
+  "lemma": "marvel",
+  "type": "v",
+  "src": "AB",
+  "fRank": 47151,
+  "lRank": 8970,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "mascots",
   "lemma": "mascot",
   "type": "s",
@@ -136701,6 +139521,16 @@
   "flags": []
  },
  {
+  "form": "minimums",
+  "lemma": "minimum",
+  "type": "n",
+  "src": "AB",
+  "fRank": 47166,
+  "lRank": 4224,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "minks",
   "lemma": "mink",
   "type": "s",
@@ -136739,6 +139569,16 @@
   "src": "AB",
   "fRank": 47174,
   "lRank": 19743,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "moldings",
+  "lemma": "molding",
+  "type": "n",
+  "src": "AB",
+  "fRank": 47181,
+  "lRank": 22772,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -137073,6 +139913,26 @@
   "flags": []
  },
  {
+  "form": "physicals",
+  "lemma": "physical",
+  "type": "n",
+  "src": "AB",
+  "fRank": 47275,
+  "lRank": 1574,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "pinheads",
+  "lemma": "pinhead",
+  "type": "n",
+  "src": "AB",
+  "fRank": 47284,
+  "lRank": 23217,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "pis",
   "lemma": "pi",
   "type": "s",
@@ -137109,6 +139969,16 @@
   "src": "AB",
   "fRank": 47289,
   "lRank": 719,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "plateaued",
+  "lemma": "plateau",
+  "type": "v",
+  "src": "AB",
+  "fRank": 47290,
+  "lRank": 12244,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -137709,6 +140579,16 @@
   "flags": []
  },
  {
+  "form": "reveling",
+  "lemma": "revel",
+  "type": "v",
+  "src": "AB",
+  "fRank": 47396,
+  "lRank": 24279,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "reverts",
   "lemma": "revert",
   "type": "3",
@@ -137775,6 +140655,16 @@
   "src": "AB",
   "fRank": 47419,
   "lRank": 47418,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "rubes",
+  "lemma": "rube",
+  "type": "n",
+  "src": "AB",
+  "fRank": 47420,
+  "lRank": 19452,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -137953,6 +140843,16 @@
   "flags": []
  },
  {
+  "form": "shoveled",
+  "lemma": "shovel",
+  "type": "v",
+  "src": "AB",
+  "fRank": 47470,
+  "lRank": 5837,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "shrugging",
   "lemma": "shrug",
   "type": "i",
@@ -137969,6 +140869,16 @@
   "src": "AB",
   "fRank": 47473,
   "lRank": 25056,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "sicced",
+  "lemma": "sic",
+  "type": "v",
+  "src": "AB",
+  "fRank": 47474,
+  "lRank": 19840,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -138183,6 +141093,26 @@
   "src": "AB",
   "fRank": 47534,
   "lRank": 4617,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "sterner",
+  "lemma": "stern",
+  "type": "a",
+  "src": "AB",
+  "fRank": 47536,
+  "lRank": 5538,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "stigmata",
+  "lemma": "stigma",
+  "type": "n",
+  "src": "AB",
+  "fRank": 47537,
+  "lRank": 21971,
   "bucket": "auto-fold",
   "flags": []
  },
@@ -138473,6 +141403,16 @@
   "flags": []
  },
  {
+  "form": "tuxes",
+  "lemma": "tux",
+  "type": "n",
+  "src": "AB",
+  "fRank": 47628,
+  "lRank": 11513,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
   "form": "twits",
   "lemma": "twit",
   "type": "s",
@@ -138699,6 +141639,16 @@
   "src": "AB",
   "fRank": 47698,
   "lRank": 31522,
+  "bucket": "auto-fold",
+  "flags": []
+ },
+ {
+  "form": "wigged",
+  "lemma": "wig",
+  "type": "v",
+  "src": "AB",
+  "fRank": 47700,
+  "lRank": 4902,
   "bucket": "auto-fold",
   "flags": []
  },

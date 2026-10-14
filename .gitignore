@@ -54,3 +54,7 @@ vite.config.js.timestamp-*.mjs
 scripts/dev-zz*
 scripts/dev-station-mirror.mjs
 supabase/.temp/
+
+# lemminflect 屈折还原的中间产物（可由 scripts/lemmatize-corpus.py 再生）
+scripts/.lemma-input.json
+scripts/.lemma-lemmas.json

@@ -375,7 +375,15 @@ async function caseRealData() {
   const foldByRep = new Map()
   let foldedCount = 0
   let displayCount = 0
+  let formRepCount = 0
   for (const w of words) {
+    // ★ formRep 与 lemma 是**两套**展示/折叠关系，不能混算 ★
+    //   repRawOf 在没有 formRep 条目时会回退到 lemma。于是「有任一代表关系���词数」
+    //   ≠ FORMS_BY_ID.size——2026-10-14 折叠表从 9,888 扩到 10,127 后，
+    //   新增的 239 个折叠词多数没有对应的 formRep 条目，两者就差了这 239。
+    //   原断言 `displayCount === FORMS_BY_ID.size` 只是**碰巧**成立（当时每个被折叠的
+    //   词恰好都有 formRep 条目），并不是不变式。现在拆开分别断言。
+    if (FORMS_BY_ID.get(w.id)) formRepCount += 1
     const r = repRawOf(w)
     if (r) {
       const t = terminal(r)
@@ -387,12 +395,16 @@ async function caseRealData() {
       foldByRep.set(w.lemma, (foldByRep.get(w.lemma) || 0) + 1)
     }
   }
-  ok(foldedCount === 9888, `★ 被折叠形仍为 9888 个（折叠未因展示表而变，实际 ${foldedCount}）`)
-  ok(displayCount === FORMS_BY_ID.size, `★ 展示关系词条数 = words-forms.js 条数（${displayCount} / ${FORMS_BY_ID.size}）`)
+  ok(foldedCount === 10127, `★ 被折叠形 10127 个（2026-10-14 由 lemminflect 补齐 +239，实际 ${foldedCount}）`)
+  ok(formRepCount === FORMS_BY_ID.size, `★ 展示关系词条数 = words-forms.js 条数（${formRepCount} / ${FORMS_BY_ID.size}）`)
+  ok(
+    displayCount === FORMS_BY_ID.size + 239,
+    `★ 有任一代表关系的词 = 展示 ${FORMS_BY_ID.size} + 仅折叠无展示 ${displayCount - FORMS_BY_ID.size}（共 ${displayCount}）`,
+  )
   ok(famByRep.size > 0, `涉及展示代表形 ${famByRep.size} 个`)
   ok(
-    LEMMA_BY_ID.size === 9888,
-    `★ words-lemma.js 仍为 9888 条（折叠表一字未动，实际 ${LEMMA_BY_ID.size}）`,
+    LEMMA_BY_ID.size === 10127,
+    `★ words-lemma.js 为 10127 条（9,888 → +239，本次经 lemminflect round-trip 校验补齐；实际 ${LEMMA_BY_ID.size}）`,
   )
 
   let bad = 0

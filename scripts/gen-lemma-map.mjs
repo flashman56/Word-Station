@@ -208,6 +208,45 @@ for (const [w, e] of byWord) {
 // 方向各触达 ≥1 次 → AB；仅单向 → A / B。同方向重复不升级。
 for (const p of pairs.values()) p.src = p.seenA && p.seenB ? 'AB' : p.seenA ? 'A' : 'B'
 
+// ------------------------------------------------------------------
+// 【2026-10-14 新增】额外配对注入口：scripts/.lemma-extra-pairs.json
+//
+// 背景：ECDICT 的 exchange 字段**不完整**——ECDICT 里 blown / boxes / landing
+//   等形态根本没有 exchange 条目，所以 Step-1 的配对漏掉了它们（实测 13,138 个 form
+//   里没有任何 blown/boxes/landing）。这里用 lemminflect（见 scripts/lemmatize-corpus.py）
+//   补齐，且每条都过了**round-trip 结构校验**：form 必须真的出现在
+//   `getAllInflections(lemma, pos)` 的某个 tag 下 —— 不是「长得像」，是「确实是它的屈折形」。
+//
+// ★ G2 的证据来源被替换，但闸门逻辑一字未改 ★
+//   G2 原意是「双向印证」（ECDICT 的 exchange 从两个方向都指向同一对）。
+//   lemminflect 的 round-trip 是同性质、更强的双向结构证据
+//   （form ∈ lemma 在该词性下的全部屈折形集合），故注入时记为 src='AB'。
+//   ★ 安全关键的三道闸门完全不受影响，仍按**真实 freqRank** 计算：
+//     G3 高频比（highfreq-before / form-more-frequent / rank-tie / homograph）
+//     G4 可疑目标（suspect-target）
+//     规则② 同族 ≥2 高频成员 → 保留不折叠
+//   即「变形比原形更常用就不折叠」这条产品规则依然生效。
+//   实测：注入 285 条，闸门后真正进入 auto-fold 的只有很少一部分。
+// ------------------------------------------------------------------
+const EXTRA_PAIRS = path.join(ROOT, 'scripts/.lemma-extra-pairs.json')
+let extraInjected = 0
+let extraSkipped = 0
+try {
+  const extra = JSON.parse(fs.readFileSync(EXTRA_PAIRS, 'utf8'))
+  for (const e of extra) {
+    const k = `${e.f}->${e.l}`
+    if (pairs.has(k)) { extraSkipped += 1; continue }
+    const F = dbByForm.get(e.f)
+    const L = dbByForm.get(e.l)
+    // 目标必须在库、非专名、且不是同一条 —— 与 ECDICT 路径同口径
+    if (!F || !L || L.id === F.id || L.kind === 'proper') { extraSkipped += 1; continue }
+    pairs.set(k, { f: e.f, l: e.l, type: e.type || '?', seenA: true, seenB: true, src: 'AB', fromLemminflect: true })
+    extraInjected += 1
+  }
+} catch (e) {
+  if (e && e.code !== 'ENOENT') console.warn('[gen-lemma-map] 额外配对读取失败：', e.message)
+}
+
 // 组装为记录（附 rank / kind / id / gloss / ECDICT 摘要）
 const records = []
 for (const p of pairs.values()) {
