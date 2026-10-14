@@ -14,7 +14,7 @@
  *       applyRemorph(words) 把补丁合并进词条；运行时 buildIndex 再把
  *       morphHints 与 morphs 合并计入 wordsByMorph，词云岛屿即自动生效。
  *
- * 词条数: 3935
+ * 词条数: 3927
  */
 
 /** @typedef {{ id: string, morphHints: string[], chain: Array<{morph: string|null, form: string, gloss: string}> }} RemorphPatch */
@@ -208,8 +208,6 @@ const wordsRemorph = [
   {id:"w.anarchist",morphHints:["r.arch","s.ist"],chain:[{morph:null,form:"an",gloss:""},{morph:"r.arch",form:"arch",gloss:"首领，统治；首要"},{morph:"s.ist",form:"ist",gloss:"名词后缀：…主义者、从业者；…主义"}]},
   {id:"w.anarchy",morphHints:["r.arch","s.cy"],chain:[{morph:null,form:"an",gloss:"无（希腊 an-，清单无对应前缀）"},{morph:"r.arch",form:"arch",gloss:"首领，统治"},{morph:"s.cy",form:"y",gloss:"状态、性质"}]},
   {id:"w.ancestral",morphHints:["s.al"],chain:[{morph:null,form:"ancestr",gloss:"祖先（整体借入，清单无对应词根）"},{morph:"s.al",form:"al",gloss:"…的，与…有关的"}]},
-  {id:"w.anchorage",morphHints:["r.chor","s.age"],chain:[{morph:null,form:"an",gloss:""},{morph:"r.chor",form:"chor",gloss:"舞，合唱"},{morph:"s.age",form:"age",gloss:"名词后缀：行为、总称、费用"}]},
-  {id:"w.anchorman",morphHints:["r.chor","r.man"],chain:[{morph:null,form:"an",gloss:""},{morph:"r.chor",form:"chor",gloss:"舞，合唱"},{morph:"r.man",form:"man",gloss:"手"}]},
   {id:"w.android",morphHints:["r.andr","s.oid"],chain:[{morph:"r.andr",form:"andr",gloss:"男，人"},{morph:"s.oid",form:"oid",gloss:"形容词后缀：像…的"}]},
   {id:"w.anesthesia",morphHints:["r.aesth","s.ia"],chain:[{morph:null,form:"an",gloss:"无（希腊否定前缀 an-，清单无对应）"},{morph:"r.aesth",form:"esthes",gloss:"感觉，感知"},{morph:"s.ia",form:"ia",gloss:"名词后缀：状态、疾病"}]},
   {id:"w.anesthetics",morphHints:["s.ive","s.plural"],chain:[{morph:null,form:"anesthet",gloss:""},{morph:"s.ive",form:"ic",gloss:"形容词后缀：有…倾向的"},{morph:"s.plural",form:"s",gloss:"名词屈折后缀：复数；动词第三人称单数"}]},
@@ -536,7 +534,6 @@ const wordsRemorph = [
   {id:"w.chlorine",morphHints:["r.chlor","s.ine"],chain:[{morph:"r.chlor",form:"chlor",gloss:"绿"},{morph:"s.ine",form:"ine",gloss:"形容词/名词后缀：…的；物质"}]},
   {id:"w.chloroform",morphHints:["r.chlor","r.form"],chain:[{morph:"r.chlor",form:"chloro",gloss:"绿"},{morph:"r.form",form:"form",gloss:"形状，形成"}]},
   {id:"w.chloroformed",morphHints:["r.chlor","r.for","r.med"],chain:[{morph:"r.chlor",form:"chloro",gloss:"绿"},{morph:"r.for",form:"for",gloss:"穿孔，贯穿"},{morph:"r.med",form:"med",gloss:"中间"}]},
-  {id:"w.chortling",morphHints:["r.chor","s.ling"],chain:[{morph:"r.chor",form:"chor",gloss:"舞，合唱"},{morph:null,form:"t",gloss:""},{morph:"s.ling",form:"ling",gloss:"名词后缀：小、幼"}]},
   {id:"w.christianity",morphHints:["s.ity"],chain:[{morph:null,form:"christiani",gloss:"基督徒（专名 Christ 派生，清单无对应词根）"},{morph:"s.ity",form:"ty",gloss:"性质、状态"}]},
   {id:"w.cigarettes",morphHints:["s.ette","s.plural"],chain:[{morph:null,form:"cigar",gloss:"雪茄"},{morph:"s.ette",form:"-ette",gloss:"名词后缀：小，女性"},{morph:"s.plural",form:"s",gloss:"名词屈折后缀：复数；动词第三人称单数"}]},
   {id:"w.cinematography",morphHints:["r.graph","s.ity"],chain:[{morph:null,form:"cinemato",gloss:"运动（希腊 kinema，清单无对应词根）"},{morph:"r.graph",form:"graph",gloss:"写，记录，图"},{morph:"s.ity",form:"y",gloss:"名词后缀：性质、状态"}]},
@@ -895,7 +892,6 @@ const wordsRemorph = [
   {id:"w.creative",morphHints:["s.ive"],chain:[{morph:null,form:"creat",gloss:"创造（整体借入，清单无对应词根）"},{morph:"s.ive",form:"ive",gloss:"有…倾向的"}]},
   {id:"w.creator",morphHints:["s.er"],chain:[{morph:null,form:"creat",gloss:"创造（整体借入，清单无对应词根）"},{morph:"s.er",form:"or",gloss:"…的人或物"}]},
   {id:"w.creators",morphHints:["s.er","s.plural"],chain:[{morph:null,form:"creat",gloss:"创造（整体借入，清单无对应词根）"},{morph:"s.er",form:"or",gloss:"…的人或物"},{morph:"s.plural",form:"s",gloss:"名词屈折后缀：复数；动词第三人称单数"}]},
-  {id:"w.cred",morphHints:["r.cred"],chain:[{morph:"r.cred",form:"cred",gloss:"相信，信任"}]},
   {id:"w.cretaceous",morphHints:["r.cern","s.ous"],chain:[{morph:"r.cern",form:"cret",gloss:"区分，筛选"},{morph:null,form:"ac",gloss:""},{morph:"s.ous",form:"eous",gloss:"形容词后缀：充满…的"}]},
   {id:"w.criminalistics",morphHints:["r.crimin","r.ali","s.ics"],chain:[{morph:"r.crimin",form:"crimin",gloss:"罪，指控"},{morph:"r.ali",form:"ali",gloss:"其他，别的"},{morph:null,form:"st",gloss:""},{morph:"s.ics",form:"ics",gloss:"名词后缀：…学，…术"}]},
   {id:"w.crit",morphHints:["r.crit"],chain:[{morph:"r.crit",form:"crit",gloss:"判断，辨别"}]},
@@ -1019,7 +1015,6 @@ const wordsRemorph = [
   {id:"w.denials",morphHints:["s.al","s.plural"],chain:[{morph:null,form:"deni",gloss:"否认（整体借入，清单无对应词根）"},{morph:"s.al",form:"al",gloss:"…的，与…有关的；动作、结果"},{morph:"s.plural",form:"s",gloss:"名词屈折后缀：复数；动词第三人称单数"}]},
   {id:"w.denounce",morphHints:["p.de","r.nunci"],chain:[{morph:"p.de",form:"de",gloss:"向下；加强"},{morph:"r.nunci",form:"noun",gloss:"宣布，报告"},{morph:null,form:"ce",gloss:"词尾残段（-ciare 演变）"}]},
   {id:"w.denounced",morphHints:["p.de","r.nunci","s.ed"],chain:[{morph:"p.de",form:"de",gloss:"向下；加强"},{morph:"r.nunci",form:"noun",gloss:"宣布，报告"},{morph:null,form:"ce",gloss:"词尾残段（-ciare 演变）"},{morph:"s.ed",form:"ed",gloss:"动词屈折后缀：过去式 / 过去分词"}]},
-  {id:"w.dens",morphHints:["r.dens"],chain:[{morph:"r.dens",form:"dens",gloss:"密，浓厚"}]},
   {id:"w.dental",morphHints:["s.al"],chain:[{morph:null,form:"dent",gloss:"牙齿（整体借入，清单无对应词根）"},{morph:"s.al",form:"al",gloss:"…的，与…有关的"}]},
   {id:"w.dentist",morphHints:["s.ist"],chain:[{morph:null,form:"dent",gloss:"牙（拉丁 dens，清单无对应词根）"},{morph:"s.ist",form:"ist",gloss:"…从业者"}]},
   {id:"w.dentists",morphHints:["s.ist","s.plural"],chain:[{morph:null,form:"dent",gloss:"牙（拉丁 dens，清单无对应词根）"},{morph:"s.ist",form:"ist",gloss:"…从业者"},{morph:"s.plural",form:"s",gloss:"名词屈折后缀：复数；动词第三人称单数"}]},
@@ -1561,8 +1556,6 @@ const wordsRemorph = [
   {id:"w.faculties",morphHints:["s.ity","s.plural"],chain:[{morph:null,form:"facul",gloss:"整体借入词干（拉丁 facultas）"},{morph:"s.ity",form:"ty",gloss:"名词后缀：性质、状态"},{morph:"s.plural",form:"ies",gloss:"名词屈折后缀：复数；动词第三人称单数"}]},
   {id:"w.faculty",morphHints:["s.ity"],chain:[{morph:null,form:"facul",gloss:"整体借入词干（拉丁 facultas）"},{morph:"s.ity",form:"ty",gloss:"名词后缀：性质、状态"}]},
   {id:"w.faithfully",morphHints:["s.ful","s.ly"],chain:[{morph:null,form:"faith",gloss:"信任（整体借入，清单无对应词根）"},{morph:"s.ful",form:"ful",gloss:"充满…的"},{morph:"s.ly",form:"ly",gloss:"副词后缀：以…方式"}]},
-  {id:"w.falling",morphHints:["r.fall","s.ing"],chain:[{morph:"r.fall",form:"fall",gloss:"欺骗，错误"},{morph:"s.ing",form:"ing",gloss:"名词/形容词后缀：动作、进行"}]},
-  {id:"w.fallout",morphHints:["r.fall","p.out"],chain:[{morph:"r.fall",form:"fall",gloss:"欺骗，错误"},{morph:"p.out",form:"out",gloss:"向外；超过"}]},
   {id:"w.falsely",morphHints:["r.fals","s.ly"],chain:[{morph:"r.fals",form:"false",gloss:"假，伪"},{morph:"s.ly",form:"ly",gloss:"以…方式"}]},
   {id:"w.fam",morphHints:["r.fam"],chain:[{morph:"r.fam",form:"fam",gloss:"家；名声"}]},
   {id:"w.families",morphHints:["r.fam","s.plural"],chain:[{morph:"r.fam",form:"fam",gloss:"家"},{morph:null,form:"ily",gloss:"名词后缀"},{morph:"s.plural",form:"ies",gloss:"名词屈折后缀：复数；动词第三人称单数"}]},
@@ -2208,7 +2201,6 @@ const wordsRemorph = [
   {id:"w.lunatic",morphHints:["s.ic"],chain:[{morph:null,form:"lunat",gloss:"月亮（源自拉丁 luna，清单无对应词根）"},{morph:"s.ic",form:"ic",gloss:"…的，与…有关"}]},
   {id:"w.lunatics",morphHints:["s.ic","s.plural"],chain:[{morph:null,form:"lunat",gloss:"月亮（源自拉丁 luna，清单无对应词根）"},{morph:"s.ic",form:"ic",gloss:"…的，与…有关"},{morph:"s.plural",form:"s",gloss:"名词屈折后缀：复数；动词第三人称单数"}]},
   {id:"w.luxurious",morphHints:["s.ous"],chain:[{morph:null,form:"luxuri",gloss:"奢侈（整体借入，清单无对应词根）"},{morph:"s.ous",form:"ous",gloss:"充满…的"}]},
-  {id:"w.lys",morphHints:["r.lys"],chain:[{morph:"r.lys",form:"lys",gloss:"解开，分解"}]},
   {id:"w.magical",morphHints:["s.al"],chain:[{morph:null,form:"magic",gloss:"魔法（整体借入，清单无对应词根）"},{morph:"s.al",form:"al",gloss:"…的，与…有关的"}]},
   {id:"w.magician",morphHints:["s.ian"],chain:[{morph:null,form:"magici",gloss:"魔法（整体借入，清单无对应词根）"},{morph:"s.ian",form:"an",gloss:"…的人"}]},
   {id:"w.magicians",morphHints:["s.ian","s.plural"],chain:[{morph:null,form:"magici",gloss:"魔法（整体借入，清单无对应词根）"},{morph:"s.ian",form:"an",gloss:"…的人"},{morph:"s.plural",form:"s",gloss:"名词屈折后缀：复数；动词第三人称单数"}]},
