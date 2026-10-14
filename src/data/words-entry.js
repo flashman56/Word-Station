@@ -17,6 +17,7 @@ import wordsMonoSeed from './words-mono-seed.js'
 import morphemes from './morphemes.js'
 import wordsRemorph from './words-remorph.js'
 import wordsBookmorph from './words-bookmorph.js'
+import wordsLoan from './words-loan.js'
 import { chainWithCanonicalGloss } from '../lib/derive.js'
 import wordsLemma, { LEMMA_BY_ID } from './words-lemma.js'
 import wordsForms, { FORMS_BY_ID } from './words-forms.js'
@@ -44,16 +45,20 @@ export const WORD_FILES = [
  *    代表形 id），**仅供 UI 展示**，不参与折叠 —— 展示比折叠宽（收的是双向印证
  *    的全部可靠屈折关系），但**不改变任何词条的学习单元身份**。详见
  *    src/data/words-forms.js 头部注释与 scripts/gen-forms-patch.mjs。
+ * ④ words-loan ：借词（loan / mono）构词提示补丁，与 ① 同机制，仅覆盖新用户队列里
+ *    确可拆出真实词素的借词（scripts/gen-loan-patch.mjs 依据审核后的候选生成）。
+ *    沿用「只做加法、保持 morphless 标记」原则，validate 据此放行。
  */
 const REMORPH = new Map(wordsRemorph.map((p) => [p.id, p]))
 const BOOKMORPH = new Map(wordsBookmorph.map((p) => [p.id, p]))
+const LOANMORPH = new Map(wordsLoan.map((p) => [p.id, p]))
 const MORPH_IDS = new Set(morphemes.map((m) => m.id))
 // 词素 id -> 权威 gloss（单一信源）。chain 分段 gloss 一律收敛到表里，消除漂移。
 const GLOSS_BY_ID = new Map(morphemes.map((m) => [m.id, m.gloss]))
 
 const rawWords = WORD_FILES.flat()
 export const words = rawWords.map((w) => {
-  const patch = BOOKMORPH.get(w.id) || REMORPH.get(w.id)
+  const patch = BOOKMORPH.get(w.id) || REMORPH.get(w.id) || LOANMORPH.get(w.id)
   const lemma = LEMMA_BY_ID.get(w.id)
   const formRep = FORMS_BY_ID.get(w.id)
   const hints = patch ? patch.morphHints.filter((mid) => MORPH_IDS.has(mid)) : []
