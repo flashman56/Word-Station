@@ -160,6 +160,56 @@ words.forEach((w, i) => {
   cefrDist[w.cefr] = (cefrDist[w.cefr] || 0) + 1
 })
 
+// ---------------------------------------------------------------- 词素挂载冲突（warn）
+//
+// ★ 为什么这条闸门必须存在 ★
+//   `words-entry.js` / `index.js` 的合并是 `morphs: [...base.morphs, ...patch.morphHints]`
+//   ——**追加**。若 base 与补丁对同一个词给出「同 form 但不同 type」的两个词素，
+//   合并后两个都在，而 chain 又被补丁整体覆盖，卡面会渲染出**不可能成立**的拆解。
+//
+//   真实案例（2026-10-14 修）：`r.ment`(root, form 'ment', 拉丁 mens「心」) 与
+//   `s.ment`(suffix, form 'ment', -mentum「结果/行为」) 同时挂在 government / comment /
+//   segment / attachment 等 25 词上，学习者看到 -mentum 被解释成「心，思想，精神」。
+//   铁证：`w.quasigovernment` 的 r.ment 段 gloss 自称「名词后缀」，id 却是 root。
+//
+//   ★ 为什么此前三个校验器都看不见 ★
+//   validate 只验「morph id 是否存在」，不验「这个 id 挂得对不对、彼此是否自相矛盾」。
+//   一条 id 存在但语义错位的链路，在旧规则下是全绿的——这正是本条要补的盲区。
+//
+//   先 warn 不升 error：存量若还有漏网，升 error 会让 validate 直接红掉、挡住其它工作。
+const morphById = new Map(morphemes.map((m) => [m.id, m]))
+{
+  let conflictWords = 0
+  words.forEach((w) => {
+    const ids = Array.isArray(w.morphs) ? w.morphs : []
+    /** @type {Map<string, {id: string, type: string}>} form -> 已见的一个词素 */
+    const seenByForm = new Map()
+    const conflicts = []
+    for (const id of ids) {
+      const m = morphById.get(id)
+      if (!m || !m.form) continue
+      const prev = seenByForm.get(m.form)
+      if (prev && prev.type !== m.type) {
+        conflicts.push(`${prev.id}(${prev.type}) + ${id}(${m.type})`)
+      } else if (!prev) {
+        seenByForm.set(m.form, { id, type: m.type })
+      }
+    }
+    if (conflicts.length) {
+      conflictWords += 1
+      warn(
+        `词 ${w.form}(${w.id}) 的 morphs 同挂了「同 form 不同 type」的词素：`
+        + `${conflicts.join('、')} —— 同形不可能既是词根又是后缀`,
+      )
+    }
+  })
+  if (conflictWords === 0) {
+    console.log('[闸门] 词素挂载冲突：0 条（同 form 不同 type）')
+  } else {
+    console.log(`[闸门] 词素挂载冲突：${conflictWords} 词命中（见下方 WARN）`)
+  }
+}
+
 // ---------------------------------------------------------------- 补齐进度提示
 
 if (fill.phonetic < fill.total || fill.example < fill.total) {
