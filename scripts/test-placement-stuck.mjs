@@ -30,9 +30,11 @@ assert.ok(ms < 500, `出题应为毫秒级（实测 ${ms}ms），超过 500ms �
 pass(`正常出题 ${probeOk.items.length} 题 / ${ms}ms —— 毫秒级，确认从来不是"慢"`)
 
 // 3) hook 必须把失败原因暴露出来，而不是静默 return
+//    ★ 自适应改写后：start() 用 pickNextPlacementWord 出首题，抽不到（first 为空）才 setStartError，
+//       不再是旧版的「items.length === 0 静默 return」。判据随之改为查 `!first` → setStartError。
 const src = await import('node:fs').then((fs) => fs.readFileSync('src/hooks/usePlacement.js', 'utf8'))
-assert.ok(/items\.length === 0[\s\S]{0,400}setStartError/.test(src),
-  'items 为空时必须 setStartError，不能静默 return')
+assert.ok(/!first[\s\S]{0,400}setStartError/.test(src),
+  '出题失败时（首题 first 为空）必须 setStartError，不能静默 return')
 assert.ok(!/if \(p\.items\.length === 0\) return/.test(src),
   '禁止出现「出不了题就静默 return」的旧写法')
 pass('usePlacement.start(): 出题失败会给出可读原因，不再静默吞掉')
