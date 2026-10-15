@@ -186,10 +186,17 @@ const UNKNOWN = {
   form: 'unknown',
   pos: 'adj.',
   gloss: '未知的',
-  morphs: ['m.un', 'm.known'],
+  // ★ 2026-10-15：补上 morph 字段。
+  //   真实数据里每个 chain 段都带 morph（否则 UI 无法把它连回词素表、点不开词源故事）。
+  //   本夹具原先只写 form+gloss，于是「chip 是否可点」这条断言永远不成立
+  //   ——它测的是夹具自己造的形状，不是产品的真实形状。
+  // ★ 用**真实存在于 morphemes.js 的 id**（p.un「否定」+ x.unk「未拆解」），
+  //   否则 chip 查不到词素、永远渲染成不可点的 <span>，断言测的是夹具自造的形状。
+  //   顺带覆盖「否定前缀 + 未拆解词根」这一真实组合。
+  morphs: ['p.un', 'x.unk'],
   chain: [
-    { form: 'un-', gloss: '不' },
-    { form: 'known', gloss: '已知的' },
+    { morph: 'p.un', form: 'un-', gloss: '不' },
+    { morph: 'x.unk', form: 'known', gloss: '已知的' },
   ],
 }
 
@@ -259,13 +266,29 @@ async function caseDecomposition() {
   ok(txt(sec).includes('构词拆解'), '标题「构词拆解」仍在')
 
   const container = mustFind(() => chipContainers(sec)[0], '未找到拆解 chip 容器（有拆解词却无容器）')
-  const chips = [...container.querySelectorAll('span')].filter((s) => hasAll(s, 'rounded', 'border'))
+  // ★ 选择器必须同时匹配 button 与 span ★
+  //   2026-10-15 起：morph 能在词素表查到的 chip 是 <button>（可点开词源故事），
+  //   查不到的（morph=null 的拼写残段）仍是 <span>。只查 span 会在前者上全部落空。
+  const chips = [...container.querySelectorAll('button, span')].filter((s) => hasAll(s, 'rounded', 'border'))
   ok(chips.length === 2, `★ 两个 chip 都渲染（实际 ${chips.length} 个）`)
   ok(chips.length === 2 && txt(chips[0]).includes('un-') && txt(chips[0]).includes('不'), `第 1 个 chip = un- / 不（实际：${chips[0] ? txt(chips[0]) : '—'}）`)
   ok(chips.length === 2 && txt(chips[1]).includes('known') && txt(chips[1]).includes('已知'), `第 2 个 chip = known / 已知的（实际：${chips[1] ? txt(chips[1]) : '—'}）`)
 
   ok(plusSpans(container).length === 1, `★ 中间出现 1 个「+」分隔符（实际 ${plusSpans(container).length} 个）`)
   ok(amberHints(sec).length === 0, `★ amber 提示不出现（实际 ${amberHints(sec).length} 个）`)
+
+  // ★ 2026-10-15 修复：学习卡上的词素 chip 此前是纯 <span>，点不动（只有详情页能展开
+  //   「词源故事」）。用户实测反馈「点构词拆解下的 psycho 也没用，而 logy 可以」。
+  //   根因：chip 没有任何 onClick。判据改为「morph 能在词素表查到 ⇒ 必须是 button」。
+  const clickable = [...container.querySelectorAll('button')]
+  ok(
+    clickable.length === 2,
+    `★ 两个 chip 都是 <button>（可点开词源故事，实际 ${clickable.length} 个）`,
+  )
+  ok(
+    clickable.every((b) => /查看词源故事/.test(b.getAttribute('title') || '')),
+    '★ 每个可点 chip 都带 title="查看词源故事"（悬停有提示，不是无反馈的死元素）',
+  )
 
   unmount()
 }

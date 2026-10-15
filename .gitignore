@@ -71,3 +71,6 @@ supabase/.temp/
 # lemminflect 屈折还原的中间产物（可由 scripts/lemmatize-corpus.py 再生）
 scripts/.lemma-input.json
 scripts/.lemma-lemmas.json
+
+# gen-morph-gap 的机读中间产物（可由脚本再生）
+scripts/.morph-gap.json

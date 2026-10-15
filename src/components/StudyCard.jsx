@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { MASTER_THRESHOLD, statusLabel } from '../lib/learning.js'
 // 红线：音标只查表（public/data/v1/phon/*.json，源头是 ECDICT），严禁模型生成
 import { phoneticsOfAsync } from '../lib/dict.js'
@@ -8,6 +8,10 @@ import { useSpeech } from '../hooks/useSpeech.js'
 import SpeakerButton from './SpeakerButton.jsx'
 import UsageSupplement from './UsageSupplement.jsx'
 import WordForms from './WordForms.jsx'
+// 构词拆解的词素 chip 可点开「词源故事」——与词详情（App.jsx WordDetail）**同一组件、
+// 同一交互**。此前学习卡上的 chip 是纯 <span>，点不动，只有详情页能展开（2026-10-15 修复）。
+import EtymologyPanel from './EtymologyPanel.jsx'
+import { default as morphemes } from '../data/morphemes.js'
 
 /**
  * 单张学习 / 复习卡片。
@@ -45,6 +49,13 @@ export default function StudyCard({
   const [revealed, setRevealed] = useState(false) // 「记得」第 1 步：已揭开释义、尚未确认掌握
   const [result, setResult] = useState(null) // 'correct' | 'incorrect' | 'known'
   const [out, setOut] = useState(null) // onAnswer 的返回值，便于立刻给反馈
+  // 构词拆解：点词素 chip 内联展开其词源故事（与 App.jsx WordDetail 同一套逻辑）。
+  // morphById 在本组件内自建一次：词素表是静态数组，不随渲染变，无需按 word memo。
+  const morphById = useMemo(() => new Map(morphemes.map((m) => [m.id, m])), [])
+  const [expandedMorphId, setExpandedMorphId] = useState(null)
+  // 换卡时收起展开态（StudyCard 以 key=index 重挂，但保险起见仍按词清一次）
+  useEffect(() => { setExpandedMorphId(null) }, [word.id])
+  const expandedMorph = expandedMorphId ? morphById.get(expandedMorphId) || null : null
 
   const isReview = mode === 'review'
   const { speak } = useSpeech()
@@ -225,17 +236,52 @@ export default function StudyCard({
                 一条都不显示 —— 这正是用户看到「标题在、面板空」的根因。判 chain 后
                 补丁全部生效。文案与 WordDetail（App.jsx）同源同字符串，防止两个 UI 面漂移。 */}
             {hasDecomposition(word) ? (
-              <div className="flex items-center flex-wrap gap-1.5">
-                {word.chain.map((step, i) => (
-                  <React.Fragment key={i}>
-                    {i > 0 && <span className="text-slate-300">+</span>}
-                    <span className="px-2 py-1 rounded border border-slate-200 text-xs">
-                      <span className="font-medium text-slate-700">{step.form}</span>
-                      <span className="text-slate-400 ml-1">{step.gloss}</span>
-                    </span>
-                  </React.Fragment>
-                ))}
-              </div>
+              <>
+                <div className="flex items-center flex-wrap gap-1.5">
+                  {word.chain.map((step, i) => {
+                    // 可点判据与 App.jsx WordDetail 逐字同款：chain 段的 morph 能在词素表查到
+                    const m = step.morph ? morphById.get(step.morph) : null
+                    const clickable = Boolean(m)
+                    const expanded = clickable && expandedMorphId === m.id
+                    return (
+                      <React.Fragment key={i}>
+                        {i > 0 && <span className="text-slate-300">+</span>}
+                        {clickable ? (
+                          <button
+                            type="button"
+                            onClick={() => setExpandedMorphId(expanded ? null : m.id)}
+                            title="查看词源故事"
+                            className={`px-2 py-1 rounded border text-xs transition-colors ${
+                              expanded
+                                ? 'border-blue-300 bg-blue-50'
+                                : 'border-slate-200 hover:border-blue-300 hover:bg-blue-50'
+                            }`}
+                          >
+                            <span className="font-medium text-slate-700">{step.form}</span>
+                            <span className="text-slate-400 ml-1">{step.gloss}</span>
+                            <span className="ml-1 text-slate-400">{expanded ? '▾' : '▸'}</span>
+                          </button>
+                        ) : (
+                          // morph 为 null 的段（如整体借入的词干）本就查不到词素，
+                          // 用 title 说明「点不开」的原因，而不是让它看起来像坏了
+                          <span
+                            className="px-2 py-1 rounded border border-slate-200 text-xs"
+                            title={step.morph ? '该词素不在词素表中' : '此段无对应词素'}
+                          >
+                            <span className="font-medium text-slate-700">{step.form}</span>
+                            <span className="text-slate-400 ml-1">{step.gloss}</span>
+                          </span>
+                        )}
+                      </React.Fragment>
+                    )
+                  })}
+                </div>
+                {expandedMorph && (
+                  <div className="mt-2">
+                    <EtymologyPanel morph={expandedMorph} defaultOpen />
+                  </div>
+                )}
+              </>
             ) : (
               <div className="px-2 py-1.5 rounded border border-amber-200 bg-amber-50 text-xs text-amber-700">
                 无词素 · {morphlessKindLabel(word)}
