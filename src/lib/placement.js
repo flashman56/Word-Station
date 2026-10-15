@@ -335,6 +335,19 @@ export const PLACEMENT_ACCURACY_REL = 0.25
 export const PLACEMENT_SEED_RANK = 8000
 
 /**
+ * 相邻两题的最小词频间隔。
+ * ★ 为什么需要它 ★
+ *   词库高位 freqRank 成桶（30000 一档就有 485 个词，桶内值完全相同），
+ *   而边界估计必然落在某个桶值上。若只「取离边界最近的词」，桶内所有候选距离并列，
+ *   题目就会在那一档里连问——用户实测反馈「第 28/29 题只差 45 个词位」，
+ *   且整段都是同一难度的生词。
+ *   取 400：略大于桶间距（500）的一半，足够跨开相邻同桶，又不至于把题推得太远。
+ *   注意这是**软约束**（排序惩罚，不是硬排除）——若附近没有别的词可出，
+ *   宁可挨着问，也不卡住不出题。
+ */
+export const MIN_GAP_RANK = 400
+
+/**
  * 候选池：去掉专有名词 / 折叠形 / 已答，附上「可选题频档下标」bandIndex。
  * bandIndex 与 scorePlacement 内部的 allBands 下标**同口径**（都用 selectableBands 过滤后）。
  * @returns {Array<{id,form,freqRank,bandIndex,gloss,example,pos,phoneticBr}>} 按 freqRank 升序
@@ -414,8 +427,21 @@ function boundaryRankFromResult(result, answeredItems, maxRank) {
  * 选下一题：给定已答，返回「词频最接近当前边界」的未答词。
  *
  * ★ 这就是「二分」的落点 ★：每题把题目推到用户当前估计的起点边界附近，
- *   认识→边界上移、不认识→边界下移，几题内收敛。不是严格的区间折半，而是
- *   「用全样本统计出的边界」取最近词，比纯折半更稳（不会因单次误答乱跳）。
+ *   认识→边界上移、不认识→边界下移，几题内收敛。
+ *
+ * ★★ 但「取最近」必须加两个约束，否则会退化成「连续追问同一档」 ★★
+ *   起因（2026-10-15 线上实测）：词库的高位 freqRank 是**成桶**的
+ *   （freqRank=30000 的词有 485 个、31000 有 519 个，桶内值完全相同）。
+ *   于是当边界估计落在某个桶值上时，`|freqRank - boundary|` 对该桶内**所有**词
+ *   都等于同一个 d，纯「取 d 最小」会永远锁定该桶的第一个词——
+ *   实测第 5 题起连续 26 题全是 freqRank=30000（temporo / teratogen / philomythic…），
+ *   用户看到的是「一连串生词」。另外边界越精确、题越密（第 28/29 题只差 45 个词位）。
+ *
+ *   两个约束：
+ *   ① **最小间隔**：与最近一题的 freqRank 至少差 MIN_GAP_RANK，否则往边界另一侧让开
+ *      （仍以边界为中心，只是排除贴脸的那几个）。这是「不要连续追问同一难度」的关键。
+ *   ② **桶内轮转**：同 freqRank 的词按「该值下已出题数量」升序取，让 485 个词轮着来，
+ *      而不是永远第一个。
  *
  * @param {Array} words 词库
  * @param {Array} bands buildBands 的输出
@@ -425,21 +451,44 @@ function boundaryRankFromResult(result, answeredItems, maxRank) {
  */
 export function pickNextPlacementWord(words, bands, answeredItems, answers) {
   const pool = buildPlacementPool(words, bands)
-  const answeredIds = new Set((Array.isArray(answeredItems) ? answeredItems : []).map((it) => it.id))
+  const answered = Array.isArray(answeredItems) ? answeredItems : []
+  const answeredIds = new Set(answered.map((it) => it.id))
   const available = pool.filter((p) => !answeredIds.has(p.id))
   if (available.length === 0) return null
   const sel = selectableBands(bands)
   const maxRank = sel.length ? Number(sel[sel.length - 1].hi) : 0
-  const result = scorePlacement({ items: answeredItems, answers, words, bands })
-  let boundary = boundaryRankFromResult(result, answeredItems, maxRank)
+  const result = scorePlacement({ items: answered, answers, words, bands })
+  let boundary = boundaryRankFromResult(result, answered, maxRank)
   if (boundary == null) boundary = PLACEMENT_SEED_RANK
   if (!Number.isFinite(boundary)) boundary = PLACEMENT_SEED_RANK
+
+  // ① 最小间隔：最后一题的 rank（没有则不限制）
+  const lastRank = answered.length ? Number(answered[answered.length - 1].freqRank) : null
+  // ② 桶内已出题数：freqRank 相同（同桶）的词已出现过几次
+  const usedPerRank = new Map()
+  for (const it of answered) {
+    const r = Number(it.freqRank)
+    if (!Number.isFinite(r)) continue
+    usedPerRank.set(r, (usedPerRank.get(r) || 0) + 1)
+  }
+
   let best = null
-  let bestD = Infinity
+  let bestKey = null
   for (const p of available) {
     const d = Math.abs(p.freqRank - boundary)
-    if (d < bestD) {
-      bestD = d
+    // 与上一题贴脸 ⇒ 加一个大惩罚（不是硬排除：宁可稍远，也不要连续同难度）
+    const tooClose = lastRank != null && Number.isFinite(lastRank)
+      && Math.abs(p.freqRank - lastRank) < MIN_GAP_RANK
+    const used = usedPerRank.get(p.freqRank) || 0
+    // 排序键：贴脸惩罚 → 桶内已用次数（轮转）→ 与边界距离
+    const key = [tooClose ? 1 : 0, used, d]
+    if (
+      bestKey === null
+      || key[0] < bestKey[0]
+      || (key[0] === bestKey[0] && (key[1] < bestKey[1]
+        || (key[1] === bestKey[1] && key[2] < bestKey[2])))
+    ) {
+      bestKey = key
       best = p
     }
   }

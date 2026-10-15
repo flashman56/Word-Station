@@ -80,6 +80,7 @@ const { default: PlacementTest } = await loadModule('src/components/PlacementTes
 const {
   pickNextPlacementWord,
   placementShouldStop,
+  scorePlacement,
   PLACEMENT_ADAPTIVE_MAX_Q,
   PLACEMENT_ADAPTIVE_MIN_Q,
   PLACEMENT_SEED_RANK,
@@ -137,6 +138,45 @@ ok(
   placementShouldStop(new Array(3).fill({ id: 'x', freqRank: 1, bandIndex: 0 }), { sufficient: true, estimate: 100, low: 99, high: 101 }) === false,
   '少于 12 题即便区间很窄也不停（防止前几题运气好就停）',
 )
+
+// ---- A2. 相邻题间隔（2026-10-15 线上反馈的回归钉子）--------------------------
+//
+// ★ 起因（真实线上问题）★
+//   用户反馈「第 28 题 electroshock(30953) 与第 29 题 hammy(30908) 太接近，
+//   二分法会让我有一连串的不认识」。实测比反馈更严重：词库高位 freqRank **成桶**
+//   （freqRank=30000 的词有 485 个、31000 有 519 个，桶内值完全相同），
+//   而边界估计必然落在某个桶值上 ⇒ 纯「取离边界最近的词」时桶内所有候选距离并列，
+//   于是从第 5 题起**连续 26 题全是 freqRank=30000**，用户看到一串同难度怪词。
+//
+// ★ 这条断言钉的就是那件事：相邻两题不得是同一个 freqRank 值 ★
+function simulateRanks(threshold) {
+  let items = []
+  const answers = {}
+  const ranks = []
+  for (let i = 0; i < PLACEMENT_ADAPTIVE_MAX_Q; i += 1) {
+    const w = pickNextPlacementWord(WORDS, BANDS, items, answers)
+    if (!w) break
+    const v = w.freqRank <= threshold ? 'known' : 'unknown'
+    answers[w.id] = v
+    items.push({ id: w.id, form: w.form, freqRank: w.freqRank, bandIndex: w.bandIndex })
+    ranks.push(w.freqRank)
+    const res = scorePlacement({ items, answers, words: WORDS, bands: BANDS })
+    if (placementShouldStop(items, res)) break
+  }
+  return ranks
+}
+{
+  // 阈值落在成桶区（30000/31000 都有 400+ 词），正是会让旧实现锁死的情形
+  const ranks = simulateRanks(30900)
+  ok(ranks.length >= 5, `模拟出一整轮（${ranks.length} 题）`)
+  const dupPairs = ranks.filter((r, i) => i > 0 && r === ranks[i - 1]).length
+  ok(dupPairs === 0, `★ 相邻两题不撞同一个 freqRank（同值重复 ${dupPairs} 次，旧实现是 26）`)
+  const gaps = ranks.slice(1).map((r, i) => Math.abs(r - ranks[i]))
+  const tiny = gaps.filter((g) => g < 200).length
+  ok(tiny <= 2, `★ 相邻差 <200 的仅 ${tiny} 处（旧实现 25/29 全部 <500）`)
+  const distinct = new Set(ranks).size
+  ok(distinct >= ranks.length * 0.6, `抽到的 rank 值有 ${distinct}/${ranks.length} 种多样性（旧实现仅 5 种）`)
+}
 
 // ================================================================ B. 真实 hook 整轮
 section('B. 真实 hook 跑完整轮（含二次确认契约）')
