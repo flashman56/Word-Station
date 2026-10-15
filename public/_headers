@@ -33,3 +33,10 @@
 
 /
   Cache-Control: no-cache
+
+# Service Worker 必须及时检查更新，否则旧缓存策略可能长期驻留。
+/sw.js
+  Cache-Control: no-cache
+
+/offline.html
+  Cache-Control: no-cache

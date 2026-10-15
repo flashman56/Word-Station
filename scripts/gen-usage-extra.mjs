@@ -20,11 +20,12 @@
  *   --limit N          最多处理 N 个词（按 freqRank 升序）
  *   --band lo-hi       只处理 freqRank 落在 [lo, hi] 的词
  *   --only-missing     只处理「缺 usage」的词（含连 phon 条目都没有的）
- *   --only-u           只补 u（提示词更短、输出更小、更省钱；用于 3a）
+ *   --only-u           只补 u（仅要求并接收 u 字段，提示词与输出更短；用于 3a）
  *   --concurrency N    并发请求数（默认 4）
  *   --batch N          每批词数（默认：--only-u 时 40，否则 16）
  *   --force            忽略已完成条目，全部重生成
- *   --skip-proper      跳过专有名词（w.kind === 'proper'）；默认关闭，行为与历史一致
+ *   --skip-proper      跳过专有名词（默认已开启；该参数为兼容旧命令）
+ *   --include-proper   把专有名词也加入待办
  *   --no-write         只跑统计、不写产物（调试用）
  *   --dry-list         只打印待办清单规模后退出（不请求 API、不写产物，自证用）
  *
@@ -66,10 +67,6 @@ function loadEnv() {
 }
 loadEnv()
 const KEY = process.env.DEEPSEEK_API_KEY || ''
-if (!KEY) {
-  console.error('缺少 DEEPSEEK_API_KEY，请在 .env 或 .env.local 中配置后重试。')
-  process.exit(1)
-}
 
 // ---------------------------------------------------------------- args
 const argv = process.argv.slice(2)
@@ -428,9 +425,8 @@ function buildEntry(raw, meta) {
 
 // ---------------------------------------------------------------- LLM
 const DEEPSEEK_URL = 'https://api.deepseek.com/chat/completions'
-// 遗留模型别名：官方文档现指向 v4.1-flash 非思考模式；实测该名字当前仍 HTTP 200 可用，
-// 故保留不改。若某天返回 401/404（别名下线），改回 'deepseek-flash' 即可。
-const MODEL = 'deepseek-chat'
+// deepseek-chat 已退出服务；使用当前模型 ID，并显式关闭默认开启的思考模式。
+const MODEL = 'deepseek-flash'
 const REQUEST_TIMEOUT_MS = 180000
 
 /** 资金/配额类致命错误：不再重试、立即停跑 */
@@ -464,6 +460,25 @@ function buildPrompt(batch) {
     }
   }
 
+  const outputShape = ONLY_U
+    ? '{"items":[{"form":"单词原形","u":"..."}]}'
+    : '{"items":[{"form":"单词原形","c":["..."],"b":"...","u":"..."}]}'
+  const hardRules = ONLY_U
+    ? [
+        'items 数量必须等于本批单词数量，form 原样照抄（大小写与输入一致），不要新增或遗漏。',
+        '绝对禁止输出 phonetic / pronunciation / IPA / 音标 / 读音 / 发音字段，不得输出 /.../ 形式的音标串或国际音标符号。',
+        '只输出 u 字段：每个标注 [需用法] 的词给一条 30 字以内中文用法说明；不得输出 c、b 或其他字段。',
+        '不确定时用保守表述，但 u 必须简洁准确，不要写「暂无」。',
+      ]
+    : [
+        'items 数量必须等于本批单词数量，form 原样照抄（大小写与输入一致），不要新增或遗漏。',
+        '绝对禁止输出任何音标或发音内容（包括 phonetic、pronunciation、IPA、音标、读音、发音字段、/…/ 音标串和国际音标符号）。',
+        'c 必须是英文固定搭配，3~5 条、每条 2~8 个词，真实常用、可直接造句；不要加编号。',
+        'b 必须是中文，60~120 字，说明词源来历、文化背景或常见误用，不能写空话。',
+        'u 只对标注 [需用法] 的词给，其他填空字符串；30 字以内中文。标注 [需用法] 的词 u 不得为空。',
+        '不确定的内容用保守表述，但字段必须齐全、非空，不要写「暂无」。',
+      ]
+
   return `你在为中文学习者编写英语单词的用法补充材料。
 
 【本批单词】（每行：单词（词性：中文释义）[需用法]）
@@ -474,18 +489,10 @@ ${taskLines.join('\n')}
 
 【输出】
 只输出一个 JSON 对象，不要任何解释文字、不要 markdown 代码块：
-{"items":[{"form":"单词原形","c":["..."],"b":"...","u":"..."}]}
+${outputShape}
 
 硬性规则：
-1. items 数量必须等于本批单词数量，form 原样照抄（大小写与输入一致），不要新增或遗漏。
-2. ★★ 绝对禁止输出任何音标或发音内容 ★★
-   不得出现 phonetic / ipa / pronunciation / 音标 / 读音 / 发音 之类的字段，
-   不得出现 /.../ 形式的音标串，不得出现任何国际音标符号。
-   音标只能由词典查表提供，模型生成的音标一律作废并整条丢弃。
-3. c 必须是**英文**搭配短语，3~5 条，每条 2~8 个词，真实常用、可直接造句；不要加编号前缀。
-4. b 必须是**中文**，60~120 字，言之有物（词源来历 / 文化背景 / 常见误用三选一或组合），不要写空话套话。
-5. u 只对标注 [需用法] 的词给，其余填 ""；30 字以内中文。凡标注 [需用法] 的词 u 绝不能为空，否则整条作废。
-6. 不确定的内容用保守表述，但字段必须齐全、非空，不要写「暂无」。`
+${hardRules.map((rule) => `- ${rule}`).join('\n')}`
 }
 
 async function callDeepSeek(prompt) {
@@ -502,6 +509,7 @@ async function callDeepSeek(prompt) {
           { role: 'user', content: prompt },
         ],
         response_format: { type: 'json_object' },
+        thinking: { type: 'disabled' },
         temperature: 0.7,
         max_tokens: 8192,
       }),
@@ -608,7 +616,7 @@ export default usageExtra
 // 低谷时段（含全部周末）：输入 $0.15 / 输出 $0.60（USD / 百万 token）
 // 高峰时段（UTC 周一–五 01:00–04:00 与 06:00–10:00）：输入 $0.30 / 输出 $1.20
 // 这里按**低谷**价估算（最常见档位）。若在高峰时段跑，真实花费最高约为估算值的 2×。
-// 注：缓存命中输入按 10% 计价（下方 costUsd 已实现）。
+// 注：缓存命中输入按 2% 计价（下方 costUsd 已实现）。
 const PRICE_IN_PER_M = 0.15
 const PRICE_OUT_PER_M = 0.60
 function costUsd(st) {
@@ -616,7 +624,8 @@ function costUsd(st) {
   const hitIn = Math.min(st.cachedPromptTokens || 0, st.promptTokens || 0)
   return (
     (missIn / 1e6) * PRICE_IN_PER_M +
-    (hitIn / 1e6) * PRICE_IN_PER_M * 0.1 +
+    // 官方低谷缓存命中价 $0.003/M ÷ 未命中价 $0.15/M = 2%。
+    (hitIn / 1e6) * PRICE_IN_PER_M * 0.02 +
     ((st.completionTokens || 0) / 1e6) * PRICE_OUT_PER_M
   )
 }
@@ -639,7 +648,7 @@ async function runPool(items, worker, concurrency) {
 function buildWorkList() {
   let pool = FORMS_BY_RANK
   if (SKIP_PROPER) pool = pool.filter((m) => m.kind !== 'proper')
-  if (ONLY_MISSING) pool = pool.filter((m) => m.needsU)
+  if (ONLY_U || ONLY_MISSING) pool = pool.filter((m) => m.needsU)
   if (BAND) pool = pool.filter((m) => m.freqRank >= BAND[0] && m.freqRank <= BAND[1])
   const pending = FORCE ? pool : pool.filter((m) => !isDone(m))
 
@@ -683,6 +692,11 @@ async function main() {
   if (work.length === 0) {
     console.log('[usage-extra] 无需生成（全部已完成）。')
     writeOutput()
+    return
+  }
+  if (!KEY) {
+    console.error('缺少 DEEPSEEK_API_KEY；仅 --dry-list 可以不配置密钥运行。请在 .env 或 .env.local 中配置后重试。')
+    process.exitCode = 1
     return
   }
 

@@ -29,14 +29,14 @@
 
 ## 3. 计数与桶分布
 
-- 生成记录总数：**13183**
-- 基线 `scripts/.lemma-pairs.json`：**13183** 对；差异 **0**（应为 0）
-- `auto-fold`：**9888**（75.0%）
-- `keep`（规则②，保留）：**330**（2.5%）
-- `audit`：**2965**（22.5%）
-- **三桶之和**：9888 + 330 + 2965 = **13183**（= 总数 13183，必须相等）
-- `src` 分布：AB 12714 / B 416 / A 53
-- 唯一变形词：**13138**
+- 生成记录总数：**13468**
+- 基线 `scripts/.lemma-pairs.json`：**13183** 对；差异 **285**（应为 0）
+- `auto-fold`：**10127**（75.2%）
+- `keep`（规则②，保留）：**338**（2.5%）
+- `audit`：**3003**（22.3%）
+- **三桶之和**：10127 + 338 + 3003 = **13468**（= 总数 13468，必须相等）
+- `src` 分布：AB 12999 / B 416 / A 53
+- 唯一变形词：**13423**
 
 ### 规则② 阈值敏感度（生效值 = 2500）
 
@@ -44,21 +44,25 @@
 
 | 阈值 T | keep 条数 | 是否生效 |
 | --- | --- | --- |
-| 1000 | 82 |  |
-| 2500 | 330 | **✅ 生效** |
-| 5000 | 845 |  |
+| 1000 | 86 |  |
+| 2500 | 338 | **✅ 生效** |
+| 5000 | 862 |  |
 
 ### keep 桶 Top20 样本（按 form fRank 升序）
 
 | form→lemma | fRank/lRank | type | src | flags |
 | --- | --- | --- | --- | --- |
+| are → be | 24/23 | v | AB | multi-highfreq |
+| would → will | 64/48 | v | AB | multi-highfreq |
 | had → have | 69/18 | pd | AB | multi-highfreq |
 | been → be | 71/23 | d | AB | multi-highfreq |
 | has → have | 82/18 | 3 | AB | multi-highfreq |
 | thanks → thank | 152/99 | 3 | AB | multi-highfreq |
 | wanted → want | 153/50 | p | AB | multi-highfreq |
 | being → be | 158/23 | i | AB | multi-highfreq |
+| might → may | 169/166 | v | AB | multi-highfreq |
 | trying → try | 190/183 | i | AB | multi-highfreq |
+| most → much | 198/103 | a | AB | multi-highfreq |
 | killed → kill | 249/176 | d | AB | multi-highfreq |
 | wants → want | 256/50 | 3 | AB | multi-highfreq |
 | having → have | 262/18 | i | AB | multi-highfreq |
@@ -68,27 +72,23 @@
 | met → meet | 346/229 | p | AB | multi-highfreq |
 | tried → try | 362/183 | pd | AB | multi-highfreq |
 | needs → need | 375/80 | s | AB | multi-highfreq |
-| happens → happen | 428/279 | 3 | AB | multi-highfreq |
-| meeting → meet | 439/229 | i | AB | multi-highfreq |
-| others → other | 441/120 | s | AB | multi-highfreq |
-| loved → love | 472/330 | p | AB | multi-highfreq |
 
 ### flags 分布
 
 | flag | 条数 |
 | --- | --- |
-| form-more-frequent | 1494 |
-| highfreq-before | 815 |
+| form-more-frequent | 1517 |
+| highfreq-before | 828 |
 | src-b-only | 416 |
-| multi-highfreq | 330 |
+| multi-highfreq | 338 |
 | lemma-proper | 233 |
-| lemma-no-gloss | 144 |
-| homograph | 116 |
-| suspect-target | 75 |
+| lemma-no-gloss | 145 |
+| homograph | 117 |
+| suspect-target | 83 |
 | src-a-only | 53 |
 | rank-tie | 2 |
 
-### type 分布（全部 11 类，合计 13183）
+### type 分布（全部 14 类，合计 13468）
 
 | type | 条数 |
 | --- | --- |
@@ -97,10 +97,13 @@
 | d | 1805 |
 | p | 1190 |
 | 3 | 939 |
-| r | 169 |
+| r | 171 |
+| n | 141 |
 | t | 125 |
+| v | 108 |
 | dp | 72 |
 | pd | 51 |
+| a | 34 |
 | s3 | 33 |
 | 3s | 5 |
 
@@ -128,6 +131,7 @@
 | lay | laying → lay | 3568/949 | i | AB | **audit** | homograph |
 | lay | lays → lay | 9125/949 | 3 | AB | **audit** | homograph |
 | left | left → leave | 161/8109 | d | AB | **audit** | highfreq-before, homograph |
+| left | lefts → left | 40010/161 | n | AB | **audit** | homograph |
 | found | found → find | 178/1740 | d | AB | **audit** | highfreq-before, homograph |
 | found | founded → found | 6710/178 | d | AB | **audit** | homograph |
 | found | founding → found | 10736/178 | i | AB | **audit** | homograph |
@@ -151,33 +155,33 @@
 > 口径：以 lemma 为族核，成员 = {lemma} ∪ {f : f→lemma}；成员 `freqRank ≤ 5000` 视为高频（此为 Step-1 统计口径）。
 > 注：规则②的**生效阈值**为 `2500`（见 §3），本节 `5000` 仅用于「多高频成员族」规模统计。
 
-- 族总数（以 lemma 计）：**8438**
-- **同族 ≥2 高频成员（双方 fRank ≤ 5000）的族数：916**
+- 族总数（以 lemma 计）：**8610**
+- **同族 ≥2 高频成员（双方 fRank ≤ 5000）的族数：934**
 
 Top 20（按族内最高频成员 rank 升序）：
 
 | lemma | 族内高频成员（rank） |
 | --- | --- |
-| be | is(8), was(20), be(23), were(67), been(71), being(158) |
+| be | is(8), was(20), be(23), are(24), were(67), been(71), being(158) |
 | have | have(18), had(69), has(82), having(262) |
 | can | can(26), could(77) |
 | like | like(35), liked(690), likes(700), liking(4835) |
 | one | one(45), ones(492) |
-| get | got(49), getting(180), gets(340) |
+| will | will(48), would(64) |
+| get | got(49), getting(180), gets(340), gotten(1002) |
 | want | want(50), wanted(153), wants(256), wanting(1921) |
 | do | did(52), doing(104), does(136), done(148), do(1850) |
 | let | let(56), letting(1147), lets(2062) |
 | go | going(60), went(184), gone(236), goes(330), go(1810) |
 | need | need(80), needs(375), needed(495), needing(4815) |
+| much | more(84), much(103), most(198) |
 | way | way(85), ways(853) |
 | please | please(94), pleased(1452) |
+| shall | should(95), shall(310) |
 | say | said(96), saying(238), says(257), say(1860) |
 | thank | thank(99), thanks(152) |
 | big | big(100), bigger(843), biggest(1044) |
 | even | even(102), evening(1030) |
-| small | small(110), smaller(2500) |
-| god | god(113), gods(1616) |
-| large | large(120), largest(3201), larger(3413) |
 
 ## 6. 复跑与确定性
 

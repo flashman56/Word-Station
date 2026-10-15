@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f8fafc" />
+    <title>暂时离线 · 单词小站</title>
+    <style>
+      body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #f8fafc; color: #1e293b; font: 16px/1.6 system-ui, sans-serif; }
+      main { max-width: 28rem; padding: 2rem; }
+      h1 { font-size: 1.5rem; }
+      p { color: #475569; }
+      button { border: 0; border-radius: .6rem; padding: .7rem 1rem; background: #2563eb; color: white; font: inherit; cursor: pointer; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>现在没有网络</h1>
+      <p>这个页面还没有完整缓存。连接网络并成功打开一次后，已访问的应用页面和词库内容会保存在本机，之后可离线继续使用。</p>
+      <button onclick="location.reload()">重新连接</button>
+    </main>
+  </body>
+</html>

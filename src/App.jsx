@@ -1,6 +1,5 @@
 import React, { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react'
 import morphemes from './data/morphemes.js'
-import { ANTONYMS, SYNONYMS } from './data/synants.js'
 import {
   ORIGINS,
   STATUS,
@@ -17,6 +16,7 @@ import { buildRelations, pairKey, relationsOf } from './lib/relations.js'
 import { buildStemIndex, familyOf } from './lib/stemFamily.js'
 import { buildWordForms } from './lib/wordForms.js'
 import { phoneticsOfAsync } from './lib/dict.js'
+import { loadAllWords } from './lib/wordData.js'
 import { shouldShowPhoneticPending } from './lib/phoneticDisplay.js'
 import { estimateVocabulary } from './lib/vocab.js'
 import { buildWeeklySummary, rewindNewlyMastered } from './lib/daily.js'
@@ -42,6 +42,19 @@ import SpeakerButton from './components/SpeakerButton.jsx'
 import EtymologyPanel from './components/EtymologyPanel.jsx'
 import UsageSupplement from './components/UsageSupplement.jsx'
 import WordForms from './components/WordForms.jsx'
+
+let relationIndexPromise = null
+function loadRelationIndex(words) {
+  if (!relationIndexPromise) {
+    relationIndexPromise = import('./data/synants.js')
+      .then(({ SYNONYMS, ANTONYMS }) => buildRelations(words, { synonyms: SYNONYMS, antonyms: ANTONYMS }))
+      .catch((error) => {
+        relationIndexPromise = null
+        throw error
+      })
+  }
+  return relationIndexPromise
+}
 import BulkActionBar from './components/BulkActionBar.jsx'
 import AddToStationMenu from './components/AddToStationMenu.jsx'
 import AuthPanel from './components/AuthPanel.jsx'
@@ -105,21 +118,30 @@ function formatDateTime(iso) {
 }
 
 /**
- * 顶层：账号 / 小站 / 同步状态 + 词库按需加载。
- * 词库（16MB）走动态 import，首屏只渲染登录与小站 UI。
+ * 顶层：账号 / 小站 / 同步状态 + 词库分片加载。
+ * 生产环境读取缓存版 JSON 分片，开发环境动态 import 源数据入口。
  */
 export default function App() {
   const [words, setWords] = useState(null)
   const [loadError, setLoadError] = useState(null)
+  const [loadAttempt, setLoadAttempt] = useState(0)
+  const [loadProgress, setLoadProgress] = useState({ loaded: 0, total: 0 })
   const auth = useAuth()
   const stations = useStations(auth.userId)
   const sync = useSync({ ownerId: auth.userId })
 
   useEffect(() => {
     let alive = true
-    import('./data/words-entry.js')
-      .then((mod) => {
-        if (alive) setWords(mod.words || [])
+    setLoadError(null)
+    setLoadProgress({ loaded: 0, total: 0 })
+    const loadWords = import.meta.env.DEV
+      ? import('./data/words-entry.js').then((mod) => mod.words || [])
+      : loadAllWords((progress) => {
+          if (alive) setLoadProgress(progress)
+        })
+    loadWords
+      .then((loadedWords) => {
+        if (alive) setWords(loadedWords)
       })
       .catch((e) => {
         if (alive) setLoadError(e && e.message ? e.message : String(e))
@@ -127,7 +149,7 @@ export default function App() {
     return () => {
       alive = false
     }
-  }, [])
+  }, [loadAttempt])
 
   return (
     <div className="h-screen flex text-slate-700 bg-slate-100">
@@ -136,8 +158,44 @@ export default function App() {
       ) : (
         <div className="flex-1 flex flex-col">
           <TopBar auth={auth} stations={stations} sync={sync} view={null} setView={() => {}} stats={null} />
-          <div className="flex-1 flex items-center justify-center text-sm text-slate-400">
-            {loadError ? `词库加载失败：${loadError}` : '词库加载中…（首次约需几秒，之后走浏览器缓存）'}
+        <div className="flex-1 flex items-center justify-center px-5 text-sm text-slate-500" aria-live="polite">
+          {loadError ? (
+            <div role="alert" className="max-w-md rounded-xl border border-amber-200 bg-white p-5 text-center shadow-sm">
+              <p className="font-semibold text-slate-800">词库暂时没有加载成功</p>
+              <p className="mt-2 text-slate-500">检查网络连接后重试。完成过一次词库加载的设备可从本机缓存继续使用。</p>
+              <button
+                type="button"
+                onClick={() => setLoadAttempt((attempt) => attempt + 1)}
+                className="mt-4 rounded-lg bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              >
+                重试加载
+              </button>
+              <details className="mt-3 text-left text-xs text-slate-400">
+                <summary className="cursor-pointer">查看错误信息</summary>
+                <code className="mt-2 block break-all">{loadError}</code>
+              </details>
+            </div>
+          ) : (
+            <div role="status" className="w-full max-w-xs text-center">
+              <p>词库加载中…{loadProgress.total ? ` ${loadProgress.loaded}/${loadProgress.total}` : ''}</p>
+              {loadProgress.total > 0 && (
+                <div
+                  className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-200"
+                  role="progressbar"
+                  aria-label="词库加载进度"
+                  aria-valuemin={0}
+                  aria-valuemax={loadProgress.total}
+                  aria-valuenow={loadProgress.loaded}
+                >
+                  <div
+                    className="h-full rounded-full bg-blue-600 transition-[width] duration-200"
+                    style={{ width: `${(loadProgress.loaded / loadProgress.total) * 100}%` }}
+                  />
+                </div>
+              )}
+              <p className="mt-2 text-xs text-slate-400">首次需要加载；之后会从本机缓存读取</p>
+            </div>
+          )}
           </div>
         </div>
       )}
@@ -172,13 +230,14 @@ function TopBar({ auth, stations, sync, view, setView, stats, sessionMode, learn
             <line x1="4" y1="18" x2="20" y2="18" />
           </svg>
         </button>
-        <span className="hidden md:inline text-sm font-semibold text-slate-700 mr-2">词根词缀单词云</span>
+        <span className="hidden md:inline shrink-0 whitespace-nowrap text-sm font-semibold text-slate-700 mr-2">词根词缀单词云</span>
         <div className="flex-1 min-w-0 flex items-center gap-2 overflow-x-auto">
           {tabs.map(([key, label]) => (
             <button
               key={key}
               onClick={() => setView && setView(key)}
-              className={`shrink-0 px-3 py-1 rounded-md text-sm ${
+              aria-pressed={view === key}
+              className={`shrink-0 whitespace-nowrap px-3 py-1 rounded-md text-sm ${
                 view === key ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-100'
               }`}
             >
@@ -250,6 +309,7 @@ function AppShell({ words, auth, stations, sync }) {
   const exitSession = useCallback(() => setSessionMode('none'), [])
   const [selectedMorphId, setSelectedMorphId] = useState(null)
   const [selectedWord, setSelectedWord] = useState(null)
+  const [relationIndex, setRelationIndex] = useState(null)
   const [networkFocusWordId, setNetworkFocusWordId] = useState(null)
   const [orderBy, setOrderBy] = useState('cefr')
   const [selectedIds, setSelectedIds] = useState(() => new Set())
@@ -305,11 +365,23 @@ function AppShell({ words, auth, stations, sync }) {
     return () => clearTimeout(timer)
   }, [])
 
+  // 同义/反义关系只在总览图或单词详情中展示，默认学习/小站入口不加载这份大数据。
+  useEffect(() => {
+    if (relationIndex || (view !== 'overview' && !selectedWord)) return
+    let alive = true
+    loadRelationIndex(words)
+      .then((loadedIndex) => {
+        if (alive) setRelationIndex(loadedIndex)
+      })
+      .catch(() => {
+        // 数据 chunk 暂时加载失败时不阻塞主功能；下次进入相关视图会重试。
+      })
+    return () => {
+      alive = false
+    }
+  }, [relationIndex, view, selectedWord, words])
+
   const index = useMemo(() => buildIndex(morphemes, words), [words])
-  const relationIndex = useMemo(
-    () => buildRelations(words, { synonyms: SYNONYMS, antonyms: ANTONYMS }),
-    [words],
-  )
   // ★ 无拆解词（「无词素」组）的唯一判据是「chain 里没有内容」★
   //   原来按 `word.morphless === true` 过滤，而 remorph 补丁给 2244 个 morphless 词
   //   补了 morphs/chain 却保留了 morphless:true（validate 的硬约束要求保留）——
@@ -1006,12 +1078,8 @@ function AppShell({ words, auth, stations, sync }) {
               <li>小站内可直接背这些词（答错 +24h 到期）</li>
               <li>总览里气泡越大 = 该词根下词越多</li>
               <li>点气泡进入聚焦，看这一簇同源词</li>
-              {/* ★ 如实说明离线边界 ★
-                   本应用没有 Service Worker：词库与代码已打进构建产物，
-                   所以「已经打开、没刷新」时断网仍可背词；但刷新或新开标签
-                   需要回源取 index.html，离线会白屏。
-                   旧文案「断网也能用」承诺的是「应用可离线」，与事实不符。 */}
-              <li>登录后进度跨设备同步；断网时，已打开的页面仍可背词（刷新需联网）</li>
+              {/* 离线能力只覆盖首次访问后已缓存的应用资源和词库分片。 */}
+              <li>首次联网打开后，已缓存内容可离线重开；登录、同步和未缓存词条仍需网络</li>
             </ol>
           </div>
         )}
@@ -1328,6 +1396,19 @@ function WordDetail({
       </div>
 
       <h3 className="text-xs font-semibold text-slate-500 mt-4 mb-1.5">构词拆解</h3>
+      {word.etymReview && (
+        <p className={`mb-2 text-[11px] ${word.etymReview.status === 'reviewed' ? 'text-emerald-700' : 'text-amber-700'}`}>
+          {word.etymReview.status === 'reviewed' ? '本词构词已逐词复核' : '本词构词待核实'} ·{' '}
+          <a
+            href={word.etymReview.sourceUrl}
+            target="_blank"
+            rel="noreferrer"
+            className={`underline underline-offset-2 ${word.etymReview.status === 'reviewed' ? 'hover:text-emerald-900' : 'hover:text-amber-900'}`}
+          >
+            {word.etymReview.status === 'reviewed' ? `查看 ${word.etymReview.sourceName} 词条` : '查看词典搜索结果'}
+          </a>
+        </p>
+      )}
       {/* ★ 判据是「chain 里有没有内容」，不是 word.morphless ★
           remorph 补丁给 2244 个 morphless 词补了 morphs/chain，但必须保留
           morphless:true（validate-data.mjs 的硬约束），判标记会让这 2244 条补丁

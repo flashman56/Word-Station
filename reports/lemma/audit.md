@@ -1,6 +1,6 @@
 # lemma 归并 · 人工审计清单
 
-> 共 **2965** 条待审（`auto-fold` 与 `keep` 桶已自动放行，不在此列）。按 fRank 升序，优先审高频。
+> 共 **3003** 条待审（`auto-fold` 与 `keep` 桶已自动放行，不在此列）。按 fRank 升序，优先审高频。
 > 证据列：form/lemma 的 rank、kind、词库 gloss、ECDICT translation 摘要（各截 ~60 字）、type、src、flags。
 > `建议` 为机器可判者（fold / keep / fix-target:<原型>）；`?` 表示需人工语义裁决。
 
@@ -52,6 +52,20 @@
 - 词库 gloss：form「能；可以（can 过去式）」 / lemma「能；可以」
 - ECDICT：form「aux. 可以, 能」 / lemma「vt. 装罐 n. 罐头, 容器 aux. 能, 可以 [计] 作废字符」
 - **建议：`?`**
+
+## more → much
+- rank：form 84 / lemma 103 ｜ type `a` ｜ src `AB` ｜ flags `highfreq-before`
+- kind：form `mono` / lemma `mono`
+- 词库 gloss：form「更多；更加」 / lemma「许多；大量」
+- ECDICT：form「n. 更多 a. 多的, 程度较大的, 更大的 adv. 多, 更多, 进一步 [计] DOS外部命令:显示满屏后自动暂…」 / lemma「n. 大量, 许多, 重要的事 a. 很多的, 重要的 adv. 多, 甚, 几乎」
+- **建议：`keep`**
+
+## should → shall
+- rank：form 95 / lemma 310 ｜ type `v` ｜ src `AB` ｜ flags `highfreq-before`
+- kind：form `mono` / lemma `mono`
+- 词库 gloss：form「应该；应当」 / lemma「将要；应该」
+- ECDICT：form「aux. 应该, 将要」 / lemma「aux. 将」
+- **建议：`keep`**
 
 ## said → say
 - rank：form 96 / lemma 1860 ｜ type `pd` ｜ src `AB` ｜ flags `highfreq-before`
@@ -422,6 +436,13 @@
 - kind：form `loan` / lemma `mono`
 - 词库 gloss：form「数字；号码」 / lemma「麻木的；失去感觉的」
 - ECDICT：form「n. 数, 数字, 数目, 号码 vt. 数, 计算, 共计 vi. 计算, 报数 [计] 数字」 / lemma「a. 麻木的, 失去知觉的 vt. 使麻木, 使昏迷, 使失去知觉」
+- **建议：`keep`**
+
+## least → less
+- rank：form 314 / lemma 458 ｜ type `a` ｜ src `AB` ｜ flags `highfreq-before`
+- kind：form `mono` / lemma `mono`
+- 词库 gloss：form「最少的；最小的」 / lemma「更少的」
+- ECDICT：form「n. 最少, 最小, 最小限度 a. 最少的, 最小的 adv. 最小, 最少」 / lemma「n. 较少, 较小 a. 少的, 小的 adv. 较少, 较小, 较差 [计] 最低成本估算与调度法」
 - **建议：`keep`**
 
 ## girls → girl
@@ -1460,6 +1481,13 @@
 - ECDICT：form「n. 呼喊, 喊话」 / lemma「n. 呼喊, 喊声 vi. 呼喊, 喊叫, 嚷 vt. 高喊」
 - **建议：`keep`**
 
+## gotten → get
+- rank：form 1002 / lemma 6072 ｜ type `v` ｜ src `AB` ｜ flags `highfreq-before`
+- kind：form `mono` / lemma `mono`
+- 词库 gloss：form「get的过去分词（美式）」 / lemma「得到；获得；变得」
+- ECDICT：form「get的过去分词」 / lemma「vt. 得到, 获得, 变成, 使得, 收获, 接通, 抓住, 染上 vi. 到达, 成为, 变得 n. (网球等)救球…」
+- **建议：`keep`**
+
 ## tells → tell
 - rank：form 1005 / lemma 1870 ｜ type `3` ｜ src `AB` ｜ flags `highfreq-before`
 - kind：form `mono` / lemma `mono`
@@ -1528,6 +1556,13 @@
 - kind：form `loan` / lemma `mono`
 - 词库 gloss：form「跳舞（现在分词）」 / lemma「舞蹈；跳舞」
 - ECDICT：form「n. 舞蹈 [建] 跳动的」 / lemma「n. 跳舞, 舞蹈, 舞会 v. 跳舞」
+- **建议：`keep`**
+
+## crew → crow
+- rank：form 1053 / lemma 4266 ｜ type `v` ｜ src `AB` ｜ flags `highfreq-before`
+- kind：form `loan` / lemma `mono`
+- 词库 gloss：form「全体船员；团队」 / lemma「乌鸦」
+- ECDICT：form「n. 全体人员, 一群人, 全体队员 crow的过去式」 / lemma「n. 啼叫, 乌鸦, 鸡鸣, 撬棍 vi. 啼叫, 报晓」
 - **建议：`keep`**
 
 ## bringing → bring
@@ -2034,6 +2069,13 @@
 - ECDICT：form「n. 磅, 英镑；重击（pound复数形式）」 / lemma「n. 磅, 英镑, 重击, 鱼塘, 拘留所, 兽栏 vt. 强烈打击, 捣烂, 监禁, 关入栏内 vi. 连续重击, 苦…」
 - **建议：`keep`**
 
+## data → datum
+- rank：form 1487 / lemma 45521 ｜ type `n` ｜ src `AB` ｜ flags `highfreq-before, suspect-target`
+- kind：form `loan` / lemma `loan`
+- 词库 gloss：form「数据；资料」 / lemma「数据；资料（单数）」
+- ECDICT：form「pl. 资料, 数据 [计] 数据; DOS内部命令:用于显示或设定系统的日期」 / lemma「n. 论据, 材料, 资料, 已知数 [医] 材料, 资料, 论据」
+- **建议：`keep`**
+
 ## depends → depend
 - rank：form 1490 / lemma 1500 ｜ type `3` ｜ src `AB` ｜ flags `highfreq-before`
 - kind：form `loan` / lemma `-`
@@ -2221,6 +2263,13 @@
 - kind：form `loan` / lemma `mono`
 - 词库 gloss：form「行动；举措（move的复数）」 / lemma「移动；搬家；感动」
 - ECDICT：form「v. 移动；搬家；感动（move的第三人称单数）」 / lemma「n. 移动, 迁居, 步骤 vt. 移动, 开动, 感动, 搬(家) vi. 移动, 离开, 运行, 迁移, 摇动, 搬…」
+- **建议：`keep`**
+
+## media → medium
+- rank：form 1620 / lemma 4596 ｜ type `n` ｜ src `AB` ｜ flags `highfreq-before`
+- kind：form `loan` / lemma `loan`
+- 词库 gloss：form「媒体；传媒」 / lemma「媒介；中间；中号」
+- ECDICT：form「n. 媒体 [计] 媒质」 / lemma「n. 媒体, 方法, 媒介 a. 半生熟的, 中间的 [计] 媒体, 中」
 - **建议：`keep`**
 
 ## dies → die
@@ -2459,6 +2508,13 @@
 - kind：form `loan` / lemma `loan`
 - 词库 gloss：form「情况；环境（复数）」 / lemma「情况；环境」
 - ECDICT：form「[法] 事件, 事项, 详细情节」 / lemma「n. 环境, 状况, 事件」
+- **建议：`keep`**
+
+## stairs → stair
+- rank：form 1825 / lemma 4878 ｜ type `n` ｜ src `AB` ｜ flags `highfreq-before`
+- kind：form `mono` / lemma `mono`
+- 词库 gloss：form「楼梯（复数）」 / lemma「楼梯；一级台阶」
+- ECDICT：form「n. 楼梯」 / lemma「n. 梯级, 楼梯, 阶梯」
 - **建议：`keep`**
 
 ## tests → test
@@ -3096,6 +3152,13 @@
 - kind：form `mono` / lemma `mono`
 - 词库 gloss：form「波浪；挥手」 / lemma「波浪；挥手」
 - ECDICT：form「n. 波（wave的复数形式）」 / lemma「n. 波, 波浪, 波动, 起伏, 高潮, 潮涌, 挥手致意, (气压)突变 vi. 波动, 飘动, 挥手示意, 起伏 …」
+- **建议：`keep`**
+
+## headquarters → headquarter
+- rank：form 2411 / lemma 27006 ｜ type `v` ｜ src `AB` ｜ flags `highfreq-before, suspect-target`
+- kind：form `mono` / lemma `mono`
+- 词库 gloss：form「总部；司令部」 / lemma「设总部于」
+- ECDICT：form「n. 总部, 司令部, 总部人员 [经] 本部, 总部, 总署」 / lemma「vt. 将...的总部设在」
 - **建议：`keep`**
 
 ## related → relate
@@ -3894,6 +3957,13 @@
 - kind：form `mono` / lemma `mono`
 - 词库 gloss：form「忍受；承担（bear 单三）」 / lemma「熊」
 - ECDICT：form「n. 空头（卖空的证券交易投机）；熊（bear的复数）」 / lemma「n. 熊 vt. 忍受, 支承, 产生, 怀有, 通过卖空使跌价 vi. 忍受, 结果实, 压挤, 行进, 转向」
+- **建议：`keep`**
+
+## cookies → cookie
+- rank：form 3032 / lemma 3191 ｜ type `n` ｜ src `AB` ｜ flags `highfreq-before`
+- kind：form `loan` / lemma `loan`
+- 词库 gloss：form「饼干（复数）」 / lemma「饼干；小甜饼」
+- ECDICT：form「n. 饼干」 / lemma「n. 饼干, 小甜点 [建] 糕点」
 - **建议：`keep`**
 
 ## stepped → step
@@ -4995,6 +5065,13 @@
 - ECDICT：form「n. 硬币（coin的复数）」 / lemma「n. 硬币, 金钱, 货币 vt. 铸币, 创造, 杜撰」
 - **建议：`keep`**
 
+## physics → physic
+- rank：form 4092 / lemma 47274 ｜ type `v` ｜ src `AB` ｜ flags `highfreq-before, suspect-target`
+- kind：form `loan` / lemma `loan`
+- 词库 gloss：form「物理学」 / lemma「药；医术」
+- ECDICT：form「n. 物理学, 物理过程, 物理现象 [化] 物理; 物理学」 / lemma「n. 药品, 泻药, 医学 vt. 给...服药, 治愈, 使通便」
+- **建议：`keep`**
+
 ## sniffs → sniff
 - rank：form 4095 / lemma 7017 ｜ type `3` ｜ src `AB` ｜ flags `highfreq-before`
 - kind：form `mono` / lemma `mono`
@@ -5429,6 +5506,13 @@
 - ECDICT：form「a. 有同情心的；表示或感到关怀或关心的」 / lemma「n. 小心, 照料, 忧虑 vi. 关心, 介意 vt. 在意, 喜欢」
 - **建议：`keep`**
 
+## oats → oat
+- rank：form 4515 / lemma 4755 ｜ type `n` ｜ src `AB` ｜ flags `highfreq-before`
+- kind：form `mono` / lemma `mono`
+- 词库 gloss：form「燕麦」 / lemma「燕麦；燕麦粥」
+- ECDICT：form「n. 燕麦, 燕麦属植物, 燕麦粥, 麦片粥」 / lemma「n. 燕麦, 燕麦田 [医] 燕麦, 雀麦」
+- **建议：`keep`**
+
 ## carries → carry
 - rank：form 4516 / lemma 8106 ｜ type `3` ｜ src `AB` ｜ flags `highfreq-before`
 - kind：form `loan` / lemma `mono`
@@ -5765,6 +5849,13 @@
 - ECDICT：form「n. 宝剑（sword的复数）」 / lemma「n. 刀, 剑, 战争, 武力, 剑状物」
 - **建议：`keep`**
 
+## diner → din
+- rank：form 4870 / lemma 13147 ｜ type `a` ｜ src `AB` ｜ flags `highfreq-before`
+- kind：form `loan` / lemma `mono`
+- 词库 gloss：form「小餐馆；用餐者」 / lemma「喧闹声；嘈杂声」
+- ECDICT：form「n. 用餐者」 / lemma「n. 喧嚣 v. 絮絮不休地说, 喧闹」
+- **建议：`keep`**
+
 ## floors → floor
 - rank：form 4872 / lemma 4872 ｜ type `s` ｜ src `AB` ｜ flags `rank-tie`
 - kind：form `mono` / lemma `mono`
@@ -5958,6 +6049,13 @@
 - rank：form 5040 / lemma 24236 ｜ type `s` ｜ src `B` ｜ flags `src-b-only, form-more-frequent, suspect-target`
 - kind：form `mono` / lemma `mono`
 - 词库 gloss：form「衣服；服装」 / lemma「给…穿衣；供给衣服」
+- ECDICT：form「n. 衣服」 / lemma「vt. 给...穿衣, 盖上, 赋予」
+- **建议：`keep`**
+
+## clothing → clothe
+- rank：form 5043 / lemma 24236 ｜ type `v` ｜ src `AB` ｜ flags `form-more-frequent, suspect-target`
+- kind：form `mono` / lemma `mono`
+- 词库 gloss：form「衣物；服装总称」 / lemma「给…穿衣；供给衣服」
 - ECDICT：form「n. 衣服」 / lemma「vt. 给...穿衣, 盖上, 赋予」
 - **建议：`keep`**
 
@@ -6640,6 +6738,13 @@
 - ECDICT：form「v. 敢于（竟敢）」 / lemma「n. 挑战, 挑动, 大胆 v. 敢, 胆敢」
 - **建议：`keep`**
 
+## dive → diva
+- rank：form 5772 / lemma 7038 ｜ type `n` ｜ src `AB` ｜ flags `form-more-frequent`
+- kind：form `mono` / lemma `loan`
+- 词库 gloss：form「跳水；潜水；俯冲」 / lemma「女歌唱家；首席女歌手」
+- ECDICT：form「n. 潜水, 跳水 vi. 跳水, 俯冲, 猛冲 vt. 把...突然伸入」 / lemma「n. 歌剧女主角/首席女主角, 主要女歌手」
+- **建议：`keep`**
+
 ## appreciated → appreciate
 - rank：form 5781 / lemma 12400 ｜ type `d` ｜ src `AB` ｜ flags `form-more-frequent`
 - kind：form `loan` / lemma `-`
@@ -7179,6 +7284,13 @@
 - ECDICT：form「v. 拒绝, 回绝( refuse的现在分词 ); 推却, 回绝; 拒绝给（所需之物）」 / lemma「vt. 拒绝, 谢绝 vi. 拒绝 n. 废物 a. 扔掉的, 无用的」
 - **建议：`keep`**
 
+## grandchildren → grandchild
+- rank：form 6472 / lemma 10445 ｜ type `n` ｜ src `AB` ｜ flags `form-more-frequent`
+- kind：form `mono` / lemma `mono`
+- 词库 gloss：form「孙辈；孙子孙女」 / lemma「孙子；孙女」
+- ECDICT：form「n. 孙子, 孙辈」 / lemma「n. 孙, 外孙女, 外孙, 孙女, 孙子」
+- **建议：`keep`**
+
 ## enters → enter
 - rank：form 6505 / lemma 8118 ｜ type `3` ｜ src `AB` ｜ flags `form-more-frequent`
 - kind：form `loan` / lemma `mono`
@@ -7332,6 +7444,13 @@
 - 词库 gloss：form「创立；建立（found 的过去式）」 / lemma「找到（find 的过去式）」
 - ECDICT：form「a. 有基础的 v. 创办, 成立(found的过去式和过去分词)」 / lemma「vt. 建立, 创立, 铸造 find的过去式和过去分词」
 - **建议：`?`**
+
+## opera → opus
+- rank：form 6711 / lemma 21110 ｜ type `n` ｜ src `AB` ｜ flags `form-more-frequent, suspect-target`
+- kind：form `loan` / lemma `loan`
+- 词库 gloss：form「歌剧；歌剧院」 / lemma「作品（编号）；巨著」
+- ECDICT：form「n. 歌剧」 / lemma「n. 作品」
+- **建议：`keep`**
 
 ## civilized → civilize
 - rank：form 6746 / lemma 14500 ｜ type `p` ｜ src `B` ｜ flags `src-b-only, form-more-frequent`
@@ -7858,6 +7977,20 @@
 - ECDICT：form「n. 肾脏；转炉的附着物；肾形矿脉（kidney的复数）」 / lemma「n. 肾, 个性 [医] 肾」
 - **建议：`keep`**
 
+## credentials → credential
+- rank：form 7500 / lemma 14200 ｜ type `v` ｜ src `AB` ｜ flags `form-more-frequent`
+- kind：form `-` / lemma `-`
+- 词库 gloss：form「资历证明；资质证书」 / lemma「资格证书；资格证书证明」
+- ECDICT：form「n. 信任状, 国书, 文件, 身份证明, 证书 [法] 信用证, 国书, 证书」 / lemma「n. 国书, 凭据, 证明书 [经] 凭证, 证书」
+- **建议：`keep`**
+
+## lire → lira
+- rank：form 7517 / lemma 12030 ｜ type `n` ｜ src `AB` ｜ flags `form-more-frequent`
+- kind：form `loan` / lemma `loan`
+- 词库 gloss：form「里拉（旧意大利货币）」 / lemma「里拉（意大利旧货币）」
+- ECDICT：form「n. （意大利和土耳其的货币单位）里拉( lira的名词复数 )」 / lemma「n. 里拉」
+- **建议：`keep`**
+
 ## weighs → weigh
 - rank：form 7522 / lemma 7671 ｜ type `3` ｜ src `AB` ｜ flags `form-more-frequent`
 - kind：form `mono` / lemma `mono`
@@ -7919,6 +8052,13 @@
 - kind：form `loan` / lemma `-`
 - 词库 gloss：form「诊断（过去式）」 / lemma「诊断；判断」
 - ECDICT：form「v. 诊断( diagnose的过去式和过去分词 )」 / lemma「v. 诊断」
+- **建议：`keep`**
+
+## stove → stave
+- rank：form 7650 / lemma 33457 ｜ type `v` ｜ src `AB` ｜ flags `form-more-frequent, suspect-target`
+- kind：form `mono` / lemma `mono`
+- 词库 gloss：form「炉子」 / lemma「挡开；延缓（stave off）」
+- ECDICT：form「n. 火炉, 窑 vt. 用火炉烤 stave的过去式和过去分词」 / lemma「n. 狭板, 梯级, 棍棒, 诗句 vt. 击穿, 弄破, 敲打, 赶走 vi. 穿孔, 破碎」
 - **建议：`keep`**
 
 ## crackers → cracker
@@ -8045,6 +8185,13 @@
 - kind：form `mono` / lemma `loan`
 - 词库 gloss：form「裤子；短裤」 / lemma「喘气；气喘」
 - ECDICT：form「n. 裤子, 长裤, 短衬裤, 女式运动短裤」 / lemma「n. 喘息, 悸动 vi. 喘息, 渴望 vt. 气喘吁吁地说」
+- **建议：`keep`**
+
+## trousers → trouser
+- rank：form 7785 / lemma 21843 ｜ type `n` ｜ src `AB` ｜ flags `form-more-frequent`
+- kind：form `mono` / lemma `loan`
+- 词库 gloss：form「长裤；裤子」 / lemma「裤子的；长裤」
+- ECDICT：form「pl. 裤子, 长裤」 / lemma「a. 裤子的」
 - **建议：`keep`**
 
 ## blares → blare
@@ -8206,6 +8353,13 @@
 - kind：form `mono` / lemma `mono`
 - 词库 gloss：form「哼鼻；喷鼻息」 / lemma「哼鼻；喷鼻息」
 - ECDICT：form「n. 喷鼻息, 鼻息声( snort的名词复数 ); （潜水艇的）通气管 v. 喷鼻息（以表示不耐烦, 轻蔑等）( sn…」 / lemma「vi. 喷着气弄响鼻子, 轻蔑地哼, 嘶嘶响着排气 vt. 哼着鼻子说, 喷出, 吸入(毒品) n. 喷鼻息, (潜艇的…」
+- **建议：`keep`**
+
+## wicked → wick
+- rank：form 7935 / lemma 13725 ｜ type `v` ｜ src `AB` ｜ flags `form-more-frequent`
+- kind：form `mono` / lemma `mono`
+- 词库 gloss：form「邪恶的；恶劣的」 / lemma「烛芯；灯芯」
+- ECDICT：form「a. 坏的, 邪恶的, 缺德的, 刻毒的, 恶劣的, 淘气的」 / lemma「n. 灯芯, 油绳」
 - **建议：`keep`**
 
 ## antibiotics → antibiotic
@@ -8460,6 +8614,13 @@
 - ECDICT：form「n. 雪撬 vt. 用雪撬搬运 vi. 乘雪撬 [计] 单一大型贵重磁盘」 / lemma「abbr. systemic lupus erythematosus 系统性红斑狼疮, 全身性红疹狼斑」
 - **建议：`keep`**
 
+## statistics → statistic
+- rank：form 8362 / lemma 12800 ｜ type `n` ｜ src `AB` ｜ flags `form-more-frequent`
+- kind：form `loan` / lemma `-`
+- 词库 gloss：form「统计；统计学」 / lemma「统计数字；统计资料」
+- ECDICT：form「n. 统计学, 统计资料 [计] 统计信息」 / lemma「n. 统计量 a. 统计的, 统计学的」
+- **建议：`keep`**
+
 ## shattering → shatter
 - rank：form 8363 / lemma 11836 ｜ type `i` ｜ src `AB` ｜ flags `form-more-frequent`
 - kind：form `mono` / lemma `mono`
@@ -8633,6 +8794,13 @@
 - kind：form `loan` / lemma `loan`
 - 词库 gloss：form「档案；档案馆」 / lemma「档案；档案馆」
 - ECDICT：form「n. 档案, 档案室 [法] 公文档案, 案卷, 档案保管处」 / lemma「vt. 把...存档 n. 档案馆, 档案文件 [计] 挡案库, 存档」
+- **建议：`keep`**
+
+## modeling → model
+- rank：form 8713 / lemma 8724 ｜ type `v` ｜ src `AB` ｜ flags `form-more-frequent`
+- kind：form `loan` / lemma `loan`
+- 词库 gloss：form「建模；模特工作」 / lemma「模型；模特儿」
+- ECDICT：form「n. 模特儿职业, 立体感 [计] 建模, 模型化, 模拟」 / lemma「n. 模型, 模范, 模特儿 a. 模范的, 作模型用的 vi. 做模型, 做模特儿 vt. 使模仿, 塑造 [计] 模…」
 - **建议：`keep`**
 
 ## directing → direct
@@ -9909,12 +10077,26 @@
 - ECDICT：form「n. 悲嗥声( whine的名词复数 ); 哀鸣者 v. 哀号( whine的第三人称单数 ); 哀诉, 诉怨」 / lemma「n. 哀叫声, 嘎嘎声, 哀鸣 vi. 哭诉, 嘎嘎响, 发呜呜声 vt. 哀诉」
 - **建议：`keep`**
 
+## cola → colon
+- rank：form 10731 / lemma 11370 ｜ type `n` ｜ src `AB` ｜ flags `form-more-frequent`
+- kind：form `loan` / lemma `loan`
+- 词库 gloss：form「可乐；可乐饮料」 / lemma「结肠；冒号」
+- ECDICT：form「结肠, 冒号, 科朗 [化] 可乐果; 可乐果属; 可乐果干子叶」 / lemma「n. 冒号, 结肠 [医] 结肠」
+- **建议：`keep`**
+
 ## founding → found
 - rank：form 10736 / lemma 178 ｜ type `i` ｜ src `AB` ｜ flags `homograph`
 - kind：form `loan` / lemma `mono`
 - 词库 gloss：form「创立；创建」 / lemma「找到（find 的过去式）」
 - ECDICT：form「[计] 铸造」 / lemma「vt. 建立, 创立, 铸造 find的过去式和过去分词」
 - **建议：`?`**
+
+## crossroads → crossroad
+- rank：form 10745 / lemma 33008 ｜ type `n` ｜ src `AB` ｜ flags `form-more-frequent, suspect-target`
+- kind：form `mono` / lemma `mono`
+- 词库 gloss：form「十字路口；抉择关头」 / lemma「十字路口；抉择关头」
+- ECDICT：form「n. 十字路口, 交叉路口, 聚会的中心地点, (喻)需作抉择的重要关头, 紧要关头」 / lemma「n. 交叉路, 岔道, 十字路口」
+- **建议：`keep`**
 
 ## pictured → picture
 - rank：form 10795 / lemma 12000 ｜ type `d` ｜ src `AB` ｜ flags `form-more-frequent`
@@ -10320,6 +10502,13 @@
 - kind：form `mono` / lemma `proper`
 - 词库 gloss：form「肌肉发达的；被劫持的」 / lemma「杰克（人名）；千斤顶」
 - ECDICT：form「v. 抬高（价格等）；用千斤顶顶起（jack的过去分词）」 / lemma「n. 插座, 千斤顶, 男人 vt. 抬起, 提醒, 扛举, 增加, 提高, 放弃 a. 雄的 [计] 插座」
+- **建议：`keep`**
+
+## brownies → brownie
+- rank：form 11500 / lemma 12086 ｜ type `n` ｜ src `AB` ｜ flags `form-more-frequent`
+- kind：form `loan` / lemma `mono`
+- 词库 gloss：form「布朗尼蛋糕」 / lemma「布朗尼蛋糕；小精灵」
+- ECDICT：form「n. 核仁巧克力饼( brownie的复数形式 )」 / lemma「n. 界仁巧克力饼」
 - **建议：`keep`**
 
 ## overrated → overrate
@@ -10992,6 +11181,13 @@
 - kind：form `loan` / lemma `loan`
 - 词库 gloss：form「钉死在十字架上；严惩」 / lemma「钉死在十字架；严惩」
 - ECDICT：form「v. 把（某人）钉死在十字架上( crucify的过去式和过去分词 ); （尤指当众）折磨; 虐待; 迫害」 / lemma「vt. 十字架上钉死」
+- **建议：`keep`**
+
+## liters → liter
+- rank：form 12386 / lemma 15525 ｜ type `n` ｜ src `AB` ｜ flags `form-more-frequent`
+- kind：form `loan` / lemma `loan`
+- 词库 gloss：form「升（容量单位）」 / lemma「升（容量单位）」
+- ECDICT：form「公升」 / lemma「n. 公升 [化] 升」
 - **建议：`keep`**
 
 ## compelling → compel
@@ -12197,6 +12393,13 @@
 - 词库 gloss：form「邻近的；附近的」 / lemma「邻居」
 - ECDICT：form「a. 附近的, 邻近的, 邻接的」 / lemma「n. 邻居 vt. 邻接 vi. 毗邻而居, 友好 a. 邻近的」
 - **建议：`?`**
+
+## alumni → alumnus
+- rank：form 14762 / lemma 46401 ｜ type `n` ｜ src `AB` ｜ flags `form-more-frequent, suspect-target`
+- kind：form `loan` / lemma `loan`
+- 词库 gloss：form「校友（复数）」 / lemma「男校友；毕业生」
+- ECDICT：form「pl. 男毕业生, 男校友」 / lemma「n. 男毕业生, 男校友」
+- **建议：`keep`**
 
 ## snickering → snicker
 - rank：form 14767 / lemma 37759 ｜ type `i` ｜ src `AB` ｜ flags `form-more-frequent`
@@ -13603,6 +13806,13 @@
 - kind：form `mono` / lemma `mono`
 - 词库 gloss：form「含糊地说； slur 的现在分词」 / lemma「污辱；含糊发音」
 - ECDICT：form「n. 型芯粘合法」 / lemma「n. 连音符, 诽谤, 玷污, 印刷模糊 vt. 草率地看过, 忽略, 含糊地念 vi. 模糊不清」
+- **建议：`keep`**
+
+## tropics → tropic
+- rank：form 17914 / lemma 26230 ｜ type `n` ｜ src `AB` ｜ flags `form-more-frequent`
+- kind：form `loan` / lemma `loan`
+- 词库 gloss：form「热带」 / lemma「回归线；热带」
+- ECDICT：form「n. 热带地区」 / lemma「n. 回归线」
 - **建议：`keep`**
 
 ## orphaned → orphan
@@ -15656,6 +15866,13 @@
 - ECDICT：form「v. 阻挠( thwart的过去式和过去分词 ); 使受挫折; 挫败; <旧>横过」 / lemma「a. 横放的 vt. 反对, 阻挠, 横过 prep. 横过 adv. 横过」
 - **建议：`keep`**
 
+## hemorrhoids → hemorrhoid
+- rank：form 23349 / lemma 33801 ｜ type `n` ｜ src `AB` ｜ flags `form-more-frequent`
+- kind：form `loan` / lemma `loan`
+- 词库 gloss：form「痔疮」 / lemma「痔疮」
+- ECDICT：form「n. 痔疮, 痔疾」 / lemma「n. 痔, 痔疮 [医] 痔」
+- **建议：`keep`**
+
 ## infuriating → infuriate
 - rank：form 23357 / lemma 47061 ｜ type `i` ｜ src `AB` ｜ flags `form-more-frequent`
 - kind：form `loan` / lemma `loan`
@@ -15823,6 +16040,13 @@
 - 词库 gloss：form「用无线电发送（过去式）」 / lemma「收音机；无线电」
 - ECDICT：form「无线电传送的」 / lemma「n. 无线电, 收音机, 无线电报, 无线电广播, 无线电台 v. 用无线电发送」
 - **建议：`?`**
+
+## whirrs → whir
+- rank：form 23969 / lemma 34212 ｜ type `v` ｜ src `AB` ｜ flags `form-more-frequent`
+- kind：form `mono` / lemma `mono`
+- 词库 gloss：form「呼呼作响」 / lemma「呼呼声；嗡嗡声」
+- ECDICT：form「n. 呼呼声( whirr的复数形式 ) v. 呼呼声( whirr的第三人称单数 )」 / lemma「n. 呼呼声, 飕飕声 vi. 作呼呼声, 发飕飕声 vt. 使呼呼响」
+- **建议：`keep`**
 
 ## squatters → squatter
 - rank：form 23981 / lemma 30301 ｜ type `s` ｜ src `AB` ｜ flags `form-more-frequent`
@@ -17567,6 +17791,13 @@
 - ECDICT：form「v. 垂直落下, 骤然跌落( plummet的现在分词 )」 / lemma「n. 测深锤, 铅坠 vi. 垂直落下」
 - **建议：`?`**
 
+## tangier → tangy
+- rank：form 29979 / lemma 36008 ｜ type `a` ｜ src `AB` ｜ flags `form-more-frequent`
+- kind：form `proper` / lemma `mono`
+- 词库 gloss：form「丹吉尔（地名）」 / lemma「味道浓烈的；酸辣的」
+- ECDICT：form「丹吉尔 [摩洛哥北部港市]」 / lemma「a. 有强烈盐味的, 气味刺鼻的, 有刺激性的」
+- **建议：`keep`**
+
 ## vos → vo
 - rank：form 29983 / lemma 19896 ｜ type `s` ｜ src `AB` ｜ flags `lemma-proper`
 - kind：form `proper` / lemma `proper`
@@ -17649,6 +17880,13 @@
 - kind：form `mono` / lemma `mono`
 - 词库 gloss：form「流口水；垂涎（现在分词）」 / lemma「流口水；垂涎」
 - ECDICT：form「[医] 垂涎」 / lemma「vi. 垂涎, 流口水, 情不自禁地说 vt. 流口水弄湿, 口齿不清地说, 处事马虎 n. 口水, 涎, 过分动情的话…」
+- **建议：`keep`**
+
+## shriveled → shrivel
+- rank：form 30289 / lemma 30681 ｜ type `v` ｜ src `AB` ｜ flags `form-more-frequent`
+- kind：form `mono` / lemma `mono`
+- 词库 gloss：form「干瘪的；枯萎的」 / lemma「枯萎；皱缩」
+- ECDICT：form「v. （因热力, 严寒、干燥、年老等而）枯萎, 皱缩( shrivel的过去式和过去分词 )」 / lemma「v. (使)起皱纹, (使)枯萎, (使)束手无策」
 - **建议：`keep`**
 
 ## descendents → descendent
@@ -18111,6 +18349,13 @@
 - kind：form `proper` / lemma `proper`
 - 词库 gloss：form「罗马尼亚人」 / lemma「罗马尼亚的；罗马尼亚人」
 - ECDICT：form「a. 罗马尼亚的；罗马尼亚人的 n. 罗马尼亚人；罗马尼亚语」 / lemma「n. 罗马尼亚人, 罗马尼亚语 a. 罗马尼亚的」
+- **建议：`keep`**
+
+## yodeling → yodel
+- rank：form 32320 / lemma 34372 ｜ type `v` ｜ src `AB` ｜ flags `form-more-frequent`
+- kind：form `loan` / lemma `loan`
+- 词库 gloss：form「用真假嗓交替唱」 / lemma「用约德尔调唱」
+- ECDICT：form「约德尔唱法」 / lemma「n. 真假嗓音反复变换的唱腔 v. 用真假嗓音反复变换地唱」
 - **建议：`keep`**
 
 ## roofing → roof
@@ -18939,6 +19184,13 @@
 - ECDICT：form「n. 塞耶斯（姓氏）」 / lemma「n. 说话的人」
 - **建议：`keep`**
 
+## pincers → pincer
+- rank：form 35969 / lemma 43169 ｜ type `n` ｜ src `AB` ｜ flags `form-more-frequent`
+- kind：form `loan` / lemma `loan`
+- 词库 gloss：form「钳子；螯」 / lemma「钳子；螯；夹击」
+- ECDICT：form「n. 钳子, 镊子, 钳形运动, 螯 [医] 镊子, 乳牙(马)」 / lemma「n. （甲壳动物的）螯； 钳子」
+- **建议：`keep`**
+
 ## munchkins → munchkin
 - rank：form 36022 / lemma 24049 ｜ type `s` ｜ src `AB` ｜ flags `lemma-proper`
 - kind：form `mono` / lemma `proper`
@@ -19548,6 +19800,13 @@
 - ECDICT：form「n. 偏移；关闭状态；低价股票（off的复数）」 / lemma「a. 关着的, 不再生效的, 处于...境况的, 休假的, 空闲的 adv. 走开, ...掉, ...下, 休息, 出…」
 - **建议：`?`**
 
+## lefts → left
+- rank：form 40010 / lemma 161 ｜ type `n` ｜ src `AB` ｜ flags `homograph`
+- kind：form `mono` / lemma `mono`
+- 词库 gloss：form「左派；左拳；左侧」 / lemma「左边的；剩下的」
+- ECDICT：form「n. 左, 左面（left的复数形式）」 / lemma「a. 左边的, 左倾的, 左侧的, 左派的 adv. 在左面 n. 左, 左面, 左派 leave的过去式和过去分词」
+- **建议：`?`**
+
 ## unsealed → unseal
 - rank：form 40122 / lemma 47660 ｜ type `d` ｜ src `AB` ｜ flags `form-more-frequent`
 - kind：form `mono` / lemma `mono`
@@ -20001,6 +20260,13 @@
 - kind：form `proper` / lemma `proper`
 - 词库 gloss：form「腓尼基人」 / lemma「腓尼基的；腓尼基人」
 - ECDICT：form「(Phoenician 的复数) a. 腓尼基的, 腓尼基人的 n. 腓尼基人」 / lemma「a. 腓尼基的, 腓尼基人的 n. 腓尼基人」
+- **建议：`keep`**
+
+## stoners → stoner
+- rank：form 43376 / lemma 17155 ｜ type `n` ｜ src `AB` ｜ flags `lemma-no-gloss`
+- kind：form `mono` / lemma `mono`
+- 词库 gloss：form「吸大麻者；呆滞者」 / lemma「常吸大麻者」
+- ECDICT：form「」 / lemma「投石者; 铺石块者; 琢石者; 去果核的工具」
 - **建议：`keep`**
 
 ## desiccated → desiccate

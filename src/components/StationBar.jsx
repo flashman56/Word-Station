@@ -1,5 +1,14 @@
 import React, { useState } from 'react'
 
+function stationErrorMessage(error) {
+  if (!error) return ''
+  const message = String(error.message || '')
+  if (error.code === 'PGRST205' || /could not find the table .* in the schema cache/i.test(message)) {
+    return '云端数据表还未初始化。请在 Supabase SQL Editor 执行项目中的 supabase/migrations/0001_init.sql，然后刷新页面。'
+  }
+  return message || '小站暂时无法连接，请检查网络后重试。'
+}
+
 /**
  * 小站切换 / 新建 / 改名 / 删除 / 置顶
  *
@@ -158,7 +167,22 @@ export default function StationBar({ stations: api, auth }) {
         </button>
       )}
 
-      {api.error && <span className="text-red-600">{api.error.message}</span>}
+      {api.error && (
+        <div
+          role="alert"
+          className="basis-full flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900"
+        >
+          <span className="min-w-0 flex-1">{stationErrorMessage(api.error)}</span>
+          <button
+            type="button"
+            onClick={() => api.refresh()}
+            disabled={api.loading}
+            className="shrink-0 rounded-md border border-amber-300 bg-white px-2.5 py-1 font-medium text-amber-800 hover:bg-amber-100 disabled:opacity-50"
+          >
+            {api.loading ? '正在重试…' : '重试'}
+          </button>
+        </div>
+      )}
       {draftNotice && <span className="text-amber-700">{draftNotice}</span>}
     </div>
   )

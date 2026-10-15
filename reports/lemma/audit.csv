@@ -6,6 +6,8 @@ fRank,lRank,form,lemma,type,src,fKind,lKind,flags,suggest,form_gloss,lemma_gloss
 60,1810,going,go,i,AB,mono,mono,highfreq-before,keep,去（go 现在分词）,去；离开,"n. 去, 离去, 工作情况, 地面状况, 行为 a. 进行中的, 流行的, 成功的, 现存的","vi. 去, 走, 达到, 运转, 查阅, 消失, 结束, 放弃, 花费, 流传, 趋于, 打算, 剩下 vt. 以..…"
 67,23,were,be,p,A,mono,mono,src-a-only,?,是（be 过去式复数）,是；存在,be的过去式,"v. 是, 表示, 在 [计] 后端, 总线允许"
 77,26,could,can,p,B,mono,mono,src-b-only,?,能；可以（can 过去式）,能；可以,"aux. 可以, 能","vt. 装罐 n. 罐头, 容器 aux. 能, 可以 [计] 作废字符"
+84,103,more,much,a,AB,mono,mono,highfreq-before,keep,更多；更加,许多；大量,"n. 更多 a. 多的, 程度较大的, 更大的 adv. 多, 更多, 进一步 [计] DOS外部命令:显示满屏后自动暂…","n. 大量, 许多, 重要的事 a. 很多的, 重要的 adv. 多, 甚, 几乎"
+95,310,should,shall,v,AB,mono,mono,highfreq-before,keep,应该；应当,将要；应该,"aux. 应该, 将要",aux. 将
 96,1860,said,say,pd,AB,mono,mono,highfreq-before,keep,说（say 过去式）,说；表达,a. 上述的 say的过去式和过去分词,"vt. 说, 讲, 念, 说明, 指明 vi. 说, 讲 n. 意见, 发言权"
 104,1850,doing,do,i,AB,mono,mono,highfreq-before,keep,做（do 现在分词）,做；完成,"n. 行为, 活动","v. 做, 进行, 完成"
 123,2680,won,win,p,AB,mono,mono,highfreq-before,keep,赢（win 的过去式）,赢；获胜,win的过去式和过去分词,"vt. 赢得, 打胜, 成功 vi. 获胜, 达到, 影响 n. 胜利, 赢, 收益"
@@ -59,6 +61,7 @@ fRank,lRank,form,lemma,type,src,fKind,lKind,flags,suggest,form_gloss,lemma_gloss
 301,1840,making,make,i,AB,mono,mono,highfreq-before,keep,制作；使得（现在分词）,制作；使得,"n. 制造, (手工)制造业, 制作, 形成, 发展, 要素, 内在因素, 赚头, 制造物","vt. 制造, 安排, 创造, 构成, 使得, 产生, 造成, 整理, 布置, 引起, 到达, 进行 vi. 开始, 前…"
 309,1800,comes,come,3,AB,mono,mono,highfreq-before,keep,来（第三人称单数）,来；到达,v. 来自；从…来（come的三单形式）,"vi. 过来, 来, 到达, 出现, 开始 interj. 喂"
 312,8412,number,numb,r,AB,loan,mono,highfreq-before,keep,数字；号码,麻木的；失去感觉的,"n. 数, 数字, 数目, 号码 vt. 数, 计算, 共计 vi. 计算, 报数 [计] 数字","a. 麻木的, 失去知觉的 vt. 使麻木, 使昏迷, 使失去知觉"
+314,458,least,less,a,AB,mono,mono,highfreq-before,keep,最少的；最小的,更少的,"n. 最少, 最小, 最小限度 a. 最少的, 最小的 adv. 最小, 最少","n. 较少, 较小 a. 少的, 小的 adv. 较少, 较小, 较差 [计] 最低成本估算与调度法"
 319,560,girls,girl,s,AB,mono,mono,highfreq-before,keep,女孩（复数）,女孩,n. 女孩（girl的复数）,"n. 女孩, 少女, 女佣"
 320,518,married,marry,pd,AB,loan,loan,highfreq-before,keep,已婚的,结婚；嫁娶,"a. 已婚的, 婚姻的 [法] 结了婚的, 有配偶的, 夫妇的","vt. 与...结婚, 娶, 嫁 vi. 结婚"
 323,430,children,child,s,AB,mono,mono,highfreq-before,keep,孩子们（复数）,儿童；孩子,"pl. 孩子, 孩子们","n. 孩子, 产物, 追随者 [医] 儿童"
@@ -207,6 +210,7 @@ fRank,lRank,form,lemma,type,src,fKind,lKind,flags,suggest,form_gloss,lemma_gloss
 997,4485,leaves,leaf,s,B,mono,mono,src-b-only|highfreq-before|homograph,keep,叶子（复数）,叶子；一张（纸）,"pl. 树叶, 花瓣","n. 叶, 树叶, 花瓣, 页 vi. 生叶, 翻书页 vt. 在...上长叶, 翻...的页"
 997,8109,leaves,leave,3,AB,mono,mono,highfreq-before|homograph,keep,叶子（复数）,离开；留下；出发,"pl. 树叶, 花瓣","n. 许可, 告别, 请假, 休假 vt. 离开, 剩下, 遗忘, 委托, 丢弃 vi. 出发, 离开, 生叶"
 999,5946,shouting,shout,i,AB,mono,mono,highfreq-before,keep,喊叫（现在分词）,喊叫；大声说,"n. 呼喊, 喊话","n. 呼喊, 喊声 vi. 呼喊, 喊叫, 嚷 vt. 高喊"
+1002,6072,gotten,get,v,AB,mono,mono,highfreq-before,keep,get的过去分词（美式）,得到；获得；变得,get的过去分词,"vt. 得到, 获得, 变成, 使得, 收获, 接通, 抓住, 染上 vi. 到达, 成为, 变得 n. (网球等)救球…"
 1005,1870,tells,tell,3,AB,mono,mono,highfreq-before,keep,告诉；讲述（第三人称单数）,告诉；辨别,v. 告诉；说（tell的第三人称单数）,"vt. 告诉, 说, 吩咐, 断定, 知道 vi. 讲述, 泄密, 告发, 表明"
 1006,5328,lies,lie,3,AB,mono,mono,highfreq-before,keep,躺；位于；说谎（第三人称单数）,躺；平卧,v. 躺卧（lie的第三人称单数形式）,"n. 谎言, 假象, 位置 vi. 躺着, 说谎, 位于, 展现, 存在, 停泊 vt. 谎骗"
 1008,2720,pulled,pull,p,AB,mono,mono,highfreq-before,keep,拉；拖（过去式）,拉；牵引,a. 牵引的；扯下来的,"vt. 拉, 拖, 拔, 牵, 撕开, 吸引 vi. 拉, 拖, 拔, 有吸引力 n. 拉, 拖, 拔, 拉力, 牵引力…"
@@ -217,6 +221,7 @@ fRank,lRank,form,lemma,type,src,fKind,lKind,flags,suggest,form_gloss,lemma_gloss
 1042,5940,taught,teach,dp,AB,mono,mono,highfreq-before,keep,教（过去式）,教；教授；教导,teach的过去式和过去分词,"vt. 教, 讲授, 教导, 教育 vi. 教书, 教学, 可以教"
 1045,2608,plays,play,3,AB,mono,mono,highfreq-before,keep,玩；演奏（第三人称单数）,玩；演奏；戏剧,n. 戏剧集；戏剧（play的复数）,"n. 游戏, 游玩, 玩笑, 运动, 比赛, 赌博, 跳动, 表演, 剧本 v. 玩, 游戏, 假装, 开玩笑, 比赛,…"
 1047,2672,dancing,dance,i,AB,loan,mono,highfreq-before,keep,跳舞（现在分词）,舞蹈；跳舞,n. 舞蹈 [建] 跳动的,"n. 跳舞, 舞蹈, 舞会 v. 跳舞"
+1053,4266,crew,crow,v,AB,loan,mono,highfreq-before,keep,全体船员；团队,乌鸦,"n. 全体人员, 一群人, 全体队员 crow的过去式","n. 啼叫, 乌鸦, 鸡鸣, 撬棍 vi. 啼叫, 报晓"
 1056,6237,bringing,bring,i,AB,mono,mono,highfreq-before,keep,带来（现在分词）,带来；拿来,v. 带来( bring的现在分词 ); 促使; 提供; 使朝（某方向或按某方式）移动,"vt. 带来, 产生, 促使, 提出 vi. 生产"
 1057,5880,dropped,drop,p,AB,mono,mono,highfreq-before,keep,掉落；下降（过去式）,落下；掉下；下降,a. 抛踢球得分的,"n. 滴, 微量, 落下, 空投 vi. 放下, 掉下, 下降 vt. 使滴下, 放下, 丢失, 遗漏 [计] 投入, …"
 1058,5328,lied,lie,pd,A,mono,mono,src-a-only|highfreq-before,keep,说谎（过去式）,躺；平卧,n. (德国)歌曲,"n. 谎言, 假象, 位置 vi. 躺着, 说谎, 位于, 展现, 存在, 停泊 vt. 谎骗"
@@ -289,6 +294,7 @@ fRank,lRank,form,lemma,type,src,fKind,lKind,flags,suggest,form_gloss,lemma_gloss
 1474,8100,led,lead,p,AB,mono,mono,highfreq-before,keep,带领；领导,带领；领导；通向,lead的过去式和过去分词 [计] 发光二极管,"n. 铅, 铅条, 领导, 超前量, 领引, 榜样, 主角, 导线 vt. 引导, 带领, 领导, 指挥, 致使, 加铅…"
 1482,4986,glasses,glass,s,AB,mono,mono,highfreq-before,keep,眼镜,玻璃；杯子,n. 眼镜；双筒望远镜；玻璃（glass的复数形式）,"n. 玻璃, 玻璃杯, 透镜 vt. 装玻璃于, 反射, 反映 vi. 成玻璃状"
 1486,3088,pounds,pound,s,AB,mono,mono,highfreq-before,keep,英镑；磅（复数）,磅；英镑,"n. 磅, 英镑；重击（pound复数形式）","n. 磅, 英镑, 重击, 鱼塘, 拘留所, 兽栏 vt. 强烈打击, 捣烂, 监禁, 关入栏内 vi. 连续重击, 苦…"
+1487,45521,data,datum,n,AB,loan,loan,highfreq-before|suspect-target,keep,数据；资料,数据；资料（单数）,"pl. 资料, 数据 [计] 数据; DOS内部命令:用于显示或设定系统的日期","n. 论据, 材料, 资料, 已知数 [医] 材料, 资料, 论据"
 1490,1500,depends,depend,3,AB,loan,,highfreq-before,keep,取决于；依赖（三单）,依赖；取决于,v. 依赖；信赖（depend的三单形式）,"vi. 靠, 视...而定, 信赖"
 1495,12200,families,family,s,AB,mono,,highfreq-before,keep,家庭（复数）,家庭；家族,n. 家族；家庭（family的复数）,"n. 家庭, 家人, 族 a. 家庭的"
 1498,4869,walls,wall,s,AB,mono,mono,highfreq-before,keep,墙（复数）,墙；墙壁,n. 墙壁；墙体（wall的复数）,"n. 墙, 墙壁, 垣, 内壁, 分界物, 屏障 a. 墙的 vt. 给...建墙, 禁闭, 用墙围住 [计] 背景墙"
@@ -316,6 +322,7 @@ fRank,lRank,form,lemma,type,src,fKind,lKind,flags,suggest,form_gloss,lemma_gloss
 1608,5346,touched,touch,p,AB,loan,mono,highfreq-before,keep,感动的；受触动的,触摸；接触,"a. 精神不太正常的, 受感动的","n. 触觉, 碰, 触, 机灵, 轻触, 格调, 少许, 缺点, 弹力 vt. 接触, 触摸, 触及, 使接触, 达到,…"
 1612,4866,cooking,cook,i,AB,mono,mono,highfreq-before,keep,烹饪；做饭,烹调；煮；厨师,n. 烹饪 [化] 熬炼; 热炼; 蒸煮,"n. 厨子, 厨师 vt. 烹调, 煮饭, 加热 vi. 在煮着"
 1614,8091,moves,move,3,AB,loan,mono,highfreq-before,keep,行动；举措（move的复数）,移动；搬家；感动,v. 移动；搬家；感动（move的第三人称单数）,"n. 移动, 迁居, 步骤 vt. 移动, 开动, 感动, 搬(家) vi. 移动, 离开, 运行, 迁移, 摇动, 搬…"
+1620,4596,media,medium,n,AB,loan,loan,highfreq-before,keep,媒体；传媒,媒介；中间；中号,n. 媒体 [计] 媒质,"n. 媒体, 方法, 媒介 a. 半生熟的, 中间的 [计] 媒体, 中"
 1622,1830,dies,die,3,AB,mono,mono,highfreq-before,keep,死亡（die的第三人称单数）,死亡；消失,v. 死亡；凋谢；消失（动词die的第三人称单数形式）,"vi. 死亡, 消逝, 平息, 熄灭, 漠然, 渴望 vt. 死 n. 骰子, 冲模"
 1631,3102,pills,pill,s,AB,loan,loan,highfreq-before,keep,药丸（pill的复数）,药丸,n. 丸剂；药丸（pill的复数）,"n. 药丸, 弹丸, 屈辱, 胡说 v. 做成药丸, 形成丸状, 服药丸, 挫败, 抢劫"
 1632,7638,burned,burn,p,AB,mono,mono,highfreq-before,keep,燃烧（burn的过去式）,烧焦,burn的过去式和过去分词 [机] 焦化,"vt. 烧, 烧毁, 烧伤 vi. 燃烧, 发热, 烧毁 n. 烧伤, 烙印"
@@ -350,6 +357,7 @@ fRank,lRank,form,lemma,type,src,fKind,lKind,flags,suggest,form_gloss,lemma_gloss
 1817,3564,staring,stare,i,AB,mono,mono,highfreq-before,keep,凝视；盯着看,凝视；盯着看,"a. 凝视的, 瞪着眼的, 显眼的","vi. 注视, 凝视, 瞪视, 显眼 vt. 盯 n. 凝视"
 1818,8397,chances,chance,s,AB,loan,mono,highfreq-before,keep,机会；可能性（复数）,机会；可能性；偶然,n. 机会( chance的名词复数 ); 偶然; 风险; 某事发生的可能性,"n. 机会, 意外, 可能性 vi. 偶然发生 vt. 冒险"
 1819,9569,circumstances,circumstance,s,AB,loan,loan,highfreq-before,keep,情况；环境（复数）,情况；环境,"[法] 事件, 事项, 详细情节","n. 环境, 状况, 事件"
+1825,4878,stairs,stair,n,AB,mono,mono,highfreq-before,keep,楼梯（复数）,楼梯；一级台阶,n. 楼梯,"n. 梯级, 楼梯, 阶梯"
 1837,8322,tests,test,s,AB,loan,mono,highfreq-before,keep,测试；考试（复数）,测验；考试,n. 测验（test的复数）,"n. 测试, 试验, 化验, 检验, 考验, 甲壳 vt. 测试, 试验, 化验 vi. 接受测验, 进行测试"
 1838,5676,rocks,rock,s,AB,mono,mono,highfreq-before,keep,岩石（复数）；摇滚乐,岩石；石头,"n. 岩石, 岩礁；岩石礁石（rock复数形式）","n. 岩石, 岩礁, 石头, 基石, 暗礁, 摇动, 摇滚乐 vt. 摇摆, 摇动, 使摇晃, 使动摇 vi. 摇, 摇…"
 1842,2947,connected,connect,d,AB,loan,loan,highfreq-before,keep,连接的；有联系的,连接；联系,"a. 连接的, 连贯的, 有联系的, 关联的, 连结的, 有关系的 [计] 连接的","v. 连接, 联合, 联系"
@@ -441,6 +449,7 @@ fRank,lRank,form,lemma,type,src,fKind,lKind,flags,suggest,form_gloss,lemma_gloss
 2392,5949,whispers,whisper,s,AB,mono,mono,highfreq-before,keep,低语；耳语,低语；耳语；私下说,v. 低声说( whisper的第三人称单数 ); 私语; 小声说; 私下说,"n. 耳语, 密谈, 谣传, 沙沙声 vi. 耳语, 密谈, 沙沙地响 vt. 低声说"
 2398,5329,carlos,carlo,s,AB,proper,proper,lemma-proper|highfreq-before,keep,卡洛斯（人名）,卡洛（男子名）,n. 卡洛斯（男子名）,n. 卡洛（男子名）
 2406,5736,waves,wave,s,AB,mono,mono,highfreq-before,keep,波浪；挥手,波浪；挥手,n. 波（wave的复数形式）,"n. 波, 波浪, 波动, 起伏, 高潮, 潮涌, 挥手致意, (气压)突变 vi. 波动, 飘动, 挥手示意, 起伏 …"
+2411,27006,headquarters,headquarter,v,AB,mono,mono,highfreq-before|suspect-target,keep,总部；司令部,设总部于,"n. 总部, 司令部, 总部人员 [经] 本部, 总部, 总署",vt. 将...的总部设在
 2415,6290,related,relate,d,AB,loan,loan,highfreq-before,keep,相关的；有亲属关系的,关联；讲述,"a. 讲述的, 叙述的；有关系的, 有关联的","vt. 讲, 叙述, 使互相关联 vi. 有关, 符合, 相处得好"
 2421,6234,sounded,sound,p,AB,loan,mono,highfreq-before,keep,听起来；发出声音,声音；响声,vbl. 听起来,"n. 声音, 语音, 吵闹, 声调, 听力范围, 探条, 海峡 a. 健全的, 可靠的, 合理的, 健康的, 彻底的, …"
 2426,5586,worries,worry,s3,AB,mono,mono,highfreq-before,keep,担心；烦恼,担心；烦恼,"n. 忧虑, 担心；烦恼","n. 担心, 烦恼, 忧虑, 苦恼, 撕咬 vt. 使烦恼, 使焦虑, 使苦恼, 困扰, 折磨, 撕咬 vi. 烦恼, …"
@@ -555,6 +564,7 @@ fRank,lRank,form,lemma,type,src,fKind,lKind,flags,suggest,form_gloss,lemma_gloss
 3028,8193,feeding,fee,i,B,mono,mono,src-b-only|highfreq-before|homograph,keep,喂养；进食,费用；酬金；小费,"n. 饲养, 进料, 加料 a. 供给饲料的, 摄取食物的","n. 费用, 小费, 封地, 所有权 vt. 付费给"
 3028,1105,feeding,feed,i,AB,mono,mono,homograph,keep,喂养；进食,喂养；供给,"n. 饲养, 进料, 加料 a. 供给饲料的, 摄取食物的","n. 饲料, 一餐, 饲养 vt. 喂, 饲养, 放牧, 靠...为生 vi. 吃东西, 用餐, 流入 [计] 送纸"
 3031,4245,bears,bear,3,AB,mono,mono,highfreq-before,keep,忍受；承担（bear 单三）,熊,n. 空头（卖空的证券交易投机）；熊（bear的复数）,"n. 熊 vt. 忍受, 支承, 产生, 怀有, 通过卖空使跌价 vi. 忍受, 结果实, 压挤, 行进, 转向"
+3032,3191,cookies,cookie,n,AB,loan,loan,highfreq-before,keep,饼干（复数）,饼干；小甜饼,n. 饼干,"n. 饼干, 小甜点 [建] 糕点"
 3035,8124,stepped,step,p,AB,mono,mono,highfreq-before,keep,踏；走（step 过去式）,踏；踩；迈步,v. 踏；行走（step的过去式和过去分词）,"n. 步骤, 步, 步幅, 脚步声, 踏级, 步伐, 短距离, 步态, 手段, 等级 vt. 踏, 以步测量, 跨步, …"
 3048,25427,depressed,depress,p,B,loan,loan,src-b-only|highfreq-before|suspect-target,keep,沮丧的；萧条的,使沮丧；压低,"a. 沮丧的, 降低的 [医] 抑郁的, 阻抑的, 压低的, 凹[陷]的, 扁平的","vt. 使沮丧, 压低, 降低, 使萧条 [化] 推下"
 3049,3176,potatoes,potato,s,AB,loan,loan,highfreq-before,keep,土豆（复数）,马铃薯；土豆,n. 马铃薯；土豆（potato的复数形式）,n. 马铃薯
@@ -712,6 +722,7 @@ fRank,lRank,form,lemma,type,src,fKind,lKind,flags,suggest,form_gloss,lemma_gloss
 4078,11400,intentions,intention,s,AB,loan,,highfreq-before,keep,意图；目的（复数）,意图；打算,n. 意图( intention的复数形式 ); 意向; 目的; 打算,"n. 意图, 目的, 含义 [医] 愈合, 意向"
 4087,13200,entitled,entitle,d,AB,loan,,highfreq-before,keep,有资格的；自以为是的,给…权利；给…题名,a. 有资格的；给与名称的,"vt. 给...权利, 取名为, 给予名称, 叫做 [法] 给...权利, 使有资格, 称呼"
 4090,8205,coins,coin,s,AB,loan,mono,highfreq-before,keep,硬币（复数）,硬币；钱币；创造新词,n. 硬币（coin的复数）,"n. 硬币, 金钱, 货币 vt. 铸币, 创造, 杜撰"
+4092,47274,physics,physic,v,AB,loan,loan,highfreq-before|suspect-target,keep,物理学,药；医术,"n. 物理学, 物理过程, 物理现象 [化] 物理; 物理学","n. 药品, 泻药, 医学 vt. 给...服药, 治愈, 使通便"
 4095,7017,sniffs,sniff,3,AB,mono,mono,highfreq-before,keep,嗅；抽鼻子,嗅；抽鼻子,"v. 以鼻吸气, 嗅, 闻( sniff的第三人称单数 ); 抽鼻子（尤指哭泣、患感冒等时出声地用鼻子吸气）; 抱怨, …","n. 以鼻吸气, 嗅, 气息 vi. 嗅, 蔑视, 嗤之以鼻 vt. 闻, 用力吸, 发觉"
 4100,12600,offended,offend,d,AB,loan,,highfreq-before,keep,被冒犯的；生气的,触怒，冒犯,"a. 不舒服, 生气","v. 犯罪, 冒犯, 违反, 进攻"
 4103,8097,fled,flee,pd,AB,mono,mono,highfreq-before,keep,逃跑（flee 过去式）,逃跑；逃离；迅速离开,v. 消逝；逃走（flee的过去分词）,"vt. 逃避, 逃跑, 逃走 vi. 逃, 消失"
@@ -774,6 +785,7 @@ fRank,lRank,form,lemma,type,src,fKind,lKind,flags,suggest,form_gloss,lemma_gloss
 4504,4748,regards,regard,3,AB,loan,loan,highfreq-before,keep,问候；致意,认为；注视；关于,"n. 问候, 致意","n. 关心, 注意, 尊敬, 关系, 问候 vt. 视为, 注意, 考虑, 和...有关, 看待 vi. 注视, 注意"
 4508,12497,snoring,snore,i,AB,mono,mono,highfreq-before,keep,打鼾,打鼾；打呼噜,"v. 打呼噜, 打鼾( snore的现在分词 )","n. 鼾声, 打鼾 vi. 打鼾 vt. 打鼾度过"
 4513,5421,caring,care,i,AB,mono,mono,highfreq-before,keep,关心的；体贴的,关心；在乎,a. 有同情心的；表示或感到关怀或关心的,"n. 小心, 照料, 忧虑 vi. 关心, 介意 vt. 在意, 喜欢"
+4515,4755,oats,oat,n,AB,mono,mono,highfreq-before,keep,燕麦,燕麦；燕麦粥,"n. 燕麦, 燕麦属植物, 燕麦粥, 麦片粥","n. 燕麦, 燕麦田 [医] 燕麦, 雀麦"
 4516,8106,carries,carry,3,AB,loan,mono,highfreq-before,keep,携带；搬运,携带；搬运；承载,v. 传递；携带；运载；怀孕（carry的第三人称单数形式）,"n. 进位, 射程, 运载 vt. 携带, 运送, 支持, 传送, 包含 vi. 被携带, 能达到 [计] 进位; 进位…"
 4530,4776,sweets,sweet,s,AB,mono,mono,highfreq-before,keep,糖果；甜食（复数）,甜的；可爱的；糖果,n. 糖果；甜食（sweet的复数）,"n. 甜蜜, 糖果, 情人 a. 甜的, 芳香的, 悦耳的, 漂亮的, 和蔼的, 不咸的, 灵活的, 轻快的"
 4531,17402,panties,panty,s,AB,mono,mono,highfreq-before|suspect-target,keep,女式内裤,女式内裤,n. 女式短裤,n. 女裤；童裤（等于panties）
@@ -822,6 +834,7 @@ fRank,lRank,form,lemma,type,src,fKind,lKind,flags,suggest,form_gloss,lemma_gloss
 4833,4932,knives,knife,s,AB,mono,mono,highfreq-before,keep,刀（复数）,刀；小刀,pl. 刀子,"n. 小刀, 匕首 vt. 切割, 伤害, 切, 戳 vi. 劈开, 穿过"
 4841,5575,feathers,feather,s,AB,mono,mono,highfreq-before,keep,羽毛,羽毛,n. 羽状裂缝；翅膀；羽毛（feather的复数）,n. 羽毛 vi. 长羽毛 vt. 用羽毛装饰
 4850,6294,swords,sword,s,AB,mono,mono,highfreq-before,keep,剑；刀剑,剑；刀,n. 宝剑（sword的复数）,"n. 刀, 剑, 战争, 武力, 剑状物"
+4870,13147,diner,din,a,AB,loan,mono,highfreq-before,keep,小餐馆；用餐者,喧闹声；嘈杂声,n. 用餐者,"n. 喧嚣 v. 絮絮不休地说, 喧闹"
 4872,4872,floors,floor,s,AB,mono,mono,rank-tie,?,地板；楼层,地板；楼层,n. 楼地面；地板；楼层；层数（floor的复数）,"n. 地板, 楼层, 底部, 底价 vt. 铺地板, 打倒 n. 地面, 地板, 基底 [计] 基底"
 4879,8000,opposed,oppose,d,AB,loan,,highfreq-before,keep,反对的；对立的,反对；对抗,"a. 反对的, 敌对的, 对抗的, 相对的 [机] 反对的, 相反的, 对立的","vt. 反对, 以...对抗, 抗争 vi. 反对"
 4881,5330,tourists,tourist,s,AB,loan,loan,highfreq-before,keep,游客；旅游者,游客；旅游者,"n. 旅行者, 观光客( tourist的名词复数 )","n. 观光客, 旅行者 a. 旅游的"
@@ -850,6 +863,7 @@ fRank,lRank,form,lemma,type,src,fKind,lKind,flags,suggest,form_gloss,lemma_gloss
 5027,5176,residents,resident,s,AB,loan,loan,form-more-frequent,keep,居民；住户（复数）,居民；住户,n. 居民；房客；住院医生（resident的复数）,"n. 居民, 常驻程序, 居住者, 留鸟 a. 居留的, 定居的"
 5034,11517,whining,whine,i,AB,mono,mono,form-more-frequent,keep,抱怨；哀鸣（现在分词）,哀鸣；抱怨,"v. 哀号( whine的现在分词 ); 哀诉, 诉怨","n. 哀叫声, 嘎嘎声, 哀鸣 vi. 哭诉, 嘎嘎响, 发呜呜声 vt. 哀诉"
 5040,24236,clothes,clothe,s,B,mono,mono,src-b-only|form-more-frequent|suspect-target,keep,衣服；服装,给…穿衣；供给衣服,n. 衣服,"vt. 给...穿衣, 盖上, 赋予"
+5043,24236,clothing,clothe,v,AB,mono,mono,form-more-frequent|suspect-target,keep,衣物；服装总称,给…穿衣；供给衣服,n. 衣服,"vt. 给...穿衣, 盖上, 赋予"
 5044,12500,rebels,rebel,s,AB,loan,,form-more-frequent,keep,反叛者（复数）,反叛，起义,n. 反叛者（rebel的复数形式）,"n. 叛徒, 反叛者 vi. 造反, 反抗, 抵抗, 反感 a. 造反的, 反抗的"
 5054,380,lords,lord,3,B,mono,mono,src-b-only,?,领主；贵族（复数）,领主；上帝；勋爵,n. 上议院；（前面与the连用）上院议员,"n. 统治者, 阁下, 上帝 vi. 称王, 作威作福 vt. 使成贵族"
 5055,6312,wrestling,wrestle,i,AB,mono,mono,form-more-frequent,keep,摔跤；搏斗,摔跤；搏斗,n. 摔跤,"n. 摔跤, 角力, 扭斗 vi. 摔跤, 搏斗, 斗争, 斟酌 vt. 与(对手)摔跤"
@@ -947,6 +961,7 @@ fRank,lRank,form,lemma,type,src,fKind,lKind,flags,suggest,form_gloss,lemma_gloss
 5740,8403,yelled,yell,p,AB,mono,mono,form-more-frequent,keep,大叫；喊叫,叫喊；吼叫；嚎叫,"v. 叫喊, 号叫, 叫着说( yell的过去式和过去分词 )","vi. 叫喊, 大叫, (齐声)呐喊欢呼 vt. 喊叫着说 n. 叫声, 喊声, 呐喊"
 5745,7560,gardens,garden,s,AB,loan,mono,form-more-frequent,keep,花园（复数）,花园；菜园,n. 花园（garden的复数形式）,"n. 花园, 果园, 菜园 vi. 栽培花木 vt. 造园 a. 花园的, 普通的"
 5752,8385,dared,dare,p,AB,mono,mono,form-more-frequent,keep,敢于；胆敢,敢；敢于；挑战,v. 敢于（竟敢）,"n. 挑战, 挑动, 大胆 v. 敢, 胆敢"
+5772,7038,dive,diva,n,AB,mono,loan,form-more-frequent,keep,跳水；潜水；俯冲,女歌唱家；首席女歌手,"n. 潜水, 跳水 vi. 跳水, 俯冲, 猛冲 vt. 把...突然伸入","n. 歌剧女主角/首席女主角, 主要女歌手"
 5781,12400,appreciated,appreciate,d,AB,loan,,form-more-frequent,keep,感激；欣赏,欣赏；感激；增值,v. 感激( appreciate的过去式和过去分词 ); 欣赏; （充分）意识到; 对…作（正确）评价,"vt. 赏识, 鉴别, 为...而感激, 领会, 欣赏 vi. 增值, 涨价"
 5782,8622,condemned,condemn,d,AB,loan,loan,form-more-frequent,keep,谴责；判刑,谴责；判刑,"a. 已被定罪的, 定了罪的人用的","vt. 判刑, 责备, 谴责 [法] 定罪, 判刑, 宣告有罪"
 5784,26583,muttering,mutter,i,AB,mono,mono,form-more-frequent|suspect-target,keep,咕哝；低声抱怨,咕哝；低声抱怨,[医] 嗫语,"n. 喃喃低语 vi. 喃喃自语, 作低沉声 vt. 出怨言, 抱怨地说"
@@ -1024,6 +1039,7 @@ fRank,lRank,form,lemma,type,src,fKind,lKind,flags,suggest,form_gloss,lemma_gloss
 6459,8000,exclaims,exclaim,3,AB,loan,,form-more-frequent,keep,呼喊；惊叫,呼喊，惊叫,"v. 呼喊, 惊叫, 大声说( exclaim的第三人称单数 )","v. 大叫, 呼喊, 大声叫"
 6461,14000,volunteered,volunteer,p,AB,loan,,form-more-frequent,keep,自愿做；志愿服务,志愿者；自愿做,"v. 自动提供, 自愿效劳( volunteer的过去式和过去分词 ); 主动建议（或告诉）; （未经当事人同意）举荐;…",n. 志愿者 a. 志愿的 v. 自愿
 6467,12500,refusing,refuse,i,AB,loan,,form-more-frequent,keep,拒绝,拒绝,"v. 拒绝, 回绝( refuse的现在分词 ); 推却, 回绝; 拒绝给（所需之物）","vt. 拒绝, 谢绝 vi. 拒绝 n. 废物 a. 扔掉的, 无用的"
+6472,10445,grandchildren,grandchild,n,AB,mono,mono,form-more-frequent,keep,孙辈；孙子孙女,孙子；孙女,"n. 孙子, 孙辈","n. 孙, 外孙女, 外孙, 孙女, 孙子"
 6505,8118,enters,enter,3,AB,loan,mono,form-more-frequent,keep,进入；输入,进入；参加；输入,v. 进入( enter的第三人称单数 ); 进去; 参加; 登记,"vt. 进入, 参加, 开始, 输入, 回车 vi. 进去, 参加 [计] 输入, 回车"
 6506,8310,maps,map,s,AB,loan,mono,form-more-frequent,keep,地图（复数）,地图,abbr. 管理分析与规划系统（Management Analysis and Planning System）,"n. 地图, 天体图, 映像 vt. 映射, 绘制...地图, 计划 [计] 实用程序, 映射, 制造自动化协议"
 6510,1060,colored,color,p,B,loan,loan,src-b-only,?,有颜色的；彩色的,颜色,a. 染色的 [建] 有色的,"n. 颜色, 面色, 颜料, 外貌 vt. 把...涂上颜色, 粉饰, 使脸红, 歪曲 vi. 变色"
@@ -1046,6 +1062,7 @@ fRank,lRank,form,lemma,type,src,fKind,lKind,flags,suggest,form_gloss,lemma_gloss
 6675,7944,inmates,inmate,s,AB,mono,mono,form-more-frequent,keep,囚犯；同住者（复数）,囚犯；被收容者,n. 囚犯( inmate的复数形式 ),"n. 同住者, 被收容者 [法] 内部的, 接近中心的, 内在的"
 6682,14161,viewers,viewer,s,AB,mono,loan,form-more-frequent,keep,观众；观看者,观众；观看者,n. 电视观众( viewer的复数形式 ); 观看者; 勘查孔; 看片机（把幻灯片等放大观看的装置）,"n. 观察者, 看电视者, 视察员, 观察器 [化] 指示器"
 6710,178,founded,found,d,AB,loan,mono,homograph,?,创立；建立（found 的过去式）,找到（find 的过去式）,"a. 有基础的 v. 创办, 成立(found的过去式和过去分词)","vt. 建立, 创立, 铸造 find的过去式和过去分词"
+6711,21110,opera,opus,n,AB,loan,loan,form-more-frequent|suspect-target,keep,歌剧；歌剧院,作品（编号）；巨著,n. 歌剧,n. 作品
 6746,14500,civilized,civilize,p,B,loan,,src-b-only|form-more-frequent,keep,文明的；有教养的,使开化，教化,"a. 文明的, 有礼的","vt. 使开化, 使文明 vi. 变文明"
 6759,7629,melted,melt,p,AB,mono,mono,form-more-frequent,keep,融化；熔化（melt 的过去式）,融化,melt的过去式和过去分词,"n. 熔化, 熔化物, 溶解 v. (使)熔化, (使)溶解, (使)消散, (使)变软"
 6765,15200,narcotics,narcotic,s,AB,loan,,form-more-frequent,keep,毒品；麻醉剂,麻醉剂；麻醉的,n. 麻醉毒品；麻醉剂（narcotic的复数）,"n. 麻醉药, 镇静剂 a. 麻醉的, 催眠的"
@@ -1121,6 +1138,8 @@ fRank,lRank,form,lemma,type,src,fKind,lKind,flags,suggest,form_gloss,lemma_gloss
 7478,12500,siblings,sibling,s,AB,mono,,form-more-frequent,keep,兄弟姐妹（复数）,兄弟姐妹,"n. 兄弟, 姐妹( sibling的复数形式 )","n. 兄弟, 同胞 [医] 同胞(兄弟姐妹)"
 7497,7838,dolphins,dolphin,s,AB,loan,loan,form-more-frequent,keep,海豚,海豚,n. 海豚；系缆柱（dolphin的复数）,n. 海豚
 7498,7860,kidneys,kidney,s,AB,mono,mono,form-more-frequent,keep,肾脏；腰子,肾脏；肾,n. 肾脏；转炉的附着物；肾形矿脉（kidney的复数）,"n. 肾, 个性 [医] 肾"
+7500,14200,credentials,credential,v,AB,,,form-more-frequent,keep,资历证明；资质证书,资格证书；资格证书证明,"n. 信任状, 国书, 文件, 身份证明, 证书 [法] 信用证, 国书, 证书","n. 国书, 凭据, 证明书 [经] 凭证, 证书"
+7517,12030,lire,lira,n,AB,loan,loan,form-more-frequent,keep,里拉（旧意大利货币）,里拉（意大利旧货币）,n. （意大利和土耳其的货币单位）里拉( lira的名词复数 ),n. 里拉
 7522,7671,weighs,weigh,3,AB,mono,mono,form-more-frequent,keep,称重；重量为,称重,"v. 称…的重量( weigh的第三人称单数 ); 重达; 权衡, 考虑; 有…重","vt. 称...重量, 衡量, 把...压弯, 考虑, 权衡, 起锚 vi. 称分量, 有意义, 重压, 起锚 n. 过…"
 7524,17467,vibrating,vibrate,i,AB,loan,loan,form-more-frequent,keep,振动；颤动,振动；颤动,[电] 振动; 振动的,"vi. 振动, 颤动, 激动, 摇摆, 踌躇 vt. 使颤动, 使振动, 使摆动"
 7533,12254,hormones,hormone,s,AB,loan,loan,form-more-frequent,keep,激素；荷尔蒙,激素；荷尔蒙,n. 荷尔蒙；激素；性激素；荷尔蒙制剂（hormone的复数）,n. 荷尔蒙 [化] 激素(旧称荷尔蒙)
@@ -1130,6 +1149,7 @@ fRank,lRank,form,lemma,type,src,fKind,lKind,flags,suggest,form_gloss,lemma_gloss
 7609,12100,suspicions,suspicion,s,AB,loan,,form-more-frequent,keep,怀疑；猜疑（复数）,怀疑，猜疑,n. 怀疑( suspicion的复数形式 ); 疑心; 感觉; 一点儿,"n. 怀疑, 觉察, 嫌疑 [法] 怀疑, 疑心, 嫌疑"
 7610,22373,restricted,restrict,d,AB,mono,mono,form-more-frequent,keep,受限制的；有限的,限制；约束,"a. 受限制的, 有限的","vt. 限制, 限定, 约束 [医] 限制"
 7624,12600,diagnosed,diagnose,d,AB,loan,,form-more-frequent,keep,诊断（过去式）,诊断；判断,v. 诊断( diagnose的过去式和过去分词 ),v. 诊断
+7650,33457,stove,stave,v,AB,mono,mono,form-more-frequent|suspect-target,keep,炉子,挡开；延缓（stave off）,"n. 火炉, 窑 vt. 用火炉烤 stave的过去式和过去分词","n. 狭板, 梯级, 棍棒, 诗句 vt. 击穿, 弄破, 敲打, 赶走 vi. 穿孔, 破碎"
 7670,8682,crackers,cracker,s,AB,mono,mono,form-more-frequent,keep,薄脆饼干；疯狂,薄脆饼干；爆竹,"a. 精神错乱的, 癫狂的, 狂热的","n. 饼干, 爆竹 [计] 破袭者"
 7679,12500,persuaded,persuade,d,AB,loan,,form-more-frequent,keep,说服；劝服,说服；劝服,v. 说服( persuade的过去式和过去分词 ); 劝告; 使信服; 使相信,"vt. 劝, 使相信, 恳求, 敦促, 说服 vi. 劝服, 被说服"
 7685,12385,lakhs,lakh,s,AB,loan,loan,form-more-frequent,keep,十万（印度计数单位）,十万（印度英语）,n. （印）十万；十万卢比；多数 a. 十万的,"n. 十万, 十万卢比, 多数 [化] 紫胶; 虫胶"
@@ -1148,6 +1168,7 @@ fRank,lRank,form,lemma,type,src,fKind,lKind,flags,suggest,form_gloss,lemma_gloss
 7771,13500,confined,confine,d,AB,loan,,form-more-frequent,keep,受限的；狭窄的,限制；禁闭,"a. 被限制的, 狭窄的, 在分娩中的, 坐月子的 [法] 有限的, 狭窄的","vt. 限制, 使不外出, 禁闭 vi. 邻接, 交界 n. 边缘, 范围, 区域"
 7779,1470,shorts,short,3,B,mono,mono,src-b-only,?,短裤,短的；不足的,"n. 短裤, (美)男人的短衬裤 [经] 空头户, 空头, 短期债券","a. 短的, 近的, 矮的, 短期的, 简短的, 少量的 adv. 简短地, 突然 n. 扼要, 短片, 缺乏 vt. …"
 7782,12658,pants,pant,3,B,mono,loan,src-b-only|form-more-frequent,keep,裤子；短裤,喘气；气喘,"n. 裤子, 长裤, 短衬裤, 女式运动短裤","n. 喘息, 悸动 vi. 喘息, 渴望 vt. 气喘吁吁地说"
+7785,21843,trousers,trouser,n,AB,mono,loan,form-more-frequent,keep,长裤；裤子,裤子的；长裤,"pl. 裤子, 长裤",a. 裤子的
 7786,26089,blares,blare,3,AB,mono,mono,form-more-frequent|suspect-target,keep,发出刺耳响声,发出刺耳响声,"n. 嘟嘟声, 响而刺耳的声音( blare的名词复数 ); （颜色等的）光泽 v. （喇叭或其他高音器具）刺耳地大声鸣…","n. 巨响, 吼叫声, 光泽 vi. 高声鸣叫, 大叫 vt. 大声喊出"
 7799,9919,editing,edit,i,AB,loan,loan,form-more-frequent,keep,编辑；剪辑,编辑；剪辑,a. 编辑的,"vt. 编辑, 编校, 修订, 剪辑 [计] 编辑; DOS外部命令:该命令是一个用于编辑文本文件的全屏幕编辑程序"
 7807,530,manning,man,i,B,proper,mono,src-b-only,?,曼宁（姓氏）,男人；人,n. 人员配备,"n. 男人, 人类, 人 vt. 为...配备人手, 操纵, 使振奋 [计] 城域网, 手册"
@@ -1171,6 +1192,7 @@ fRank,lRank,form,lemma,type,src,fKind,lKind,flags,suggest,form_gloss,lemma_gloss
 7916,18000,trespassing,trespass,i,AB,loan,,form-more-frequent,keep,非法侵入；擅自进入,非法侵入；擅自进入,n. [法]非法入侵,"n. 擅自进入, 非法侵入, 侵害 vi. 侵害, 侵入, 打扰, 冒犯"
 7924,8121,exits,exit,s,AB,loan,mono,form-more-frequent,keep,出口；退场,退出；离开；出去,"n. 出口( exit的名词复数 ); 通道; 退出; 退场 v. 离开, 退场( exit的第三人称单数 )","n. 出口, 退场, 离去, 去世 vi. 退出, 脱离, 去世 [计] 退出; DOS内部命令:本命令用于退出当前的命…"
 7934,14734,snorts,snort,s,AB,mono,mono,form-more-frequent,keep,哼鼻；喷鼻息,哼鼻；喷鼻息,"n. 喷鼻息, 鼻息声( snort的名词复数 ); （潜水艇的）通气管 v. 喷鼻息（以表示不耐烦, 轻蔑等）( sn…","vi. 喷着气弄响鼻子, 轻蔑地哼, 嘶嘶响着排气 vt. 哼着鼻子说, 喷出, 吸入(毒品) n. 喷鼻息, (潜艇的…"
+7935,13725,wicked,wick,v,AB,mono,mono,form-more-frequent,keep,邪恶的；恶劣的,烛芯；灯芯,"a. 坏的, 邪恶的, 缺德的, 刻毒的, 恶劣的, 淘气的","n. 灯芯, 油绳"
 7953,9000,antibiotics,antibiotic,s,AB,loan,,form-more-frequent,keep,抗生素,抗生素；抗菌的,n. 抗生学；抗生素,n. 抗生素 a. 抗生的
 7956,14599,revs,rev,s,AB,loan,loan,form-more-frequent,keep,（发动机）转速,发动机转速；牧师,"abbr. revolutions （复数）旋转, 回转, 转数 n. <口>发动机的旋转( rev的名词复数 ) v.…","n. 一次回转 v. 加快转速 [计] 反转, 周, 转数"
 7984,12400,references,reference,s,AB,loan,,form-more-frequent,keep,参考；推荐人（复数）,提及；参考；推荐信,n. 参考文献；参照；推荐信（reference的复数）,"n. 参考, 索引, 参照 vt. 给...加上参考资料 vt. 引用 vi. 引用 [计] 引用"
@@ -1207,6 +1229,7 @@ fRank,lRank,form,lemma,type,src,fKind,lKind,flags,suggest,form_gloss,lemma_gloss
 8337,1720,saw,see,p,AB,mono,mono,homograph,?,锯子,看见；理解,"n. 锯子, 谚语 vt. 锯, 锯开, 来回移动 vi. 拉锯, 移动 see的过去式","vt. 看见, 查看, 参观, 游览, 理解, 知道, 同意 vi. 看, 观看, 注意, 知道, 考虑 n. 主教的职…"
 8344,9683,uncovered,uncover,d,AB,mono,mono,form-more-frequent,keep,揭开（过去式）,揭开；发现,"a. 无遮盖的, 未戴帽子的, 未保险的 [经] 无担保的, 未补进的(空头), 未保险的","vt. 揭露, 揭开, 暴露, 脱帽致敬 vi. 脱帽致敬, 揭去盖子"
 8352,45315,sled,sle,p,AB,mono,mono,form-more-frequent|suspect-target,keep,雪橇；长橇；乘雪橇,系统性红斑狼疮（缩写）,n. 雪撬 vt. 用雪撬搬运 vi. 乘雪撬 [计] 单一大型贵重磁盘,"abbr. systemic lupus erythematosus 系统性红斑狼疮, 全身性红疹狼斑"
+8362,12800,statistics,statistic,n,AB,loan,,form-more-frequent,keep,统计；统计学,统计数字；统计资料,"n. 统计学, 统计资料 [计] 统计信息","n. 统计量 a. 统计的, 统计学的"
 8363,11836,shattering,shatter,i,AB,mono,mono,form-more-frequent,keep,令人震惊的；粉碎的,打碎；粉碎,a. 令人震惊的；令人极度疲劳的；破碎的,"n. 碎片, 粉碎, 落叶, 喷洒 vt. 打碎, 使散开, 粉碎, 破坏 vi. 粉碎, 损坏, 脱落"
 8377,10115,exhausting,exhaust,i,AB,loan,loan,form-more-frequent,keep,令人疲惫的,使精疲力尽；耗尽,"a. 使耗尽的, 使人筋疲力尽的 [计] 经验, 技巧, 穷举, 耗尽, 排气","n. 排气, 排气装置, 废气 vt. 抽完, 用尽, 耗尽, 使精疲力尽 vi. 排气"
 8412,10235,goons,goon,s,AB,mono,mono,form-more-frequent,keep,暴徒；打手,暴徒；打手,"n. 受雇暴徒, 呆子, 愚笨者( goon的复数形式 )","n. 受雇暴徒, 愚笨者, 呆子"
@@ -1232,6 +1255,7 @@ fRank,lRank,form,lemma,type,src,fKind,lKind,flags,suggest,form_gloss,lemma_gloss
 8689,12900,scans,scan,s,AB,mono,,form-more-frequent,keep,扫描；浏览（第三人称单数）,扫描；浏览,abbr. 网络系统自动程序控制（scheduling control automation by network sy…,"n. 审视, 浏览, 扫描, 细查 vt. 细看, 浏览, 扫描, 详细调查, 标出格律 vi. 押韵, 扫描 [计] …"
 8703,24546,steroids,steroid,s,AB,loan,loan,form-more-frequent,keep,类固醇；激素,类固醇；甾体,n. 类固醇( steroid的名词复数 ),n. 类固醇 [化] 甾族化合物
 8707,10887,archives,archive,s,AB,loan,loan,form-more-frequent,keep,档案；档案馆,档案；档案馆,"n. 档案, 档案室 [法] 公文档案, 案卷, 档案保管处","vt. 把...存档 n. 档案馆, 档案文件 [计] 挡案库, 存档"
+8713,8724,modeling,model,v,AB,loan,loan,form-more-frequent,keep,建模；模特工作,模型；模特儿,"n. 模特儿职业, 立体感 [计] 建模, 模型化, 模拟","n. 模型, 模范, 模特儿 a. 模范的, 作模型用的 vi. 做模型, 做模特儿 vt. 使模仿, 塑造 [计] 模…"
 8743,12300,directing,direct,i,AB,loan,,form-more-frequent,keep,导演；指挥,指导，导演；指路,[经] 指示,"a. 直接的, 坦白的 vt. 指示, 指挥, 命令, 导演 vi. 指导, 指挥 adv. 直接地"
 8762,15403,knuckles,knuckle,s,AB,mono,mono,form-more-frequent,keep,指关节；指节,指关节,"n. （指人）指关节( knuckle的名词复数 ); （指动物）膝关节, 踝 v. （指人）指关节( knuckle的…","n. 指节, 蹄爪, 膝关节 v. 以指节打, 以手指射"
 8764,11159,disconnected,disconnect,d,AB,mono,loan,form-more-frequent,keep,断开的；不连贯的,断开；切断联系,"a. 分离的, 不连贯的","vt. 使分离, 使不相连, 拆开 vi. 断开 [计] 断开"
@@ -1414,7 +1438,9 @@ fRank,lRank,form,lemma,type,src,fKind,lKind,flags,suggest,form_gloss,lemma_gloss
 10680,15867,stuttering,stutter,i,AB,mono,mono,form-more-frequent,keep,口吃；结巴,口吃；结巴,"n. 口吃, 结巴 [医] 口吃, 讷吃","n. 口吃, 结结巴巴 v. 结结巴巴地说"
 10713,12250,divisions,division,s,AB,loan,,form-more-frequent,keep,部门；分歧；除法,division划分；部门；分歧,n. 分开( division的复数形式 ); 分界线; 分歧; 分离,"n. 分, 分开, 除法, 部门(如部、处、系等), 师 [计] 部分"
 10728,11517,whines,whine,s,AB,mono,mono,form-more-frequent,keep,哀鸣；抱怨,哀鸣；抱怨,"n. 悲嗥声( whine的名词复数 ); 哀鸣者 v. 哀号( whine的第三人称单数 ); 哀诉, 诉怨","n. 哀叫声, 嘎嘎声, 哀鸣 vi. 哭诉, 嘎嘎响, 发呜呜声 vt. 哀诉"
+10731,11370,cola,colon,n,AB,loan,loan,form-more-frequent,keep,可乐；可乐饮料,结肠；冒号,"结肠, 冒号, 科朗 [化] 可乐果; 可乐果属; 可乐果干子叶","n. 冒号, 结肠 [医] 结肠"
 10736,178,founding,found,i,AB,loan,mono,homograph,?,创立；创建,找到（find 的过去式）,[计] 铸造,"vt. 建立, 创立, 铸造 find的过去式和过去分词"
+10745,33008,crossroads,crossroad,n,AB,mono,mono,form-more-frequent|suspect-target,keep,十字路口；抉择关头,十字路口；抉择关头,"n. 十字路口, 交叉路口, 聚会的中心地点, (喻)需作抉择的重要关头, 紧要关头","n. 交叉路, 岔道, 十字路口"
 10795,12000,pictured,picture,d,AB,loan,,form-more-frequent,keep,描绘；想象,图画，照片,v. 绘画( picture的过去式和过去分词 ); 描绘; 想像; 设想,"n. 图画, 照片, 景色, 美丽如画的人(或物), 化身, 生动的描述, 想像, 形象思维 vt. 画, 拍摄, 用图…"
 10802,11366,delusions,delusion,s,AB,loan,loan,form-more-frequent,keep,妄想；错觉,错觉；妄想,n. 欺骗( delusion的复数形式 ); 谬见; 错觉; 妄想,"n. 迷惑, 欺瞒, 错觉 [医] 妄想"
 10823,12500,attracts,attract,3,AB,loan,,form-more-frequent,keep,吸引；招引,吸引；引起,v. 吸引( attract的第三人称单数 ); 使喜爱; 引起…的好感（或爱慕）; 具有吸引力,"vt. 吸引, 诱惑 vi. 有吸引力"
@@ -1473,6 +1499,7 @@ fRank,lRank,form,lemma,type,src,fKind,lKind,flags,suggest,form_gloss,lemma_gloss
 11454,12100,conflicts,conflict,s,AB,loan,,form-more-frequent,keep,冲突；矛盾（复数）,冲突；抵触,n. 冲突( conflict的名词复数 ); 战斗; 相互干扰; 矛盾,"n. 战斗, 冲突, 矛盾, 争执 vi. 争执, 战斗, 冲突, 抵触 [计] 冲突"
 11460,13000,interrogated,interrogate,d,AB,loan,,form-more-frequent,keep,审问；盘问（过去式）,审问，盘问,v. 询问( interrogate的过去式和过去分词 ); 审问; （在计算机或其他机器上）查询,"vt. 质问, 讯问, 审问 vi. 质问, 讯问"
 11468,425,jacked,jack,p,AB,mono,proper,lemma-proper,keep,肌肉发达的；被劫持的,杰克（人名）；千斤顶,v. 抬高（价格等）；用千斤顶顶起（jack的过去分词）,"n. 插座, 千斤顶, 男人 vt. 抬起, 提醒, 扛举, 增加, 提高, 放弃 a. 雄的 [计] 插座"
+11500,12086,brownies,brownie,n,AB,loan,mono,form-more-frequent,keep,布朗尼蛋糕,布朗尼蛋糕；小精灵,n. 核仁巧克力饼( brownie的复数形式 ),n. 界仁巧克力饼
 11506,15100,overrated,overrate,d,B,mono,,src-b-only|form-more-frequent,keep,评价过高的,高估，评价过高,v. 对（质量、能力等）估价过高( overrate的过去式和过去分词 ),"vt. 评价过高, 高估, 估价过高 [经] 对...估价过高, 高估"
 11527,13000,manipulating,manipulate,i,AB,loan,,form-more-frequent,keep,操纵；控制,操纵，操作；篡改,[计] 手动,"vt. 操纵, 利用, 操作, 巧妙地处理, 假造"
 11542,20631,in-laws,in-law,s,AB,mono,mono,form-more-frequent,keep,姻亲,姻亲,n. 姻亲,n. 姻亲
@@ -1569,6 +1596,7 @@ fRank,lRank,form,lemma,type,src,fKind,lKind,flags,suggest,form_gloss,lemma_gloss
 12368,24305,headlights,headlight,s,AB,mono,mono,form-more-frequent,keep,（汽车）前灯,前灯；车头灯,n. （汽车等）的前灯( headlight的复数形式 ),"n. 前灯, 桅灯 [电] 车前灯"
 12371,14200,donors,donor,s,AB,loan,,form-more-frequent,keep,捐赠者；捐献者,捐赠者，供者,n. 捐赠者( donor的复数形式 ); 献血者; 捐血者; 器官捐献者,n. 捐赠人 [化] 给体; 供体
 12372,14672,crucified,crucify,dp,AB,loan,loan,form-more-frequent,keep,钉死在十字架上；严惩,钉死在十字架；严惩,v. 把（某人）钉死在十字架上( crucify的过去式和过去分词 ); （尤指当众）折磨; 虐待; 迫害,vt. 十字架上钉死
+12386,15525,liters,liter,n,AB,loan,loan,form-more-frequent,keep,升（容量单位）,升（容量单位）,公升,n. 公升 [化] 升
 12400,15033,compelling,compel,i,AB,,loan,form-more-frequent,keep,令人信服的；引人入胜的,强迫；迫使,"a. 强制的, 强迫性的, 激发兴趣的","vt. 强迫, 迫使"
 12423,33395,bleating,bleat,i,AB,mono,mono,form-more-frequent,keep,（羊）咩咩叫；哀声抱怨,咩咩叫；哀诉,"v. （羊, 小牛）叫( bleat的现在分词 ); 哭诉; 发出羊叫似的声音; 轻声诉说",n. 羊的叫声 vi. 咩咩叫 vt. 以颤抖的声音说
 12430,22620,hinges,hinge,s,AB,mono,mono,form-more-frequent,keep,铰链；关键；取决于,铰链；枢纽,n. 铰链( hinge的名词复数 ),"n. 铰链, 关键, 枢纽 vt. 装铰链 vi. 靠铰链移动, 依...而转移"
@@ -1741,6 +1769,7 @@ fRank,lRank,form,lemma,type,src,fKind,lKind,flags,suggest,form_gloss,lemma_gloss
 14715,3170,e-mailed,e-mail,p,B,loan,loan,lemma-no-gloss|src-b-only,keep,发电子邮件,电子邮件,v. 电子邮件( e-mail的过去式和过去分词 ),[计] 电子邮件
 14728,35170,shackles,shackle,s,AB,mono,mono,form-more-frequent,keep,镣铐；束缚,束缚；给…戴镣铐,"n. 手铐, 脚镣；塞古","n. 桎梏, 束缚物 vt. 加枷锁, 束缚"
 14749,2227,neighboring,neighbor,i,B,mono,mono,src-b-only,?,邻近的；附近的,邻居,"a. 附近的, 邻近的, 邻接的","n. 邻居 vt. 邻接 vi. 毗邻而居, 友好 a. 邻近的"
+14762,46401,alumni,alumnus,n,AB,loan,loan,form-more-frequent|suspect-target,keep,校友（复数）,男校友；毕业生,"pl. 男毕业生, 男校友","n. 男毕业生, 男校友"
 14767,37759,snickering,snicker,i,AB,mono,mono,form-more-frequent,keep,窃笑；暗笑,窃笑；暗笑,v. =sni^^er( snicker的现在分词 ),n. 窃笑 vi. 窃笑 vt. 窃笑着说
 14772,15700,partisans,partisan,s,AB,loan,,form-more-frequent,keep,游击队员；党羽（复数）,党徒；游击队员；adj.偏袒的,n. 游击队员( partisan的复数形式 ); 党人; 党羽; 帮伙,"n. 党羽, 虔诚信徒, 同党, 游击队员 a. 党派的, 偏袒的, 效忠的, 献身的, 盲目推崇的"
 14800,16300,hieroglyphics,hieroglyphic,s,AB,,,form-more-frequent,keep,象形文字；难解的符号,象形文字（尤指古埃及文字）,n. 象形文字,n. 象形文字；象形文字写的文章
@@ -1942,6 +1971,7 @@ fRank,lRank,form,lemma,type,src,fKind,lKind,flags,suggest,form_gloss,lemma_gloss
 17816,813,favored,favor,p,B,loan,loan,src-b-only,?,受青睐的；有利的,恩惠；帮助；赞成,"a. 有利的, 受惠的, 幸运的","n. 好意, 喜爱 vt. 赐予, 支持, 喜欢, 证实"
 17824,20023,hoodlums,hoodlum,s,AB,mono,mono,form-more-frequent,keep,流氓；小混混（复数）,流氓；恶棍,"n. 流氓, 暴徒( hoodlum的复数形式 )","n. 暴徒, 年轻无赖"
 17845,29408,slurring,slur,i,AB,mono,mono,form-more-frequent,keep,含糊地说； slur 的现在分词,污辱；含糊发音,n. 型芯粘合法,"n. 连音符, 诽谤, 玷污, 印刷模糊 vt. 草率地看过, 忽略, 含糊地念 vi. 模糊不清"
+17914,26230,tropics,tropic,n,AB,loan,loan,form-more-frequent,keep,热带,回归线；热带,n. 热带地区,n. 回归线
 17935,4693,orphaned,orphan,p,B,loan,loan,src-b-only,?,成为孤儿的,孤儿,[计][修]孤立,"n. 孤儿 a. 无双亲的, 孤儿的 vt. 使成孤儿 [计] 弧体"
 17944,8231,axes,ax,s,AB,mono,mono,homograph,?,斧头（复数）；轴（复数）,斧头；解雇,"pl. 斧头, 轴, 轴线 [计] 坐标轴","n. 斧头 vt. 用斧削或砍, 削减"
 17944,5279,axes,axe,3,B,mono,mono,src-b-only|homograph,?,斧头（复数）；轴（复数）,斧头；削减,"pl. 斧头, 轴, 轴线 [计] 坐标轴","n. 斧, 斧头 vt. 削减(人员、经费、计划、机构等)"
@@ -2235,6 +2265,7 @@ fRank,lRank,form,lemma,type,src,fKind,lKind,flags,suggest,form_gloss,lemma_gloss
 23281,33395,bleats,bleat,s,AB,mono,mono,form-more-frequent,keep,咩咩叫；羊叫声,咩咩叫；哀诉,"v. （羊, 小牛）叫( bleat的第三人称单数 ); 哭诉; 发出羊叫似的声音; 轻声诉说",n. 羊的叫声 vi. 咩咩叫 vt. 以颤抖的声音说
 23294,30812,bombarded,bombard,d,AB,loan,loan,form-more-frequent,keep,轰炸；连续攻击,轰炸；炮击,v. 炮击( bombard的过去式和过去分词 ); 轰炸; 连珠炮般地提问; <核>以高能量粒子或放射能冲击,"vt. 炮击, 攻击, 轰击 n. 射石炮"
 23302,25631,thwarted,thwart,d,AB,mono,mono,form-more-frequent,keep,阻挠；挫败,阻挠；挫败,v. 阻挠( thwart的过去式和过去分词 ); 使受挫折; 挫败; <旧>横过,"a. 横放的 vt. 反对, 阻挠, 横过 prep. 横过 adv. 横过"
+23349,33801,hemorrhoids,hemorrhoid,n,AB,loan,loan,form-more-frequent,keep,痔疮,痔疮,"n. 痔疮, 痔疾","n. 痔, 痔疮 [医] 痔"
 23357,47061,infuriating,infuriate,i,AB,loan,loan,form-more-frequent,keep,令人愤怒的,激怒；使大怒,"a. 令人大怒的 v. 使大怒, 激怒( infuriate的现在分词)",a. 狂怒的 vt. 激怒
 23402,32209,biceps,bicep,s,AB,loan,loan,lemma-no-gloss|form-more-frequent,keep,肱二头肌,二头肌,"n. 二头肌, 臂部肌肉 [医] 二头的, 二头肌",[体]二头肌训练机
 23412,18002,aztecs,aztec,s,AB,proper,proper,lemma-proper,keep,阿兹特克人,阿兹特克人；阿兹特克语,n. 阿芝特克人 a. 阿芝特克人的,"n. 阿兹特克人, 阿兹特克语 a. 阿兹特克人的"
@@ -2259,6 +2290,7 @@ fRank,lRank,form,lemma,type,src,fKind,lKind,flags,suggest,form_gloss,lemma_gloss
 23852,40565,looser,loos,r,AB,mono,mono,form-more-frequent,keep,更松的；更宽松的,厕所（英俚语，复数）,[经] 放宽,"n. 损耗, 洗手间（loo复数形式）"
 23890,38854,lbs,lb,s,AB,loan,mono,lemma-no-gloss|form-more-frequent,keep,磅（重量单位，复数缩写）,磅（重量单位缩写）,磅,"磅, 文学士 [经] 磅"
 23892,592,radioed,radio,p,B,loan,loan,src-b-only,?,用无线电发送（过去式）,收音机；无线电,无线电传送的,"n. 无线电, 收音机, 无线电报, 无线电广播, 无线电台 v. 用无线电发送"
+23969,34212,whirrs,whir,v,AB,mono,mono,form-more-frequent,keep,呼呼作响,呼呼声；嗡嗡声,n. 呼呼声( whirr的复数形式 ) v. 呼呼声( whirr的第三人称单数 ),"n. 呼呼声, 飕飕声 vi. 作呼呼声, 发飕飕声 vt. 使呼呼响"
 23981,30301,squatters,squatter,s,AB,loan,loan,form-more-frequent,keep,擅自占住者,擅自占地者；蹲坐者,n. 蹲着的人( squatter的复数形式 ); 擅自占用房屋或土地的人,"n. 蹲着的人, 擅自占用土地或房屋者 vi. 涉水而过"
 23995,24765,peacekeepers,peacekeeper,s,AB,mono,mono,form-more-frequent,keep,维和人员,维和人员；和平维护者,n. 维和士兵( peacekeeper的复数形式 ),n. (交战国间的)停火执行者(或小组)
 24000,31500,decurved,decurve,p,AB,,,lemma-no-gloss|form-more-frequent,keep,向下弯曲的,向下弯曲；使下曲,a. 向下弯的,使朝下弯曲
@@ -2508,6 +2540,7 @@ fRank,lRank,form,lemma,type,src,fKind,lKind,flags,suggest,form_gloss,lemma_gloss
 29869,3461,pms,pm,s,AB,loan,loan,lemma-no-gloss,keep,经前综合征（缩写）,首相；下午,"[计] 过程监控系统, 计划管理系统 [医] 孕马血清激素","出纳员, 军需官 [计] 调相, 性能管理, 处理模块, 程序存储器"
 29911,33683,foreclosed,foreclose,d,AB,loan,loan,form-more-frequent,keep,取消赎回权（过去式）,取消抵押品赎回权,v. 取消（抵押品）赎回权( foreclose的过去式和过去分词 ); 取消（抵押人的）赎回抵押品的权利; 排除; 阻…,"vt. 阻止, 排除, 预先处理, 取消抵押品赎回权 vi. 取消抵押品赎回权"
 29956,16000,plummeting,plummet,i,B,loan,,src-b-only,?,骤降；暴跌（现在分词）,垂直落下，暴跌,"v. 垂直落下, 骤然跌落( plummet的现在分词 )","n. 测深锤, 铅坠 vi. 垂直落下"
+29979,36008,tangier,tangy,a,AB,proper,mono,form-more-frequent,keep,丹吉尔（地名）,味道浓烈的；酸辣的,丹吉尔 [摩洛哥北部港市],"a. 有强烈盐味的, 气味刺鼻的, 有刺激性的"
 29983,19896,vos,vo,s,AB,proper,proper,lemma-proper,keep,沃斯（人名/缩写）,沃（人名/缩写）,abbr. 虚拟操作系统（Virtual Operating System）；声控录制系统（Voice Operatio…,abbr. 口头命令（Verbal Order）
 30012,38867,sanctified,sanctify,pd,AB,loan,loan,form-more-frequent,keep,神圣化的；圣洁的,使神圣；赐福于,"a. 神圣化的, 认可的, 批准的","vt. 使神圣, 奉献给神, 使成为神圣之物"
 30089,8007,loathing,loathe,i,B,mono,mono,src-b-only,?,厌恶；憎恨,厌恶；憎恨,"n. 非常讨厌, 嫌恶, 极不情愿","vt. 厌恶, 憎恶"
@@ -2520,6 +2553,7 @@ fRank,lRank,form,lemma,type,src,fKind,lKind,flags,suggest,form_gloss,lemma_gloss
 30203,30817,minos,mino,s,AB,proper,proper,lemma-proper|form-more-frequent,keep,米诺斯（希腊神话王）,美浓（日本地名）,[计] 米诺斯,n. 日本劳工阶级所穿的草制外衣
 30232,23685,remodeled,remodel,pd,A,loan,loan,src-a-only,?,改建；重塑（过去式）,改建；重塑,a. 改造的；改制的 v. 改造（remodel的过去式及过去分词）；重建,"vt. 改造, 改型, 改变"
 30251,35923,slobbering,slobber,i,AB,mono,mono,form-more-frequent,keep,流口水；垂涎（现在分词）,流口水；垂涎,[医] 垂涎,"vi. 垂涎, 流口水, 情不自禁地说 vt. 流口水弄湿, 口齿不清地说, 处事马虎 n. 口水, 涎, 过分动情的话…"
+30289,30681,shriveled,shrivel,v,AB,mono,mono,form-more-frequent,keep,干瘪的；枯萎的,枯萎；皱缩,"v. （因热力, 严寒、干燥、年老等而）枯萎, 皱缩( shrivel的过去式和过去分词 )","v. (使)起皱纹, (使)枯萎, (使)束手无策"
 30322,36814,descendents,descendent,s,AB,loan,loan,form-more-frequent,keep,后裔；子孙（复数）,下降的；后代的,n. 后裔（descendent的复数）,"a. 下降的, 降落的, 世袭的 [医] 下行的, 降的"
 30372,17900,mementos,memento,s,A,loan,,src-a-only,?,纪念品,纪念物，引起回忆的东西,"n. 纪念品, 令人回忆的东西( memento的名词复数 )","n. 纪念物, 令人回忆的东西"
 30377,602,felled,fell,d,AB,mono,mono,homograph,?,砍倒；击倒,跌倒（fall的过去式）,"v. 砍倒, 打倒( fell的过去式 ); 砍倒, 打倒( fell的过去式和过去分词 ); 来临; 成为","vt. 击倒 n. 一季所伐的木材, 折缝 a. 凶猛的, 可怕的 fall的过去式"
@@ -2586,6 +2620,7 @@ fRank,lRank,form,lemma,type,src,fKind,lKind,flags,suggest,form_gloss,lemma_gloss
 32264,41650,neutered,neuter,d,AB,loan,loan,form-more-frequent,keep,阉割；使无效,中性的；无性的,n. 无性动物；中性名词；阉割动物 a. 中性的；不及物的；无性的,"a. 中性的, 不及物的, 生殖器不完全的 n. 中性词, 无性动物, 阉割动物"
 32275,34663,razed,raze,d,AB,loan,loan,form-more-frequent,keep,夷平；摧毁,夷平；彻底摧毁,"v. 彻底摧毁, 将…夷为平地( raze的过去式和过去分词 )","vt. 毁灭, 刮去, 把...夷为平地, 消除, 抹去, 破坏"
 32315,12229,romanians,romanian,s,AB,proper,proper,lemma-proper,keep,罗马尼亚人,罗马尼亚的；罗马尼亚人,a. 罗马尼亚的；罗马尼亚人的 n. 罗马尼亚人；罗马尼亚语,"n. 罗马尼亚人, 罗马尼亚语 a. 罗马尼亚的"
+32320,34372,yodeling,yodel,v,AB,loan,loan,form-more-frequent,keep,用真假嗓交替唱,用约德尔调唱,约德尔唱法,n. 真假嗓音反复变换的唱腔 v. 用真假嗓音反复变换地唱
 32333,4875,roofing,roof,i,B,mono,mono,src-b-only,?,屋顶材料；盖屋顶,屋顶；车顶,n. 盖屋顶,"n. 屋顶, 室顶 vt. 给...盖屋顶, 遮蔽"
 32337,15200,extradited,extradite,p,B,loan,,src-b-only,?,引渡,引渡（逃犯等）,v. 引渡( extradite的过去式和过去分词 ),"vt. 引渡, 获取(逃犯等)的引渡 [法] 引渡, 使被引渡"
 32379,35978,patronising,patronise,i,B,mono,loan,src-b-only|form-more-frequent,keep,居高临下的；屈尊的,以高人一等的态度对待；光顾,vt. （英）保护（等于patronize）,"vt. 庇护, 资助, 赞助, 保护, 光顾, 惠顾, 对...以恩人自居"
@@ -2704,6 +2739,7 @@ fRank,lRank,form,lemma,type,src,fKind,lKind,flags,suggest,form_gloss,lemma_gloss
 35886,9155,screenings,screening,s,AB,mono,mono,lemma-no-gloss,keep,放映；筛查（复数）,筛查；放映,n. 筛后残余的物；筛屑；残渣,"[医] 筛选, 筛分(如普查癌、结核等病), 萤光屏检查"
 35925,12188,borgias,borgia,s,AB,proper,proper,lemma-proper,keep,波吉亚家族,波吉亚（家族名）,n. (Borgias)人名；(希)博尔亚斯,n. 博尔吉亚（意大利15、16世纪权门家族）
 35954,38063,sayers,sayer,s,AB,proper,mono,form-more-frequent,keep,塞耶斯（姓氏）,说话者；预言者,n. 塞耶斯（姓氏）,n. 说话的人
+35969,43169,pincers,pincer,n,AB,loan,loan,form-more-frequent,keep,钳子；螯,钳子；螯；夹击,"n. 钳子, 镊子, 钳形运动, 螯 [医] 镊子, 乳牙(马)",n. （甲壳动物的）螯； 钳子
 36022,24049,munchkins,munchkin,s,AB,mono,proper,lemma-proper,keep,小矮人；小甜甜圈（复数）,芒奇金人；小矮人,"(munchkin 的复数) n. 小巧玲珑的人, 忙个不停的人","n. 小巧玲珑的人, 忙个不停的人"
 36026,8525,atms,atm,s,AB,proper,mono,lemma-no-gloss,keep,自动取款机（复数）,自动取款机,先进的交通管理系统,[计] 自动出纳机; 异步传输方式
 36027,19920,hobbits,hobbit,s,AB,proper,proper,lemma-proper,keep,霍比特人（复数）,霍比特人（虚构种族）,哈比人,n. （英国作家J R R Tolkien笔下的）
@@ -2791,6 +2827,7 @@ fRank,lRank,form,lemma,type,src,fKind,lKind,flags,suggest,form_gloss,lemma_gloss
 39925,255,cased,case,p,B,loan,loan,src-b-only,?,装箱的；踩点的,情况；案件；箱子,v. 包装；装入（case的过去式和过去分词形式）,"n. 情形, 情况, 箱, 容器, 事实, 病例, 案例, 框子 vt. 装箱, 包盖"
 39977,42737,dockers,docker,s,AB,proper,mono,form-more-frequent,keep,码头工人；多克斯（品牌）,码头工人,n. 码头工人( docker的复数形式 ),n. 码头工人
 39989,97,offs,off,3,B,mono,mono,src-b-only,?,起跑；出发（口语）,离开；关闭,n. 偏移；关闭状态；低价股票（off的复数）,"a. 关着的, 不再生效的, 处于...境况的, 休假的, 空闲的 adv. 走开, ...掉, ...下, 休息, 出…"
+40010,161,lefts,left,n,AB,mono,mono,homograph,?,左派；左拳；左侧,左边的；剩下的,"n. 左, 左面（left的复数形式）","a. 左边的, 左倾的, 左侧的, 左派的 adv. 在左面 n. 左, 左面, 左派 leave的过去式和过去分词"
 40122,47660,unsealed,unseal,d,AB,mono,mono,form-more-frequent,keep,未密封的,开启；拆封,"未密封的, 打开的","vt. 开封, 开启, 使解除束缚"
 40151,39122,carthaginians,carthaginian,s,AB,proper,proper,lemma-proper,keep,迦太基人,迦太基的；迦太基人,(Carthaginian 的复数) a. 迦太基的 n. 迦太基人,a. 迦太基的 n. 迦太基人
 40157,9026,pcs,pc,s,AB,mono,mono,lemma-no-gloss,keep,个人电脑（复数）,个人电脑；政治正确,[计] 个人通信业务 [化] 青霉素类抗生素,"个人计算机 [计] 外部控制, 个人计算机, 光电导体, 伪码"
@@ -2856,6 +2893,7 @@ fRank,lRank,form,lemma,type,src,fKind,lKind,flags,suggest,form_gloss,lemma_gloss
 43150,15721,chinamen,chinaman,s,AB,mono,proper,lemma-proper,keep,（旧，贬）中国人,中国佬（贬义）；中国人,n. 中国佬,n. 中国佬
 43235,47656,unnerved,unnerve,d,AB,mono,mono,form-more-frequent,keep,使紧张；使失去勇气,使失去勇气；使不安,"a. 气馁的, 丧失勇气的, 失常的, 烦恼不安的","vt. 使失去勇气, 使胆怯, 使不能自制 [医] 除神经"
 43344,41703,phoenicians,phoenician,s,AB,proper,proper,lemma-proper,keep,腓尼基人,腓尼基的；腓尼基人,"(Phoenician 的复数) a. 腓尼基的, 腓尼基人的 n. 腓尼基人","a. 腓尼基的, 腓尼基人的 n. 腓尼基人"
+43376,17155,stoners,stoner,n,AB,mono,mono,lemma-no-gloss,keep,吸大麻者；呆滞者,常吸大麻者,,投石者; 铺石块者; 琢石者; 去果核的工具
 43382,20500,desiccated,desiccate,d,B,loan,,src-b-only,?,干燥的；脱水的,使干燥，脱水；使（食物）干缩保存,"a. 干的, 粉状的 v. 使干燥(desiccate的过去式); 变干","vt. 使干, 干贮 vi. 变干"
 43466,43632,crustaceans,crustacean,s,AB,loan,loan,form-more-frequent,keep,甲壳类动物,甲壳类动物,n. 甲壳纲动物（如蟹、龙虾）( crustacean的复数形式 ),a. 甲壳纲的 n. 甲壳纲动物
 43494,47466,shelved,shelve,d,AB,mono,mono,form-more-frequent,keep,搁置；置于架上,搁置；把…放架上,a. 搁置的；废置不用的,"vt. 放置架子上, 搁置 vi. 渐渐倾斜"

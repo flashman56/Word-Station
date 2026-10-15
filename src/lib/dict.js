@@ -21,10 +21,13 @@ import { publicKey, slug } from './wordKey.js'
 
 // 保留设备级词典缓存命名空间；真正的数据版本由 manifest.generatedAt 追加在其后。
 const CACHE_PREFIX = 'wrc.dict.v1:'
+const MANIFEST_CACHE_KEY = `${CACHE_PREFIX}manifest`
 const MANIFEST_URL = 'data/v1/manifest.json'
 
 /** @type {object|null} */
 let manifestCache = null
+/** @type {Promise<object>|null} */
+let manifestInflight = null
 /** @type {Map<string, number[]>|null} formSlug -> [shardIdx, idx, freqRank, cefrIdx] */
 let indexCache = null
 /** @type {Map<number, object[]>|null} shardIdx -> 词条数组 */
@@ -63,7 +66,11 @@ async function cleanupStaleCacheVersions(manifest) {
   try {
     const allKeys = await idbKeys()
     const staleKeys = allKeys.filter(
-      (key) => typeof key === 'string' && key.startsWith(CACHE_PREFIX) && !key.startsWith(currentPrefix),
+      (key) =>
+        typeof key === 'string'
+        && key !== MANIFEST_CACHE_KEY
+        && key.startsWith(CACHE_PREFIX)
+        && !key.startsWith(currentPrefix),
     )
     await Promise.all(
       staleKeys.map(async (key) => {
@@ -128,12 +135,35 @@ export async function loadCachedJson(url, cacheKey, manifest) {
  * 加载并缓存 manifest。
  * @returns {Promise<object>}
  */
-export async function loadManifest() {
-  if (manifestCache) return manifestCache
-  // manifest 决定缓存版本，不能再放进自身控制的 IndexedDB 缓存。
-  manifestCache = await fetchJson(MANIFEST_URL)
-  await cleanupStaleCacheVersions(manifestCache)
-  return manifestCache
+export function loadManifest() {
+  if (manifestCache) return Promise.resolve(manifestCache)
+  if (manifestInflight) return manifestInflight
+
+  manifestInflight = (async () => {
+    // 优先取最新版本；网络不可用时回退到上次成功缓存的版本，保证离线设备仍能
+    // 定位已经缓存的分片。manifest 用独立元数据键，不参与分片版本清理。
+    try {
+      manifestCache = await fetchJson(MANIFEST_URL)
+      try {
+        await idbSet(MANIFEST_CACHE_KEY, manifestCache)
+      } catch {
+        /* IndexedDB 不可用时仍可在线使用 */
+      }
+    } catch (networkError) {
+      try {
+        manifestCache = await idbGet(MANIFEST_CACHE_KEY)
+      } catch {
+        /* IndexedDB 不可用时保留原始网络错误 */
+      }
+      if (!manifestCache) throw networkError
+    }
+    await cleanupStaleCacheVersions(manifestCache)
+    return manifestCache
+  })().finally(() => {
+    manifestInflight = null
+  })
+
+  return manifestInflight
 }
 
 /**
@@ -289,6 +319,7 @@ export async function phoneticsOfAsync(form) {
 /** 清空内存缓存（测试用；IndexedDB 缓存保留） */
 export function __resetDictMemory() {
   manifestCache = null
+  manifestInflight = null
   indexCache = null
   shardCache.clear()
   phonCache.clear()

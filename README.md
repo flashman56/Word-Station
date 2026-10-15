@@ -5,8 +5,7 @@
 
 在此基础上新增「**单词小站**」：注册账号后可创建多个小站，每天批量往里扔生词，
 不在公共词库里的词一键生成入库，学习进度跨设备同步。
-离线边界：应用未接 Service Worker，词库与代码已打进构建产物，**已打开且未刷新**时断网仍可背词；
-刷新 / 新开标签需联网（离线白屏）。详见 `src/App.jsx`「怎么用」处的说明。
+离线使用：首次联网打开后，应用外壳和已访问的代码、词库分片会缓存在本机；之后可离线重开并使用已缓存内容。尚未访问过的词条分片、账号登录、云同步和 AI 生成仍需要网络。浏览器若清理了站点数据，需要重新联网加载。
 设计文档：[`docs/wordstation-design.md`](./docs/wordstation-design.md)
 
 ## 运行
@@ -20,6 +19,7 @@ npm run dev        # http://localhost:5199
 
 ```bash
 npm run validate   # 校验数据（改完词根词缀数据后务必跑一次）
+npm run validate -- --verbose-warnings  # 需要时展开所有非阻断建议
 npm run build      # 生产构建（会先跑 split:data 切分片）
 npm run preview    # 预览构建产物
 npm run test:e2e   # 端到端回归测试（jsdom + 真实 React 渲染，覆盖多选批量标注等场景）
