@@ -3,7 +3,7 @@ import { MASTER_THRESHOLD, statusLabel } from '../lib/learning.js'
 // 红线：音标只查表（public/data/v1/phon/*.json，源头是 ECDICT），严禁模型生成
 import { phoneticsOfAsync } from '../lib/dict.js'
 import { shouldShowPhoneticPending } from '../lib/phoneticDisplay.js'
-import { hasDecomposition, morphlessKindLabel } from '../lib/derive.js'
+import { hasDecomposition, morphlessKindLabel, buildMorphByForm, normalizeMorphForm } from '../lib/derive.js'
 import { useSpeech } from '../hooks/useSpeech.js'
 import SpeakerButton from './SpeakerButton.jsx'
 import UsageSupplement from './UsageSupplement.jsx'
@@ -50,8 +50,9 @@ export default function StudyCard({
   const [result, setResult] = useState(null) // 'correct' | 'incorrect' | 'known'
   const [out, setOut] = useState(null) // onAnswer 的返回值，便于立刻给反馈
   // 构词拆解：点词素 chip 内联展开其词源故事（与 App.jsx WordDetail 同一套逻辑）。
-  // morphById 在本组件内自建一次：词素表是静态数组，不随渲染变，无需按 word memo。
+  // morphById / morphByForm 在本组件内自建一次：词素表是静态数组，不随渲染变，无需按 word memo。
   const morphById = useMemo(() => new Map(morphemes.map((m) => [m.id, m])), [])
+  const morphByForm = useMemo(() => buildMorphByForm(morphemes), [])
   const [expandedMorphId, setExpandedMorphId] = useState(null)
   // 换卡时收起展开态（StudyCard 以 key=index 重挂，但保险起见仍按词清一次）
   useEffect(() => { setExpandedMorphId(null) }, [word.id])
@@ -239,8 +240,11 @@ export default function StudyCard({
               <>
                 <div className="flex items-center flex-wrap gap-1.5">
                   {word.chain.map((step, i) => {
-                    // 可点判据与 App.jsx WordDetail 逐字同款：chain 段的 morph 能在词素表查到
-                    const m = step.morph ? morphById.get(step.morph) : null
+                    // 可点判据与 App.jsx WordDetail 逐字同款：chain 段的 morph 能在词素表查到；
+                    // morph 为空时用 form 反查（归一化后查 morphByForm），救活「应链未链」的段。
+                    const m = step.morph
+                      ? morphById.get(step.morph)
+                      : morphByForm.get(normalizeMorphForm(step.form))
                     const clickable = Boolean(m)
                     const expanded = clickable && expandedMorphId === m.id
                     return (

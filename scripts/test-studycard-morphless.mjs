@@ -273,7 +273,6 @@ async function caseDecomposition() {
   ok(chips.length === 2, `★ 两个 chip 都渲染（实际 ${chips.length} 个）`)
   ok(chips.length === 2 && txt(chips[0]).includes('un-') && txt(chips[0]).includes('不'), `第 1 个 chip = un- / 不（实际：${chips[0] ? txt(chips[0]) : '—'}）`)
   ok(chips.length === 2 && txt(chips[1]).includes('known') && txt(chips[1]).includes('已知'), `第 2 个 chip = known / 已知的（实际：${chips[1] ? txt(chips[1]) : '—'}）`)
-
   ok(plusSpans(container).length === 1, `★ 中间出现 1 个「+」分隔符（实际 ${plusSpans(container).length} 个）`)
   ok(amberHints(sec).length === 0, `★ amber 提示不出现（实际 ${amberHints(sec).length} 个）`)
 
@@ -293,7 +292,58 @@ async function caseDecomposition() {
   unmount()
 }
 
-// ================================================================ ③ chain undefined
+/** 应链未链：chain 段的 form 命中词素，但 morph 字段为 null（用户实测 psycho- 点不动的根因之一） */
+const FORM_FALLBACK = {
+  id: 'w.psychology',
+  form: 'psychology',
+  pos: 'n.',
+  gloss: '心理学',
+  // 真实数据形状：psychology 的 morphs 只挂了 r.log，psycho- 那段 morph 为 null
+  morphs: ['r.log'],
+  chain: [
+    { morph: null, form: 'psycho-', gloss: '心灵' }, // form 命中 r.psych（variants 含 psycho），morph 却为 null
+    { morph: 'r.log', form: '-logy', gloss: '学' },
+  ],
+}
+
+// ================================================================ ③ 应链未链（form 反查）
+
+async function caseFormFallback() {
+  unmount()
+  mount(FORM_FALLBACK)
+  await flush()
+  clickExact('记得')
+  await flush()
+
+  const sec = decompSection()
+  ok(txt(sec).includes('构词拆解'), '标题「构词拆解」仍在')
+
+  const container = mustFind(() => chipContainers(sec)[0], '未找到拆解 chip 容器（应链未链词却无容器）')
+  const chips = [...container.querySelectorAll('button, span')].filter((s) => hasAll(s, 'rounded', 'border'))
+  ok(chips.length === 2, `★ 两个 chip 都渲染（实际 ${chips.length} 个）`)
+
+  // ★ 关键断言：psycho- 段 morph=null，但 form 命中 r.psych ⇒ 必须反查成可点 button
+  //   （这是 2026-10-15 前「点 psycho 没用、点 logy 可以」的直接成因）
+  const clickable = [...container.querySelectorAll('button')]
+  ok(
+    clickable.length === 2,
+    `★ 两个 chip 都是 <button>（psycho- 经 form 反查 r.psych 后也可点，实际 ${clickable.length} 个）`,
+  )
+  ok(
+    clickable.every((b) => /查看词源故事/.test(b.getAttribute('title') || '')),
+    '★ 每个可点 chip 都带 title="查看词源故事"',
+  )
+
+  // 点击 psycho- 段，应展开 r.psych 的词源故事面板（含「来源」标签，EtymologyPanel 必渲染）
+  clickable[0].click()
+  await flush()
+  ok(!hasProbeError(), '★ 点击 psycho- chip 展开词源故事未触发渲染异常')
+  ok(txt(sec).includes('来源'), '★ 点击 psycho- 后词源故事面板出现（EtymologyPanel 渲染「来源」标签）')
+
+  unmount()
+}
+
+// ================================================================ ④ chain undefined
 
 async function caseChainUndefined() {
   unmount()
@@ -359,9 +409,10 @@ console.log('[test:studycard] StudyCard「无词素」空面板修复的 DOM 级
 selfCheck()
 await runCase('① morphless 词（boer 形状）：amber 提示 + 不出现空面板', caseMorphless)
 await runCase('② 有拆解词：两 chip + 「+」分隔 + 无 amber', caseDecomposition)
-await runCase('③ chain undefined：不抛错，落 amber 分支', caseChainUndefined)
-await runCase('④ morphlessKindLabel 映射表（六例）', caseMapping)
-await runCase('⑤ 真实数据一致性（words-entry 的 boer）', caseRealData)
+await runCase('③ 应链未链（psycho- 经 form 反查 r.psych 后可点）', caseFormFallback)
+await runCase('④ chain undefined：不抛错，落 amber 分支', caseChainUndefined)
+await runCase('⑤ morphlessKindLabel 映射表（六例）', caseMapping)
+await runCase('⑥ 真实数据一致性（words-entry 的 boer）', caseRealData)
 
 // 进程级未捕获异常（渲染异常应由 ErrorBoundary 接住；到这一层说明有漏网）
 ok(uncaught.length === 0, `无进程级未捕获异常（实际 ${uncaught.length} 个${uncaught.length ? '：' + uncaught.map((e) => (e && e.message) || e).join(' | ') : ''}）`)

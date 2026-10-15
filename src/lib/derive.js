@@ -269,7 +269,34 @@ export function buildIndex(morphemes, words) {
   const wordById = new Map()
   words.forEach((w) => wordById.set(w.id, w))
 
-  return { morphById, wordsByMorph, wordById }
+  // form -> 词素 反查表（含 variants），用于 chain 段 morph 为空时按 form 反查，
+  // 救活「应链未链」的段——词素表里有对应词条、chain 却只写了 form 没写 morph id，
+  // 于是 UI 渲染成不可点。归一化去首尾的 - · 与空白、转小写（'psycho-' -> 'psycho'）。
+  const morphByForm = buildMorphByForm(morphemes)
+
+  return { morphById, morphByForm, wordsByMorph, wordById }
+}
+
+/** 词素 form / variants 归一化：去首尾的 - · 与空白，转小写。 */
+export function normalizeMorphForm(form) {
+  return String(form || '')
+    .trim()
+    .toLowerCase()
+    .replace(/^[-·\s]+|[-·\s]+$/g, '')
+}
+
+/** 构建 form -> 词素 反查表（含 variants），供 chain 段按 form 反查词素用。 */
+export function buildMorphByForm(morphemes) {
+  const map = new Map()
+  for (const m of morphemes) {
+    const key = normalizeMorphForm(m.form)
+    if (key) map.set(key, m)
+    for (const v of m.variants || []) {
+      const vk = normalizeMorphForm(v)
+      if (vk && !map.has(vk)) map.set(vk, m)
+    }
+  }
+  return map
 }
 
 /** 检索：同时匹配词素（词形/变体/中英含义）与单词（词形/释义） */

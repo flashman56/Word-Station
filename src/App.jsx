@@ -9,6 +9,7 @@ import {
   freqBand,
   hasDecomposition,
   morphlessKindLabel,
+  normalizeMorphForm,
   recordOf,
   search,
 } from './lib/derive.js'
@@ -1447,7 +1448,10 @@ function WordDetail({
         <>
           <div className="flex items-center flex-wrap gap-1">
             {word.chain.map((step, i) => {
-              const m = step.morph ? index.morphById.get(step.morph) : null
+              // morph 为空时用 form 反查（归一化后查 index.morphByForm），救活「应链未链」的段
+              const m = step.morph
+                ? index.morphById.get(step.morph)
+                : index.morphByForm.get(normalizeMorphForm(step.form))
               const clickable = Boolean(m)
               const expanded = clickable && expandedMorphId === m.id
               return (
