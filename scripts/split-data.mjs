@@ -15,7 +15,7 @@
  *   - 切分必须稳定：同一输入产出同一批文件（分片顺序按 words 数组原顺序）。
  *   - usage-extra 字段只有 c/b/u，绝不在这里引入任何音标字段。
  */
-import { mkdirSync, writeFileSync, rmSync, existsSync } from 'node:fs'
+import { mkdirSync, writeFileSync, rmSync, existsSync, readdirSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { words, phonetics } from '../src/data/index.js'
@@ -43,13 +43,37 @@ function ensureDir(dir) {
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
 }
 
+/* ★ 增量写出：本次写出的文件全部记入 writtenFiles，收尾只删「本次没写到」的旧残留。★
+   旧做法每次 rmSync(OUT_DIR, {recursive:true}) 整目录删——满量 602 个文件，
+   在有删除配额的环境（沙箱 50/次）会卡死，表现为 npm run build 假死。
+   分片名不含内容哈希、同名覆盖即等价，因此增量覆盖 + 少量残留清理与整目录删等价。 */
+const writtenFiles = new Set()
+
+function writeShard(file, data) {
+  const p = resolve(file)
+  writeFileSync(p, data, 'utf8')
+  writtenFiles.add(p)
+}
+
+/** 删除本次未写出的旧文件（正常情况为 0 个；仅词库缩小 / 分片数变少时才有少量）。 */
+function pruneStale() {
+  if (!existsSync(OUT_DIR)) return
+  const walk = (dir) => {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      const p = resolve(dir, e.name)
+      if (e.isDirectory()) walk(p)
+      else if (!writtenFiles.has(p)) rmSync(p, { force: true })
+    }
+  }
+  walk(OUT_DIR)
+}
+
 function main() {
   if (!Array.isArray(words) || words.length === 0) {
     throw new Error('src/data/index.js 没有产出任何单词，终止切分')
   }
 
-  // 清理旧产物，避免残留分片被 manifest 漏掉或误引用
-  if (existsSync(OUT_DIR)) rmSync(OUT_DIR, { recursive: true, force: true })
+  // 不再整目录删（见 pruneStale 注释）：确保目录存在即可，写出后只清残留
   ensureDir(resolve(OUT_DIR, 'words'))
   ensureDir(resolve(OUT_DIR, 'phon'))
   ensureDir(resolve(OUT_DIR, 'usage'))
@@ -61,7 +85,7 @@ function main() {
 
   for (let s = 0; s < shardCount; s += 1) {
     const slice = words.slice(s * SHARD_SIZE, (s + 1) * SHARD_SIZE)
-    writeFileSync(
+    writeShard(
       resolve(OUT_DIR, 'words', `w-${s}.json`),
       JSON.stringify(slice),
       'utf8',
@@ -80,7 +104,7 @@ function main() {
     written += slice.length
   }
 
-  writeFileSync(resolve(OUT_DIR, 'words-index.json'), JSON.stringify(index), 'utf8')
+  writeShard(resolve(OUT_DIR, 'words-index.json'), JSON.stringify(index), 'utf8')
 
   // ---------------------------------------------------------------- 音标分片
   // phonetics: { [form小写]: { p, en, zh, u } }；按首字母分 27 片（a-z + '_'）
@@ -99,7 +123,7 @@ function main() {
   ;[...phonGroups.keys()].sort().forEach((bucket) => {
     const file = `data/${VERSION}/phon/p-${bucket}.json`
     phonShards[bucket] = file
-    writeFileSync(
+    writeShard(
       resolve(OUT_DIR, 'phon', `p-${bucket}.json`),
       JSON.stringify(phonGroups.get(bucket)),
       'utf8',
@@ -141,7 +165,7 @@ function main() {
     if (payload.length > usageLargestBucket.length) usageLargestBucket = bucket
     const file = `data/${VERSION}/usage/${usageShardFileName(bucket)}`
     usageShards[bucket] = file
-    writeFileSync(
+    writeShard(
       resolve(OUT_DIR, 'usage', usageShardFileName(bucket)),
       payload,
       'utf8',
@@ -167,7 +191,10 @@ function main() {
     usageCount: usageKeys.length,
     cefrLegend: CEFR_LIST,
   }
-  writeFileSync(resolve(OUT_DIR, 'manifest.json'), JSON.stringify(manifest), 'utf8')
+  writeShard(resolve(OUT_DIR, 'manifest.json'), JSON.stringify(manifest), 'utf8')
+
+  // 收尾：只删本次没写到的旧残留（替代原先的整目录 rmSync）
+  pruneStale()
 
   // ---------------------------------------------------------------- 报告
   const indexBytes = Buffer.byteLength(JSON.stringify(index), 'utf8')
