@@ -34,6 +34,10 @@ export default function FocusView({
   onSetReview,
   onReset,
   onBackToMap,
+  /* ★ 词根浏览历史：从别的词根岛跳转过来时，显示「← 返回上一个词根」★
+     backMorphDisplay 为 null/undefined 时不渲染按钮（无历史 = 无处可返）。 */
+  onBackMorph,
+  backMorphDisplay,
   /* ★ C-02：「加入小站」的透传 props（G1 第 2 处调用点）★
      默认值 = 空对象 → 按钮不渲染，既有调用点行为完全不变。 */
   addToStationProps = {},
@@ -419,6 +423,18 @@ export default function FocusView({
           style={{ background: '#fffdf5', border: `2px solid ${theme.ink}`, color: theme.ink, fontFamily: CUTE_FONT, fontWeight: 700 }}
         >
           ← 回到「{morph.display.split(' / ')[0]}」词素岛
+        </button>
+      )}
+
+      {/* 词根浏览历史 → 返回上一个词根岛（如 log → dialogue → dia- 后，可一键回 log）。
+          位置随 ego 按钮是否存在下移，避免重叠。 */}
+      {backMorphDisplay && (
+        <button
+          onClick={() => onBackMorph?.()}
+          className={`absolute left-3 ${ego ? 'top-[4.75rem]' : 'top-11'} px-3 py-1.5 text-xs rounded-xl shadow-md hover:brightness-[1.05]`}
+          style={{ background: '#fffdf5', border: `2px solid ${theme.ink}`, color: theme.ink, fontFamily: CUTE_FONT, fontWeight: 700 }}
+        >
+          ← 返回「{String(backMorphDisplay).split(' / ')[0]}」
         </button>
       )}
 

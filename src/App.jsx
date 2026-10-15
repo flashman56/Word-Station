@@ -309,6 +309,8 @@ function AppShell({ words, auth, stations, sync }) {
   const startReview = useCallback(() => setSessionMode('review'), [])
   const exitSession = useCallback(() => setSessionMode('none'), [])
   const [selectedMorphId, setSelectedMorphId] = useState(null)
+  // 词根浏览历史栈：openMorph 跳岛时记下出发岛，FocusView 据此显示「← 返回上一个词根」（上限 10）
+  const [morphHistory, setMorphHistory] = useState([])
   const [selectedWord, setSelectedWord] = useState(null)
   const [relationIndex, setRelationIndex] = useState(null)
   const [networkFocusWordId, setNetworkFocusWordId] = useState(null)
@@ -533,9 +535,21 @@ function AppShell({ words, auth, stations, sync }) {
   }, [selectedMorphId, visibleMorphs, index])
 
   const openMorph = (id) => {
+    // 跳岛前记下出发岛（连续去重、上限 10）：用户在 log 岛经单词点进 dia- 岛后，可一键返回 log
+    if (selectedMorphId && selectedMorphId !== id) {
+      setMorphHistory((h) => (h[h.length - 1] === selectedMorphId ? h : [...h.slice(-9), selectedMorphId]))
+    }
     setSelectedMorphId(id)
     setSelectedWord(null)
     setView('focus')
+  }
+
+  const backMorph = () => {
+    const prev = morphHistory[morphHistory.length - 1]
+    if (!prev) return
+    setMorphHistory((h) => h.slice(0, -1))
+    setSelectedMorphId(prev)
+    setSelectedWord(null)
   }
 
   const openRelatedWord = useCallback(
@@ -975,6 +989,12 @@ function AppShell({ words, auth, stations, sync }) {
                   onReset={bulkReset}
                   addToStationProps={addToStationProps}
                   onBackToMap={() => setView('overview')}
+                  onBackMorph={backMorph}
+                  backMorphDisplay={
+                    morphHistory.length
+                      ? index.morphById.get(morphHistory[morphHistory.length - 1])?.display || null
+                      : null
+                  }
                   width={window.innerWidth < 768 ? window.innerWidth : Math.max(520, window.innerWidth - 640)}
                   height={window.innerWidth < 768 ? window.innerHeight - 120 : Math.max(420, window.innerHeight - 140)}
                 />
@@ -1027,6 +1047,7 @@ function AppShell({ words, auth, stations, sync }) {
             onClick={() => {
               setSelectedWord(null)
               setSelectedMorphId(null)
+              setMorphHistory([])
             }}
             className="md:hidden mb-2 -ml-1 p-1 rounded-md text-slate-600 hover:bg-slate-100"
             aria-label="关闭详情"

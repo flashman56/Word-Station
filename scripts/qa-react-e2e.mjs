@@ -64,7 +64,15 @@ await esbuild.build({
   platform: 'browser',
   jsx: 'automatic',
   loader: { '.js': 'jsx' },
-  define: { 'process.env.NODE_ENV': '"development"' },
+  define: {
+    'process.env.NODE_ENV': '"development"',
+    // ★ App.jsx 词条加载用 import.meta.env.DEV 分支（739869f 引入）。
+    //   这里不定义它，import.meta.env 在 Node 里是 undefined → 直接读 .DEV 抛 TypeError，
+    //   e2e 自那次提交起一直挂。true = 走 dev 分支（直接用静态 import 的 words-entry），
+    //   与本 bundle 已打包词条数据的行为一致。
+    'import.meta.env.DEV': 'true',
+    'import.meta.env.PROD': 'false',
+  },
   logLevel: 'warning',
 })
 console.log('[bundle] 打包完成，真实引入 src/App.jsx 及其全部子组件/hooks\n')
