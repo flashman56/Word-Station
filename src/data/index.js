@@ -12,7 +12,7 @@
  *   3. 跑 npm run validate 检查引用是否正确。
  */
 import morphemes from './morphemes.js'
-import { chainWithCanonicalGloss } from '../lib/derive.js'
+import { chainWithCanonicalGloss, normalizeMorphForm, buildMorphByForm } from '../lib/derive.js'
 import wordsLatin from './words-latin.js'
 import wordsGreek from './words-greek.js'
 import wordsAffix from './words-affix.js'
@@ -52,6 +52,35 @@ const MORPH_IDS = new Set(morphemes.map((m) => m.id))
 // 词素 id -> 权威 gloss（单一信源）。chain 分段 gloss 一律收敛到表里，消除漂移。
 const GLOSS_BY_ID = new Map(morphemes.map((m) => [m.id, m.gloss]))
 
+// form -> 词素 反查表（与 derive.buildMorphByForm 同源）。把 chain 段（含 morph=null 但 form
+// 命中词素表）解析进 morphs，使「chain 显示的词素」与「词群归属」一致。派生层仅做加法。
+const MORPH_BY_FORM = buildMorphByForm(morphemes)
+
+// 从 chain 解析出所有引用到的词素 id：段自带 morph 优先；morph 为空但 form 命中词素表也计入。
+function chainMorphIds(chain) {
+  const ids = []
+  for (const c of chain || []) {
+    if (c.morph && MORPH_IDS.has(c.morph)) ids.push(c.morph)
+    else if (!c.morph) {
+      const m = MORPH_BY_FORM.get(normalizeMorphForm(c.form))
+      if (m) ids.push(m.id)
+    }
+  }
+  return ids
+}
+
+// 把 chain 引用的词素并入 morphs（纯加法），使词群归属 ⊇ chain。不改 chain / morphless。
+function deriveMorphsFromChain(out) {
+  const chain = out.chain || []
+  if (!chain.length) return out
+  const extra = chainMorphIds(chain)
+  if (!extra.length) return out
+  const set = new Set(out.morphs || [])
+  let changed = false
+  for (const id of extra) if (!set.has(id)) { set.add(id); changed = true }
+  return changed ? { ...out, morphs: [...set] } : out
+}
+
 const rawWords = WORD_FILES.flat()
 export const words = rawWords.map((w) => {
   // 人工逐词复核优先级最高；不得让旧自动/书本补丁覆盖已审定结论。
@@ -73,9 +102,9 @@ export const words = rawWords.map((w) => {
     // 早退词也可能自带 chain（base 文件里写死的），同样收敛 gloss
     if (w.chain && w.chain.length) {
       const nc = chainWithCanonicalGloss(w.chain, GLOSS_BY_ID)
-      if (nc !== w.chain) return { ...w, chain: nc, ...(etymReview ? { etymReview } : {}) }
+      if (nc !== w.chain) return deriveMorphsFromChain({ ...w, chain: nc, ...(etymReview ? { etymReview } : {}) })
     }
-    return etymReview ? { ...w, etymReview } : w
+    return deriveMorphsFromChain(etymReview ? { ...w, etymReview } : w)
   }
   // ★ morphs 必须去重 ★
   //   合并是「base 的 morphs + 补丁的 morphHints」直接追加。补丁与 base 命中**同一个**
@@ -97,7 +126,9 @@ export const words = rawWords.map((w) => {
   //   逐词复核把「证据不足」的拆解整个移除（unverified 的 morphHints 为空）⇒ morphs 变空。
   //   R6 硬约束「morphs 为空 ⇒ 显式 morphless: true」，在装配层补齐而非逐条手标。
   if (hasEtymReview && Array.isArray(out.morphs) && out.morphs.length === 0) out.morphless = true
-  return out
+  // ★ 人工逐词复核是权威替换：其 morphs 已是审核员最终结论，绝不再从 chain 反加回去。
+  //   其余补丁层（REMORPH/BOOKMORPH/LOANMORPH）为加法语义，才允许派生补全。
+  return hasEtymReview ? out : deriveMorphsFromChain(out)
 })
 
 export { morphemes, phonetics, phoneticsOf }

@@ -19,7 +19,7 @@ import wordsRemorph from './words-remorph.js'
 import wordsBookmorph from './words-bookmorph.js'
 import wordsLoan from './words-loan.js'
 import wordsEtymReviewed from './words-etym-reviewed.js'
-import { chainWithCanonicalGloss } from '../lib/derive.js'
+import { chainWithCanonicalGloss, normalizeMorphForm, buildMorphByForm } from '../lib/derive.js'
 import wordsLemma, { LEMMA_BY_ID } from './words-lemma.js'
 import wordsForms, { FORMS_BY_ID } from './words-forms.js'
 
@@ -60,6 +60,37 @@ const MORPH_IDS = new Set(morphemes.map((m) => m.id))
 // 词素 id -> 权威 gloss（单一信源）。chain 分段 gloss 一律收敛到表里，消除漂移。
 const GLOSS_BY_ID = new Map(morphemes.map((m) => [m.id, m.gloss]))
 
+// form -> 词素 反查表（与 derive.buildMorphByForm 同源）。用于把 chain 段（含 morph=null 但 form
+// 命中词素表）解析进 morphs，使「chain 显示的词素」与「词群归属」一致。派生层仅做加法，绝不移除。
+const MORPH_BY_FORM = buildMorphByForm(morphemes)
+
+// 从 chain 解析出所有引用到的词素 id：段自带 morph 优先；morph 为空但 form 命中词素表也计入。
+function chainMorphIds(chain) {
+  const ids = []
+  for (const c of chain || []) {
+    if (c.morph && MORPH_IDS.has(c.morph)) ids.push(c.morph)
+    else if (!c.morph) {
+      const m = MORPH_BY_FORM.get(normalizeMorphForm(c.form))
+      if (m) ids.push(m.id)
+    }
+  }
+  return ids
+}
+
+// 把 chain 引用的词素并入 morphs（纯加法；morphs 已含则跳过），使词群归属 ⊇ chain。
+// 不改动既有 morphs、不改 chain、不改 morphless 标记。解决「chain 显示了 psycho-，但单词没归入
+// r.psych 词群」这类不一致——词群（wordsByMorph）由 morphs 构建，此前 chain 与 morphs 脱节。
+function deriveMorphsFromChain(out) {
+  const chain = out.chain || []
+  if (!chain.length) return out
+  const extra = chainMorphIds(chain)
+  if (!extra.length) return out
+  const set = new Set(out.morphs || [])
+  let changed = false
+  for (const id of extra) if (!set.has(id)) { set.add(id); changed = true }
+  return changed ? { ...out, morphs: [...set] } : out
+}
+
 const rawWords = WORD_FILES.flat()
 export const words = rawWords.map((w) => {
   // 人工逐词复核优先级最高；不得让旧自动/书本补丁覆盖已审定结论。
@@ -81,9 +112,9 @@ export const words = rawWords.map((w) => {
     // 早退词也可能自带 chain（base 文件里写死的），同样收敛 gloss
     if (w.chain && w.chain.length) {
       const nc = chainWithCanonicalGloss(w.chain, GLOSS_BY_ID)
-      if (nc !== w.chain) return { ...w, chain: nc, ...(etymReview ? { etymReview } : {}) }
+      if (nc !== w.chain) return deriveMorphsFromChain({ ...w, chain: nc, ...(etymReview ? { etymReview } : {}) })
     }
-    return etymReview ? { ...w, etymReview } : w
+    return deriveMorphsFromChain(etymReview ? { ...w, etymReview } : w)
   }
   // ★ morphs 必须去重（与 src/data/index.js 逐字同款——既有明写契约）★
   //   合并是「base 的 morphs + 补丁的 morphHints」直接追加。补丁与 base 命中**同一个**
@@ -108,7 +139,10 @@ export const words = rawWords.map((w) => {
   //   注意：base 文件里这些词原本带 morphless:false（因为它们曾被自动补丁补过拆解），
   //   移除拆解后若不翻标记，数据就自相矛盾了。
   if (hasEtymReview && Array.isArray(out.morphs) && out.morphs.length === 0) out.morphless = true
-  return out
+  // ★ 人工逐词复核是权威替换：其 morphs 已是审核员最终结论（可能故意排除某些 chain 段），
+  //   绝不再用 deriveMorphsFromChain 从 chain 反加回去——否则推翻人工结论、重挂被移除的词素。
+  //   其余补丁层（REMORPH/BOOKMORPH/LOANMORPH）均为加法语义，才允许派生补全。
+  return hasEtymReview ? out : deriveMorphsFromChain(out)
 })
 
 export default words
